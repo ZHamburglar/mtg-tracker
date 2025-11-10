@@ -18,6 +18,7 @@ app.use(
   })
 );
 
+console.log("Auth service up and running");
 // Use the imported routes here
 app.use(newUserRouter);
 
