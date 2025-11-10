@@ -18,8 +18,6 @@ app.use(
   })
 );
 
-console.log("Auth service - app.ts loaded");
-
 // Use the imported routes here
 app.use(newUserRouter);
 
