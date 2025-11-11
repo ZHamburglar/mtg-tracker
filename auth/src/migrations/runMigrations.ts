@@ -7,7 +7,7 @@ export async function runMigrations(pool: mysql.Pool): Promise<void> {
 
   // Create migrations tracking table if it doesn't exist
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS migrations (
+    CREATE TABLE IF NOT EXISTS migrations_users (
       id INT AUTO_INCREMENT PRIMARY KEY,
       filename VARCHAR(255) NOT NULL UNIQUE,
       executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -22,7 +22,7 @@ export async function runMigrations(pool: mysql.Pool): Promise<void> {
 
   // Check which migrations have already been run
   const [executedMigrations] = await pool.query<mysql.RowDataPacket[]>(
-    'SELECT filename FROM migrations'
+    'SELECT filename FROM migrations_users'
   );
   const executedFiles = new Set(executedMigrations.map(row => row.filename));
 
@@ -43,7 +43,7 @@ export async function runMigrations(pool: mysql.Pool): Promise<void> {
       
       // Record that this migration was executed
       await pool.query(
-        'INSERT INTO migrations (filename) VALUES (?)',
+        'INSERT INTO migrations_users (filename) VALUES (?)',
         [file]
       );
       
