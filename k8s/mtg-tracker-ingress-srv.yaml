@@ -5,8 +5,13 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - mtg-tracker.local
+      secretName: mtg-tracker-tls
   rules:
     - host: mtg-tracker.local
       http:
