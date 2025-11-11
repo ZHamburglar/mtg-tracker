@@ -15,6 +15,24 @@ spec:
       containers:
         - name: auth
           image: zhamburglar/mtg-tracker-auth
+          env:
+            - name: MYSQL_HOST
+              value: "mysql"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
 ---
 apiVersion: v1
 kind: Service

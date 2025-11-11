@@ -38,3 +38,6 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 
 Running locally: docker run -p 3000:3000 zhamburglar/mtg-tracker-client
+
+docker build -t test-next .
+docker run -p 3000:3000 test-next
