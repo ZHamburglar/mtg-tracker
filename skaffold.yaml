@@ -9,6 +9,14 @@ build:
     push: false
     # push: true
   artifacts:
+    - image: zhamburglar/mtg-tracker-auth
+      context: auth
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: 'src/**/*.ts'
+            dest: .
     - image: zhamburglar/mtg-tracker-client
       context: client
       docker:
