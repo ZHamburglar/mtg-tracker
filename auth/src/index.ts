@@ -35,7 +35,7 @@ const start = async () => {
     port: 3306
   });
 
-  connection.connect((err) => {
+  connection.connect((err: mysql.QueryError | null) => {
     if (err) {
       console.error('Error connecting to the database:', err.message);
       return;
