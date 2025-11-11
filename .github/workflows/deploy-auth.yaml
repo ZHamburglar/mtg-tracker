@@ -35,7 +35,7 @@ jobs:
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v5
         with:
-          context: ./mtg-tracker-auth
+          context: ./auth
           push: true
           tags: zhamburglar/mtg-tracker-auth:latest
           platforms: linux/amd64,linux/arm64
