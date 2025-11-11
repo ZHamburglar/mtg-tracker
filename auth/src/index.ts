@@ -1,3 +1,4 @@
+import mysql from 'mysql2';
 import { app } from "./app";
 
 const start = async () => {
@@ -23,6 +24,26 @@ const start = async () => {
     console.log(`User: ${process.env.MYSQL_USER}`);
     console.log(`Database: ${process.env.MYSQL_DATABASE}`);
   }
+
+  // mysql://authuser:authpass@mysql:3306/authdb
+
+  const connection = mysql.createConnection({
+    host: 'mysql', // Replace with your MySQL host (e.g., '127.0.0.1')
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE,
+    port: 3306
+  });
+
+  connection.connect((err) => {
+    if (err) {
+      console.error('Error connecting to the database:', err.message);
+      return;
+    }
+    console.log('Connected to the MySQL database!');
+  });
+
+
 
   app.listen(3000, () => {
     console.log("Listening on port 3000!!!!");
