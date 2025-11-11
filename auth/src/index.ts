@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
+import { runMigrations } from './migrations/runMigrations';
 
 let pool: mysql.Pool | undefined;
 
@@ -33,7 +34,12 @@ const start = async () => {
   // You can export the pool or set it in a global variable if needed
   console.log('pool created:', pool !== undefined);
 
+  if (!pool) {
+    throw new Error("Failed to create database pool");
+  }
 
+  // Run migrations from the migrations folder
+  await runMigrations(pool);
 
   app.listen(3000, () => {
     console.log("Listening on port 3000!!!!");
