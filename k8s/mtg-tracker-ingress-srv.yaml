@@ -4,6 +4,10 @@ metadata:
   name: mtg-tracker-ingress-service
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Real-IP: $remote_addr";
+      more_set_headers "X-Forwarded-For: $proxy_add_x_forwarded_for";
 spec:
   ingressClassName: nginx
   rules:

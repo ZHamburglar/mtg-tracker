@@ -10,6 +10,11 @@ import { newUserRouter } from "./routes/newuser";
 const app = express();
 app.set("trust proxy", true);
 app.use(json());
+app.use((req, res, next) => {
+  const clientIP = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  console.log('Client IP:', clientIP);
+  next();
+});
 
 app.use(
   cookieSession({
