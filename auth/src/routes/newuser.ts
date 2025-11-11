@@ -10,4 +10,8 @@ router.post('/api/users/newuser', async (req: Request, res: Response) => {
   res.status(201).send({ message: 'New user created', email });
 });
 
+router.get('/api/users/health', async (req: Request, res: Response) => {
+  res.status(200).send({ status: 'User service is healthy' });
+});
+
 export { router as newUserRouter };
