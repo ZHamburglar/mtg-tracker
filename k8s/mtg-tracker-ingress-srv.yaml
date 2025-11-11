@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: mtg-tracker.dev
+    - host: mtg-tracker.local
       http:
         paths:
           - path: /api/users/?(.*)
