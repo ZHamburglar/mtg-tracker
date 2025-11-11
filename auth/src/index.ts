@@ -1,5 +1,8 @@
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise';
 import { app } from "./app";
+import { createMysqlPoolWithRetry } from './config/mysql';
+
+let pool: mysql.Pool | undefined;
 
 const start = async () => {
   if (!process.env.MYSQL_HOST) {
@@ -25,23 +28,10 @@ const start = async () => {
     console.log(`Database: ${process.env.MYSQL_DATABASE}`);
   }
 
-  // mysql://authuser:authpass@mysql:3306/authdb
 
-  const connection = mysql.createConnection({
-    host: 'mysql', // Replace with your MySQL host (e.g., '127.0.0.1')
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    port: 3306
-  });
-
-  connection.connect((err: mysql.QueryError | null) => {
-    if (err) {
-      console.error('Error connecting to the database:', err.message);
-      return;
-    }
-    console.log('Connected to the MySQL database!');
-  });
+  pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
+  // You can export the pool or set it in a global variable if needed
+  console.log('pool created:', pool !== undefined);
 
 
 
@@ -51,3 +41,11 @@ const start = async () => {
 };
 
 start();
+
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, closing database connection...");
+  if (pool) {
+    await pool.end();
+  }
+  process.exit(0);
+});
