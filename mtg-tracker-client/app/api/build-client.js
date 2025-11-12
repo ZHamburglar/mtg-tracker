@@ -7,12 +7,14 @@ export default () => {
     const isProduction = process.env.NODE_ENV === 'production';
     
     if (isProduction) {
-      // Running in Kubernetes cluster - use internal service name with HTTP
+      // Running in Kubernetes cluster - use internal service name
       console.log('Server-side request (K8s cluster)');
+      
       return axios.create({
-        baseURL: "http://ingress-nginx-controller.ingress-nginx.svc.cluster.local",
+        baseURL: "http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80",
         headers: {
-          Host: 'mtg-tracker.local' // Tell ingress which host this request is for
+          Host: 'mtg-tracker.local', // Tell ingress which host this request is for
+          'X-Forwarded-Proto': 'https' // Prevent SSL redirect loop
         }
       });
     } else {
