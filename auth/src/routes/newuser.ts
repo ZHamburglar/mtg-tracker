@@ -1,5 +1,5 @@
 import express, { Request, Response} from 'express';
-import { body } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user';
 
@@ -16,6 +16,12 @@ router.post('/api/users/newuser',
       .withMessage('Password must be between 8 and 25 characters')
   ],
   async (req: Request, res: Response) => {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { email, password } = req.body;
     
     // Check if user already exists
