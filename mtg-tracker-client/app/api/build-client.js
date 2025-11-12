@@ -10,7 +10,7 @@ export default () => {
       // Running in Kubernetes cluster - use internal service name
       console.log('Server-side request (K8s cluster)');
       return axios.create({
-        baseURL: "http://ingress-nginx-controller.ingress-nginx.svc.cluster.local",
+        baseURL: "https://ingress-nginx-controller.ingress-nginx.svc.cluster.local",
         headers: {
           Host: 'mtg-tracker.local' // Tell ingress which host this request is for
         }
