@@ -1,3 +1,5 @@
+"use client";
+
 import { NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
@@ -37,7 +39,7 @@ const Header = ({ currentUser }) => {
               </NavigationMenuTrigger>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Button>Dark Mode</Button>
+              <Button onClick={() => console.log('Toggle dark mode', currentUser)}>Dark Mode</Button>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
