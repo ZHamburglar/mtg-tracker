@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { runMigrations } from './migrations/runMigrations';
+import { User } from './models/user';
 
 let pool: mysql.Pool | undefined;
 
@@ -40,6 +41,9 @@ const start = async () => {
 
   // Run migrations from the migrations folder
   await runMigrations(pool);
+
+  // Initialize User model with database pool
+  User.setPool(pool);
 
   app.listen(3000, () => {
     console.log("Listening on port 3000!!!!");
