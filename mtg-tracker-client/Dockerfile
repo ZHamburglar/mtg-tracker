@@ -18,6 +18,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Copy the standalone build from builder (includes everything needed)
 COPY --from=builder /app/.next/standalone ./
@@ -27,5 +28,5 @@ COPY --from=builder /app/public ./public
 # Expose port
 EXPOSE 3000
 
-# Start the Next.js server
-CMD ["npm", "start"]
+# Start the Next.js server using the standalone server.js
+CMD ["node", "server.js"]
