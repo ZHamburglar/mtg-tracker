@@ -21,6 +21,15 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      # Cache Docker layers using GitHub Actions cache
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       # Enable Buildx for multi-arch builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -39,5 +48,13 @@ jobs:
           push: true
           tags: zhamburglar/mtg-tracker-client:latest
           platforms: linux/arm64
-          cache-from: type=registry,ref=zhamburglar/mtg-tracker-client:buildcache
-          cache-to: type=registry,ref=zhamburglar/mtg-tracker-client:buildcache,mode=max
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache
+            type=registry,ref=zhamburglar/mtg-tracker-client:buildcache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      
+      # Move cache to prevent it from growing indefinitely
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
