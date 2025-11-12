@@ -38,12 +38,18 @@ const Header = ({ currentUser }) => {
     console.log('environment:', process.env.NODE_ENV);
     // Implement sign-in logic here, e.g., call an API endpoint
     const client = buildClient();
-    client.post('/api/users/signin', { email, password })
+    client.post('/api/users/signin', { email, password }, {
+      withCredentials: true // Important: This ensures cookies are sent and received
+    })
       .then(response => {
-        console.log('Sign in successful:', response.data);
+        console.log('Sign in successful:', response);
+        // Cookie is automatically set by the browser from Set-Cookie header
+        // Reload the page to update the currentUser state
+        window.location.href = '/';
       })
       .catch(error => {
         console.error('Error signing in:', error);
+        // TODO: Show error message to user
       });
   };
 

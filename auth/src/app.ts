@@ -25,7 +25,9 @@ app.use((req, res, next) => {
 app.use(
   cookieSession({
     signed: false,
-    secure: process.env.NODE_ENV !== "test",
+    secure: false, // Set to false to allow cookies over HTTP in dev
+    sameSite: 'lax', // Allow cookies to be sent with cross-origin requests
+    httpOnly: true, // Prevent JavaScript access to cookies for security
   })
 );
 
