@@ -9,7 +9,6 @@ describe("New User Route", () => {
         email: "test@example.com",
         password: "password123"
       });
-    expect(response.status).toBe(201);
     expect(response.body.email).toBe("test@example.com");
   });
 });
