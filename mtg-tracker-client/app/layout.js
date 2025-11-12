@@ -13,28 +13,16 @@ export const metadata = {
 };
 
 async function getCurrentUser() {
-  const client = buildClient();
-  const { data } = await client.get('/api/users/currentuser');
-  console.log('data in layout:', data);
-  // try {
-  //   // Server-side fetch - runs on the server during rendering
-  //   const response = await fetch('http://auth-srv:3000/api/users/currentuser', {
-  //     cache: 'no-store', // Don't cache, always get fresh data
-  //     headers: {
-  //       // Forward cookies from the request if needed
-  //       // Cookie: cookies().toString()
-  //     }
-  //   });
-    
-  //   if (response.ok) {
-  //     const data = await response.json();
-  //     return data.currentUser;
-  //   }
-  // } catch (error) {
-  //   console.error('Error fetching current user:', error);
-  // }
-  
-  // return null;
+  try {
+    const client = buildClient();
+    const { data } = await client.get('/api/users/currentuser');
+    console.log('data in layout:', data);
+    return data.currentUser;
+  } catch (error) {
+    // During build time or if service is unavailable, return null
+    console.error('Error fetching current user:', error.message);
+    return null;
+  }
 }
 
 export default async function RootLayout({ children }) {
