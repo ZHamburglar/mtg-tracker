@@ -5,6 +5,7 @@ import cookieSession from "cookie-session";
 
 // Import routes here and use them
 import { newUserRouter } from "./routes/newuser";
+import { healthRouter } from "./routes/health";
 
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(
 
 console.log("Auth service up and running!!");
 // Use the imported routes here
+app.use(healthRouter);
 app.use(newUserRouter);
 
 
