@@ -35,12 +35,9 @@ const Header = ({ currentUser }) => {
 
   const signIn = () => {
     console.log('Signing in with', email, password);
-    console.log('environment:', process.env.NODE_ENV);
     // Implement sign-in logic here, e.g., call an API endpoint
     const client = buildClient();
-    client.post('/api/users/signin', { email, password }, {
-      withCredentials: true // Important: This ensures cookies are sent and received
-    })
+    client.post('/api/users/signin', { email, password })
       .then(response => {
         console.log('Sign in successful:', response);
         // Cookie is automatically set by the browser from Set-Cookie header
