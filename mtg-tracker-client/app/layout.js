@@ -25,7 +25,8 @@ async function getCurrentUser() {
 }
 
 export default async function RootLayout({ children }) {
-  const currentUser = await getCurrentUser();
+  // const currentUser = await getCurrentUser();
+  const currentUser = null; // Disable auth for now
   
   return (
     <html lang="en" className="dark">
