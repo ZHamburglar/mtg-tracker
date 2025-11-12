@@ -42,7 +42,7 @@ const Header = ({ currentUser }) => {
         console.log('Sign in successful:', response);
         // Cookie is automatically set by the browser from Set-Cookie header
         // Reload the page to update the currentUser state
-        window.location.href = '/';
+        // window.location.href = '/';
       })
       .catch(error => {
         console.error('Error signing in:', error);
@@ -50,7 +50,6 @@ const Header = ({ currentUser }) => {
       });
   };
 
-  console.log('currentUser in Header:', currentUser);
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
