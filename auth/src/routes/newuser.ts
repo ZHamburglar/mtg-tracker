@@ -1,7 +1,9 @@
 import express, { Request, Response} from 'express';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user';
+import { BadRequestError } from '../errors/bad-request-error';
+import { validateRequest } from '../middlewares/validate-request';
 
 export const router = express.Router();
 
@@ -15,20 +17,15 @@ router.post('/api/users/newuser',
       .isLength({ min: 8, max: 25 })
       .withMessage('Password must be between 8 and 25 characters')
   ],
+  validateRequest,
   async (req: Request, res: Response) => {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { email, password } = req.body;
-    
+
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
 
     if (existingUser) {
-      throw new Error('Email in use');
+      throw new BadRequestError('Email in use');
     }
 
     // Create new user in database
