@@ -32,11 +32,13 @@ const Header = ({ currentUser }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+
   const signIn = () => {
     console.log('Signing in with', email, password);
+    console.log('environment:', process.env.NODE_ENV);
     // Implement sign-in logic here, e.g., call an API endpoint
     const client = buildClient();
-    client.post('/api/users/newuser', { email, password })
+    client.post('/api/users/signin', { email, password })
       .then(response => {
         console.log('Sign in successful:', response.data);
       })
