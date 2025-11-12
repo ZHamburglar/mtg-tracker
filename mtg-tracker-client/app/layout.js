@@ -3,7 +3,6 @@ import Header from "@/components/header";
 import buildClient from './api/build-client';
 
 import "./globals.css";
-import { Root } from "react-day-picker";
 
 const inter = Inter({ subsets: ["latin"] });
 

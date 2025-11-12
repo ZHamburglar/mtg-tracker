@@ -17,7 +17,7 @@ spec:
     - host: mtg-tracker.local
       http:
         paths:
-          - path: /api/users/?(.*)
+          - path: /api/users(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
