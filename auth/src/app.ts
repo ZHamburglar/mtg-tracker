@@ -7,6 +7,7 @@ import cookieSession from "cookie-session";
 import { newUserRouter } from "./routes/newuser";
 import { currentUserRouter } from "./routes/current-user";
 import { userSignoutRouter } from "./routes/signout-user";
+import { userSigninRouter } from "./routes/signin-user";
 
 import { healthRouter } from "./routes/health";
 import { errorHandler } from "./middlewares/error-handler";
@@ -34,6 +35,7 @@ app.use(healthRouter);
 app.use(newUserRouter);
 app.use(currentUserRouter);
 app.use(userSignoutRouter);
+app.use(userSigninRouter);
 
 // Error handler must be added AFTER all routes
 app.use(errorHandler);
