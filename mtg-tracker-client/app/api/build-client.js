@@ -5,6 +5,16 @@ export default () => {
   if (typeof window === "undefined") {
     // We are on the server
     const isProduction = process.env.NODE_ENV === 'production';
+    const isBuilding = process.env.NEXT_PHASE === 'phase-production-build';
+    
+    // Skip API calls during build time
+    if (isBuilding) {
+      console.log('Build time - skipping API client creation');
+      return axios.create({
+        baseURL: "http://localhost:3000",
+        // This will fail gracefully during build, caught by try-catch in layout
+      });
+    }
     
     if (isProduction) {
       // Running in Kubernetes cluster - use internal service name

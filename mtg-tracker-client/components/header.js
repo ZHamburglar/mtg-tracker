@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 
 const Header = ({ currentUser }) => {
+  console.log('currentUser in Header:', currentUser);
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
