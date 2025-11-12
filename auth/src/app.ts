@@ -5,6 +5,7 @@ import cookieSession from "cookie-session";
 
 // Import routes here and use them
 import { newUserRouter } from "./routes/newuser";
+import { currentUserRouter } from "./routes/current-user";
 import { healthRouter } from "./routes/health";
 import { errorHandler } from "./middlewares/error-handler";
 
@@ -29,6 +30,7 @@ console.log("Auth service up and running!!");
 // Use the imported routes here
 app.use(healthRouter);
 app.use(newUserRouter);
+app.use(currentUserRouter);
 
 // Error handler must be added AFTER all routes
 app.use(errorHandler);
