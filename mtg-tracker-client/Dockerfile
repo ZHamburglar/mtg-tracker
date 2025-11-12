@@ -28,4 +28,4 @@ COPY --from=builder /app/public ./public
 EXPOSE 3000
 
 # Start the Next.js server
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
