@@ -31,11 +31,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build and push for both amd64 + arm64
-      - name: Build and push multi-arch image
+      # Build and push with caching
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: ./mtg-tracker-client
           push: true
           tags: zhamburglar/mtg-tracker-client:latest
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
+          cache-from: type=registry,ref=zhamburglar/mtg-tracker-client:buildcache
+          cache-to: type=registry,ref=zhamburglar/mtg-tracker-client:buildcache,mode=max
