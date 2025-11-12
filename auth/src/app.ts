@@ -6,6 +6,7 @@ import cookieSession from "cookie-session";
 // Import routes here and use them
 import { newUserRouter } from "./routes/newuser";
 import { healthRouter } from "./routes/health";
+import { errorHandler } from "./middlewares/error-handler";
 
 
 const app = express();
@@ -29,5 +30,7 @@ console.log("Auth service up and running!!");
 app.use(healthRouter);
 app.use(newUserRouter);
 
+// Error handler must be added AFTER all routes
+app.use(errorHandler);
 
 export { app };
