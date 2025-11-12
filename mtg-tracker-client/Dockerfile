@@ -19,15 +19,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Make sure production dependencies are installed
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-# Copy built application from builder
-COPY --from=builder /app/.next ./ .next
+# Copy the standalone build from builder (includes everything needed)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-# COPY --from=builder /app/next.config.js ./next.config.js
-COPY --from=builder /app/package*.json ./
 
 # Expose port
 EXPOSE 3000
