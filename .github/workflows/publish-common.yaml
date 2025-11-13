@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: cd common && npm ci
       - run: cd common && npm run build
 
   publish-npm:
@@ -37,6 +38,10 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      # Install dependencies
+      - name: Install dependencies
+        run: cd common && npm ci
       
       # Bump version and commit
       - name: Bump version
