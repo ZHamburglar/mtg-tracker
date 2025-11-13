@@ -2,6 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-depl
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: auth=zhamburglar/mtg-tracker-auth
+    argocd-image-updater.argoproj.io/auth.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
 spec:
   replicas: 1
   selector:
@@ -14,7 +18,8 @@ spec:
     spec:
       containers:
         - name: auth
-          image: zhamburglar/mtg-tracker-auth
+          image: zhamburglar/mtg-tracker-auth:latest
+          imagePullPolicy: Always
           env:
             - name: MYSQL_HOST
               value: "mysql"

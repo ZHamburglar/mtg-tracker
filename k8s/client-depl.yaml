@@ -2,6 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: client-deployment
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: client=zhamburglar/mtg-tracker-client
+    argocd-image-updater.argoproj.io/client.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
 spec:
   replicas: 1
   selector:
@@ -15,6 +19,7 @@ spec:
       containers:
         - name: client
           image: zhamburglar/mtg-tracker-client:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
 ---

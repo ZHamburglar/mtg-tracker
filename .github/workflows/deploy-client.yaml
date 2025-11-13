@@ -46,7 +46,9 @@ jobs:
         with:
           context: ./mtg-tracker-client
           push: true
-          tags: zhamburglar/mtg-tracker-client:latest
+          tags: |
+            zhamburglar/mtg-tracker-client:latest
+            zhamburglar/mtg-tracker-client:${{ github.sha }}
           platforms: linux/arm64
           cache-from: |
             type=local,src=/tmp/.buildx-cache

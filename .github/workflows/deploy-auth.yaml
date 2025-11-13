@@ -37,6 +37,8 @@ jobs:
         with:
           context: ./auth
           push: true
-          tags: zhamburglar/mtg-tracker-auth:latest
+          tags: |
+            zhamburglar/mtg-tracker-auth:latest
+            zhamburglar/mtg-tracker-auth:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
 
