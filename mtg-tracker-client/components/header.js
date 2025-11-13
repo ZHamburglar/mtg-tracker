@@ -92,7 +92,7 @@ const Header = ({ currentUser }) => {
                     
                     <DialogFooter>
                       <Button variant="outline" onClick={() => console.log('Cancel sign out')}>Cancel</Button>
-                      <Button onClick={() => console.log('Sign out confirmed')}>Sign Out</Button>
+                      <Button onClick={() => console.log('Sign out confirmed!')}>Sign Out</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
