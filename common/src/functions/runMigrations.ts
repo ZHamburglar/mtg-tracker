@@ -18,7 +18,7 @@ export async function runMigrations(pool: mysql.Pool): Promise<void> {
   const migrationsDir = path.join(__dirname);
   const files = fs.readdirSync(migrationsDir)
     .filter(file => file.endsWith('_up.sql'))
-    .sort(); // Sort to ensure correct order
+    .sort();
 
   // Check which migrations have already been run
   const [executedMigrations] = await pool.query<mysql.RowDataPacket[]>(
