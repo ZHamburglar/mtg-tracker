@@ -16,6 +16,7 @@
   "author": "zhamburglar",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "del-cli": "^7.0.0",
     "typescript": "^5.9.3"
   },
