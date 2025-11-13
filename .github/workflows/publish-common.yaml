@@ -51,14 +51,19 @@ jobs:
         run: |
           cd common
           npm version patch -m "Bump version to %s [skip ci]"
-          git push
-          git push --tags
       
-      # Build and publish
+      # Build package
       - name: Build package
         run: cd common && npm run build
       
+      # Publish to npm
       - name: Publish to npm
         run: cd common && npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      
+      # Push version bump after successful publish
+      - name: Push version bump
+        run: |
+          git push
+          git push --tags
