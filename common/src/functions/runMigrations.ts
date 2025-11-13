@@ -54,5 +54,5 @@ export async function runMigrations(pool: mysql.Pool): Promise<void> {
     }
   }
 
-  console.log('All migrations complete on auth');
+  console.log('All migrations complete on auth!');
 }
