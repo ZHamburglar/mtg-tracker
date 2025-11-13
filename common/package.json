@@ -1,6 +1,6 @@
 {
   "name": "@mtg-tracker/common",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
@@ -10,7 +10,7 @@
   "scripts": {
     "clean": "del ./build/*",
     "build": "npm run clean && tsc",
-    "publish": "git add . && git commit -m \"Updates\" && npm version patch && npm run build && npm publish --access public && git push && git push --tags"
+    "publ": "git add . && git commit -m \"Updates\" && npm version patch && npm run build && npm publish --access public && git push && git push --tags"
   },
   "keywords": [],
   "author": "zhamburglar",
