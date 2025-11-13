@@ -24,12 +24,15 @@ export default () => {
     });
   }
 
-  if (isProduction) {
-    // Running in Kubernetes cluster
-    console.log('Production mode - using mtg-tracker.local');
-    return axios.create({
-      baseURL: "https://mtg-tracker.local",
-      withCredentials: true,
-    });
-  }
+    if (isProduction) {
+      // Running in Kubernetes cluster - use internal service name
+      console.log('Server-side request (K8s cluster)');
+      return axios.create({
+        baseURL: "https://mtg-tracker.local",
+        headers: {
+          Host: 'mtg-tracker.local', // Tell ingress which host this request is for
+          'X-Forwarded-Proto': 'https' // Prevent SSL redirect loop
+        }
+      });
+    }
 };
