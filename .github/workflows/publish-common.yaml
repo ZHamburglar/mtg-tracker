@@ -51,6 +51,9 @@ jobs:
         run: |
           cd common
           npm version patch -m "Bump version to %s [skip ci]"
+          cd ..
+          git add common/package.json common/package-lock.json
+          git commit --amend --no-edit
       
       # Build package
       - name: Build package
@@ -65,5 +68,5 @@ jobs:
       # Push version bump after successful publish
       - name: Push version bump
         run: |
-          git push
+          git push origin HEAD:main
           git push --tags
