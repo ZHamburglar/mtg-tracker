@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
-import { runMigrations } from './migrations/runMigrations';
+import { runMigrations } from './runMigrations';
 import { User } from './models/user';
 
 let pool: mysql.Pool | undefined;
@@ -40,7 +40,7 @@ const start = async () => {
   }
 
   // Run migrations from the migrations folder
-  await runMigrations(pool);
+  await runMigrations(pool, 'auth');
 
   // Initialize User model with database pool
   User.setPool(pool);
