@@ -46,14 +46,15 @@ jobs:
       - name: Install dependencies
         run: cd common && npm ci
       
+      # Fetch latest changes
+      - name: Fetch latest changes
+        run: git fetch origin main
+      
       # Bump version and commit
       - name: Bump version
         run: |
           cd common
           npm version patch -m "Bump version to %s [skip ci]"
-          cd ..
-          git add common/package.json common/package-lock.json
-          git commit --amend --no-edit
       
       # Build package
       - name: Build package
@@ -68,5 +69,5 @@ jobs:
       # Push version bump after successful publish
       - name: Push version bump
         run: |
-          git push origin HEAD:main
+          git push origin HEAD:main --force-with-lease
           git push --tags
