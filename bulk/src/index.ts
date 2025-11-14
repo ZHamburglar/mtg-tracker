@@ -40,7 +40,8 @@ const start = async () => {
   }
 
   // Run migrations from the migrations folder
-  const migrationsDir = path.join(__dirname, 'migrations');
+  // Use process.cwd() to get the project root, then navigate to src/migrations
+  const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
   await runMigrations(pool, migrationsDir, 'bulk');
 
   // Initialize User model with database pool
