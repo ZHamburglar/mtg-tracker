@@ -3,14 +3,14 @@ import "express-async-errors";
 import { json } from "body-parser";
 import cookieSession from "cookie-session";
 
+import { errorHandler } from "@mtg-tracker/common"
+
 // Import routes here and use them
 import { newUserRouter } from "./routes/newuser";
 import { currentUserRouter } from "./routes/current-user";
 import { userSignoutRouter } from "./routes/signout-user";
 import { userSigninRouter } from "./routes/signin-user";
-
 import { healthRouter } from "./routes/health";
-import { errorHandler } from "./middlewares/error-handler";
 
 
 const app = express();

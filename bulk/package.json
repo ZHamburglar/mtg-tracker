@@ -1,7 +1,7 @@
 {
-  "name": "mtg-auth",
+  "name": "mtg-bulk",
   "version": "1.0.0",
-  "description": "",
+  "description": "Service for bulk operations from scryfall",
   "main": "index.js",
   "scripts": {
     "start": "ts-node-dev src/index.ts",
@@ -18,16 +18,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mtg-tracker/common": "^1.0.12",
+    "@mtg-tracker/common": "latest",
     "@types/cookie-session": "^2.0.49",
     "@types/express": "^5.0.5",
-    "@types/jsonwebtoken": "^9.0.10",
-    "bcrypt": "^6.0.0",
     "cookie-session": "^2.1.1",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "express-validator": "^7.3.0",
-    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.15.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
