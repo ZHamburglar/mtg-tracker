@@ -46,15 +46,16 @@ jobs:
       - name: Install dependencies
         run: cd common && npm ci
       
-      # Fetch latest changes
-      - name: Fetch latest changes
-        run: git fetch origin main
-      
-      # Bump version and commit
+      # Bump version (without committing yet)
       - name: Bump version
+        run: cd common && npm version patch --no-git-tag-version
+      
+      # Commit version bump
+      - name: Commit version bump
         run: |
-          cd common
-          npm version patch -m "Bump version to %s [skip ci]"
+          git add common/package.json common/package-lock.json
+          VERSION=$(node -p "require('./common/package.json').version")
+          git commit -m "Bump version to ${VERSION} [skip ci]"
       
       # Build package
       - name: Build package
@@ -66,8 +67,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       
-      # Push version bump after successful publish
-      - name: Push version bump
+      # Create and push tag
+      - name: Create and push tag
         run: |
-          git push origin HEAD:main --force-with-lease
-          git push --tags
+          VERSION=$(node -p "require('./common/package.json').version")
+          git tag "v${VERSION}"
+          git push origin main
+          git push origin "v${VERSION}"
