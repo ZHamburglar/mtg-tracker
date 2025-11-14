@@ -67,10 +67,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       
-      # Create and push tag
-      - name: Create and push tag
-        run: |
-          VERSION=$(node -p "require('./common/package.json').version")
-          git tag "v${VERSION}"
-          git push origin main
-          git push origin "v${VERSION}"
+      # Push version bump commit
+      - name: Push version bump
+        run: git push origin main
