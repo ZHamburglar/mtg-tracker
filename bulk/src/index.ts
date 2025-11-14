@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import path from 'path';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { runMigrations } from '@mtg-tracker/common';
@@ -39,7 +40,8 @@ const start = async () => {
   }
 
   // Run migrations from the migrations folder
-  await runMigrations(pool, 'bulk');
+  const migrationsDir = path.join(__dirname, 'migrations');
+  await runMigrations(pool, migrationsDir, 'bulk');
 
   // Initialize User model with database pool
   // User.setPool(pool);
