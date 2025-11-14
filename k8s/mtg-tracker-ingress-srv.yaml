@@ -29,6 +29,13 @@ spec:
                 name: auth-srv
                 port:
                   number: 3000
+          - path: /api/bulk(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: bulk-srv
+                port:
+                  number: 3000
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:

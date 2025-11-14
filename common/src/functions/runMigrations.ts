@@ -18,6 +18,12 @@ export async function runMigrations(pool: mysql.Pool, migrationsDir: string, ser
     )
   `);
 
+  // Check if migrations directory exists
+  if (!fs.existsSync(migrationsDir)) {
+    console.log(`No migrations directory found at ${migrationsDir}, skipping migrations...`);
+    return;
+  }
+
   // Get all migration files from the provided directory
   const files = fs.readdirSync(migrationsDir)
     .filter(file => file.endsWith('_up.sql'))
