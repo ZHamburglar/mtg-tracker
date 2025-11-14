@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import mysql from 'mysql2/promise';
 
-export async function runMigrations(pool: mysql.Pool, service: string): Promise<void> {
+export async function runMigrations(pool: mysql.Pool, migrationsDir: string, service: string): Promise<void> {
   console.log(`Running database migrations for the ${service} service...`);
 
   // Sanitize service name
@@ -18,8 +18,7 @@ export async function runMigrations(pool: mysql.Pool, service: string): Promise<
     )
   `);
 
-    // Get all migration files
-  const migrationsDir = path.join(__dirname, 'migrations');
+  // Get all migration files from the provided directory
   const files = fs.readdirSync(migrationsDir)
     .filter(file => file.endsWith('_up.sql'))
     .sort(); // Sort to ensure correct order
