@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulk-depl
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: bulk=zhamburglar/mtg-tracker-bulk
+    argocd-image-updater.argoproj.io/auth.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bulk
+  template:
+    metadata:
+      labels:
+        app: bulk
+    spec:
+      containers:
+        - name: bulk
+          image: zhamburglar/mtg-tracker-bulk:latest
+          imagePullPolicy: Always
+          env:
+            - name: MYSQL_HOST
+              value: "mysql"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bulk-srv
+spec:
+  selector:
+    app: bulk
+  ports:
+    - name: bulk
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
