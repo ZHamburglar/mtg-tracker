@@ -3,6 +3,7 @@ import axios from 'axios';
 import cron from 'node-cron';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
+import { Set } from '../models/set';
 
 const router = express.Router();
 
@@ -54,6 +55,31 @@ const fetchDefaultCards = async () => {
   }
 };
 
+// Function to fetch sets
+const fetchSets = async () => {
+  try {
+    console.log('Fetching sets from Scryfall...');
+
+    const response = await axios.get('https://api.scryfall.com/sets');
+    const sets = response.data.data;
+    
+    if (!Array.isArray(sets)) {
+      console.error('Expected array of sets but got:', typeof sets);
+      return;
+    }
+
+    console.log(`Fetched ${sets.length} sets from Scryfall`);
+
+    // Bulk create all sets at once for better performance
+    console.log('Bulk inserting sets into database...');
+    const setResult = await Set.bulkCreate(sets);
+    console.log(`Set import summary: ${setResult.setsCreated} new sets added, ${setResult.setsUpdated} existing sets updated`);
+    console.log('Sets import completed successfully!');
+  } catch (error) {
+    console.error('Error fetching sets:', error);
+  }
+};
+
 // Schedule to run every night at midnight
 cron.schedule('1 0 * * *', () => {
   console.log('Running scheduled task to fetch default cards at midnight');
@@ -78,6 +104,27 @@ router.get('/api/bulk/card', async (req: Request, res: Response) => {
     console.error('Error starting card import:', error);
     res.status(500).json({
       message: 'Failed to start card import',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/bulk/set', async (req: Request, res: Response) => {
+  try {
+    console.log('Manual trigger: Fetching and importing default sets...');
+    res.status(202).json({
+      message: 'Set import started',
+      status: 'processing'
+    });
+
+    // Run the import asynchronously
+    fetchSets().catch(err => {
+      console.error('Error in background set import:', err);
+    });
+  } catch (error) {
+    console.error('Error starting set import:', error);
+    res.status(500).json({
+      message: 'Failed to start set import',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }

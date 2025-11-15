@@ -6,6 +6,7 @@ import { runMigrations } from '@mtg-tracker/common';
 
 import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
+import { Set } from './models/set';
 
 let pool: mysql.Pool | undefined;
 
@@ -50,6 +51,7 @@ const start = async () => {
   // Initialize models with database pool
   Card.setPool(pool);
   CardPrice.setPool(pool);
+  Set.setPool(pool);
 
   app.listen(3000, () => {
     console.log("Listening on port 3000!");
