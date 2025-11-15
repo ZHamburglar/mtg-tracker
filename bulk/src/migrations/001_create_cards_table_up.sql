@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS cards (
   released_at DATE,
   layout VARCHAR(50),
   mana_cost VARCHAR(50),
-  cmc DECIMAL(5,2),
+  cmc DECIMAL(10,2),
   type_line VARCHAR(255),
   oracle_text TEXT,
   power VARCHAR(10),
