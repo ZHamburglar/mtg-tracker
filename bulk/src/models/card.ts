@@ -259,11 +259,27 @@ export class Card {
 
       try {
         const [result] = await Card.pool.query<mysql.ResultSetHeader>(query, values);
+        // For ON DUPLICATE KEY UPDATE:
+        // - affectedRows = 1 per row inserted
+        // - affectedRows = 2 per row updated (with changes)
+        // - affectedRows = 0 per row that matched but had no changes
+        // Formula: affectedRows = inserts*1 + updates*2 + noChanges*0
+        // We also know: inserts + updates + noChanges = batch.length
+        // To get accurate counts, we check changedRows (only counts actual updates)
         const batchSize = batch.length;
-        const updates = Math.max(0, result.affectedRows - batchSize);
-        const inserts = batchSize - updates;
+        // changedRows is only set when rows are actually modified
+        const actualUpdates = result.changedRows || 0;
+        // Remaining affectedRows are inserts (since noChanges contributes 0)
+        const inserts = result.affectedRows - (actualUpdates * 2);
+        // Duplicates with no changes
+        const noChanges = batchSize - inserts - actualUpdates;
+        
         totalCreated += inserts;
-        totalUpdated += updates;
+        totalUpdated += actualUpdates;
+        
+        if (noChanges > 0) {
+          console.log(`  - ${noChanges} cards already up-to-date (no changes needed)`);
+        }
       } catch (error) {
         console.error(`Error bulk creating batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
