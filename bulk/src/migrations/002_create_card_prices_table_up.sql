@@ -12,7 +12,22 @@ CREATE TABLE IF NOT EXISTS card_prices (
   price_tix DECIMAL(10,2),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_card_id (card_id),
-  INDEX idx_created_at (created_at),
-  FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+  
+  INDEX idx_card_created (card_id, created_at),
+
+  CONSTRAINT fk_card_prices_card
+  FOREIGN KEY (card_id) REFERENCES cards(id)
+    ON DELETE CASCADE
 );
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+
