@@ -140,7 +140,7 @@ export class Card {
     // Process in batches to avoid max_allowed_packet error
     for (let i = 0; i < transformedCards.length; i += batchSize) {
       const batch = transformedCards.slice(i, i + batchSize);
-      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedCards.length / batchSize)} (${batch.length} cards)...`);
+      console.log(`Processing card batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedCards.length / batchSize)} (${batch.length} cards)...`);
       
       // Build bulk insert query for this batch
       const values: any[] = [];
