@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS cards (
   INDEX idx_oracle (oracle_id),
   INDEX idx_type (type_line),
   INDEX idx_cmc (cmc),
-  INDEX idx_color_identity ((CAST(JSON_EXTRACT(color_identity, '$') AS CHAR(50))))
+  INDEX idx_color_identity ((CAST(JSON_EXTRACT(color_identity, '$') AS CHAR(50)))),
 
   CONSTRAINT fk_cards_set
     FOREIGN KEY (set_id) REFERENCES sets(id)
