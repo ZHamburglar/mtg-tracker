@@ -65,18 +65,11 @@ export class CardPrice {
       const query = `
         INSERT INTO card_prices (card_id, price_usd, price_usd_foil, price_usd_etched, price_eur, price_eur_foil, price_tix) 
         VALUES ${placeholders}
-        ON DUPLICATE KEY UPDATE
-          price_usd = VALUES(price_usd),
-          price_usd_foil = VALUES(price_usd_foil),
-          price_usd_etched = VALUES(price_usd_etched),
-          price_eur = VALUES(price_eur),
-          price_eur_foil = VALUES(price_eur_foil),
-          price_tix = VALUES(price_tix)
       `;
 
       try {
-        await CardPrice.pool.query(query, values);
-        totalCreated += batch.length;
+        const [result] = await CardPrice.pool.query<mysql.ResultSetHeader>(query, values);
+        totalCreated += result.affectedRows;
       } catch (error) {
         console.error(`Error bulk creating price batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
@@ -96,14 +89,7 @@ export class CardPrice {
 
     await CardPrice.pool.query(
       `INSERT INTO card_prices (card_id, price_usd, price_usd_foil, price_usd_etched, price_eur, price_eur_foil, price_tix) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         price_usd = VALUES(price_usd),
-         price_usd_foil = VALUES(price_usd_foil),
-         price_usd_etched = VALUES(price_usd_etched),
-         price_eur = VALUES(price_eur),
-         price_eur_foil = VALUES(price_eur_foil),
-         price_tix = VALUES(price_tix)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [attrs.card_id, attrs.usd, attrs.usd_foil, attrs.usd_etched, attrs.eur, attrs.eur_foil, attrs.tix]
     );
   }

@@ -55,6 +55,7 @@ export interface CardAttrs {
 export interface CardCreationResult {
   successful: boolean;
   cardsCreated: number;
+  cardsUpdated: number;
 }
 
 export interface CardDoc {
@@ -136,6 +137,7 @@ export class Card {
 
     const transformedCards = cards.map(card => Card.transformScryfallCard(card));
     let totalCreated = 0;
+    let totalUpdated = 0;
     
     // Process in batches to avoid max_allowed_packet error
     for (let i = 0; i < transformedCards.length; i += batchSize) {
@@ -256,8 +258,13 @@ export class Card {
     `;
 
       try {
-        await Card.pool.query(query, values);
-        totalCreated += batch.length;
+        const [result] = await Card.pool.query<mysql.ResultSetHeader>(query, values);
+        // affectedRows includes both inserts and updates
+        // For ON DUPLICATE KEY UPDATE: affectedRows = 1 for insert, 2 for update
+        const inserted = Math.floor(result.affectedRows / 2);
+        const updated = result.affectedRows - inserted;
+        totalCreated += inserted;
+        totalUpdated += updated;
       } catch (error) {
         console.error(`Error bulk creating batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
@@ -266,7 +273,8 @@ export class Card {
 
     return {
       successful: true,
-      cardsCreated: totalCreated
+      cardsCreated: totalCreated,
+      cardsUpdated: totalUpdated
     };
   }
 

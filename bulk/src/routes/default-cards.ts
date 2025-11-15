@@ -28,7 +28,7 @@ const fetchDefaultCards = async () => {
     // Bulk create all cards at once for better performance
     console.log('Bulk inserting cards into database...');
     const cardResult = await Card.bulkCreate(cards);
-    console.log(`Successfully created/updated ${cardResult.cardsCreated} cards`);
+    console.log(`Card import summary: ${cardResult.cardsCreated} new cards added, ${cardResult.cardsUpdated} existing cards updated`);
 
     // Process card prices
     console.log('Processing card prices...');
@@ -47,7 +47,7 @@ const fetchDefaultCards = async () => {
     console.log(`Found ${pricesData.length} cards with prices out of ${cards.length} total cards`);
     
     const priceResult = await CardPrice.bulkCreate(pricesData);
-    console.log(`Successfully created/updated ${priceResult.pricesCreated} card prices`);
+    console.log(`Price import summary: ${priceResult.pricesCreated} price records added to history`);
     console.log('Default cards import completed successfully!');
   } catch (error) {
     console.error('Error fetching default cards:', error);
@@ -55,7 +55,7 @@ const fetchDefaultCards = async () => {
 };
 
 // Schedule to run every night at midnight
-cron.schedule('0 0 * * *', () => {
+cron.schedule('1 0 * * *', () => {
   console.log('Running scheduled task to fetch default cards at midnight');
   fetchDefaultCards().catch(err => {
     console.error('Error in scheduled card import:', err);
