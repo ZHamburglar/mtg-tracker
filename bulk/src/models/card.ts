@@ -38,7 +38,7 @@ export interface CardAttrs {
   edhrec_uri?: string;
   tcgplayer_uri?: string;
   cardmarket_uri?: string;
-  cardhoard_uri?: string;
+  cardhoarder_uri?: string;
   legalities?: Record<string, string>;
   games?: string[];
   finishes?: string[];
@@ -116,7 +116,7 @@ export class Card {
     if (scryfallCard.related_uris?.edhrec) transformed.edhrec_uri = scryfallCard.related_uris.edhrec.substring(0, 500);
     if (scryfallCard.purchase_uris?.tcgplayer) transformed.tcgplayer_uri = scryfallCard.purchase_uris.tcgplayer.substring(0, 500);
     if (scryfallCard.purchase_uris?.cardmarket) transformed.cardmarket_uri = scryfallCard.purchase_uris.cardmarket.substring(0, 500);
-    if (scryfallCard.purchase_uris?.cardhoarder) transformed.cardhoard_uri = scryfallCard.purchase_uris.cardhoarder.substring(0, 500);
+    if (scryfallCard.purchase_uris?.cardhoarder) transformed.cardhoarder_uri = scryfallCard.purchase_uris.cardhoarder.substring(0, 500);
     if (scryfallCard.legalities) transformed.legalities = scryfallCard.legalities;
     if (scryfallCard.games) transformed.games = scryfallCard.games;
     if (scryfallCard.finishes) transformed.finishes = scryfallCard.finishes;
@@ -185,7 +185,7 @@ export class Card {
         card.edhrec_uri,
         card.tcgplayer_uri,
         card.cardmarket_uri,
-        card.cardhoard_uri,
+        card.cardhoarder_uri,
         card.legalities ? JSON.stringify(card.legalities) : null,
         card.games ? JSON.stringify(card.games) : null,
         card.finishes ? JSON.stringify(card.finishes) : null,
@@ -205,7 +205,7 @@ export class Card {
         power, toughness, colors, color_identity, keywords, produced_mana, rarity, set_id,
         set_code, set_name, collector_number, artist, artist_ids, illustration_id, flavor_text,
         full_art, textless, promo, reprint, frame, edhrec_rank, border_color, image_uri_png,
-        gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoard_uri, legalities,
+        gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
         games, finishes, reserved, oversized, game_changer, foil, nonfoil, digital
       ) VALUES ${placeholders}
       ON DUPLICATE KEY UPDATE
@@ -245,7 +245,7 @@ export class Card {
         edhrec_uri = VALUES(edhrec_uri),
         tcgplayer_uri = VALUES(tcgplayer_uri),
         cardmarket_uri = VALUES(cardmarket_uri),
-        cardhoard_uri = VALUES(cardhoard_uri),
+        cardhoarder_uri = VALUES(cardhoarder_uri),
         legalities = VALUES(legalities),
         games = VALUES(games),
         finishes = VALUES(finishes),
@@ -305,7 +305,7 @@ export class Card {
         power, toughness, colors, color_identity, keywords, produced_mana, rarity, set_id,
         set_code, set_name, collector_number, artist, artist_ids, illustration_id, flavor_text,
         full_art, textless, promo, reprint, frame, edhrec_rank, border_color, image_uri_png,
-        gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoard_uri, legalities,
+        gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
         games, finishes, reserved, oversized, game_changer, foil, nonfoil, digital
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -348,7 +348,7 @@ export class Card {
       attrs.edhrec_uri,
       attrs.tcgplayer_uri,
       attrs.cardmarket_uri,
-      attrs.cardhoard_uri,
+      attrs.cardhoarder_uri,
       attrs.legalities ? JSON.stringify(attrs.legalities) : null,
       attrs.games ? JSON.stringify(attrs.games) : null,
       attrs.finishes ? JSON.stringify(attrs.finishes) : null,
