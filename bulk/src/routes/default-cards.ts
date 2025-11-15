@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import axios from 'axios';
 import cron from 'node-cron';
-import { Card } from '../models/card.js';
-import { CardPrice } from '../models/cardprice.js';
+import { Card } from '../models/card';
+import { CardPrice } from '../models/cardprice';
 
 const router = express.Router();
 
