@@ -80,7 +80,11 @@ export class Card {
     if (scryfallCard.released_at) transformed.released_at = new Date(scryfallCard.released_at);
     if (scryfallCard.layout) transformed.layout = scryfallCard.layout;
     if (scryfallCard.mana_cost) transformed.mana_cost = scryfallCard.mana_cost;
-    if (scryfallCard.cmc !== undefined) transformed.cmc = scryfallCard.cmc;
+    // Cap CMC at reasonable value to avoid DECIMAL overflow (DECIMAL(10,2) max is 99999999.99)
+    if (scryfallCard.cmc !== undefined) {
+      const cmc = typeof scryfallCard.cmc === 'number' ? scryfallCard.cmc : parseFloat(scryfallCard.cmc);
+      transformed.cmc = Math.min(cmc, 99999999);
+    }
     if (scryfallCard.type_line) transformed.type_line = scryfallCard.type_line;
     if (scryfallCard.oracle_text) transformed.oracle_text = scryfallCard.oracle_text;
     if (scryfallCard.power) transformed.power = scryfallCard.power;
