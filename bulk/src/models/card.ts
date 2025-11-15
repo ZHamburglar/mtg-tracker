@@ -259,12 +259,18 @@ export class Card {
 
       try {
         const [result] = await Card.pool.query<mysql.ResultSetHeader>(query, values);
-        // affectedRows includes both inserts and updates
-        // For ON DUPLICATE KEY UPDATE: affectedRows = 1 for insert, 2 for update
-        const inserted = Math.floor(result.affectedRows / 2);
-        const updated = result.affectedRows - inserted;
-        totalCreated += inserted;
-        totalUpdated += updated;
+        // For ON DUPLICATE KEY UPDATE with bulk inserts:
+        // - Each row that is inserted adds 1 to affectedRows
+        // - Each row that is updated adds 2 to affectedRows
+        // - Total affectedRows = (inserts * 1) + (updates * 2)
+        // - We know: inserts + updates = batch.length
+        // - Solving: updates = affectedRows - batch.length
+        // - Therefore: inserts = batch.length - updates
+        const batchSize = batch.length;
+        const updates = Math.max(0, result.affectedRows - batchSize);
+        const inserts = batchSize - updates;
+        totalCreated += inserts;
+        totalUpdated += updates;
       } catch (error) {
         console.error(`Error bulk creating batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
@@ -347,5 +353,15 @@ export class Card {
 
     await Card.pool.query(query, values);
     return {} as CardDoc;
+  }
+
+  static async getTotal(): Promise<number> {
+    if (!Card.pool) {
+      throw new Error('Database pool not initialized. Call Card.setPool() first.');
+    }
+
+    const query = 'SELECT COUNT(*) as total FROM cards';
+    const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(query);
+    return rows[0]?.total || 0;
   }
 }
