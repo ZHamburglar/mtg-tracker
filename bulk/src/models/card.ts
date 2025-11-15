@@ -109,12 +109,13 @@ export class Card {
     if (scryfallCard.frame) transformed.frame = scryfallCard.frame;
     if (scryfallCard.edhrec_rank) transformed.edhrec_rank = scryfallCard.edhrec_rank.toString();
     if (scryfallCard.border_color) transformed.border_color = scryfallCard.border_color;
-    if (scryfallCard.image_uris?.png) transformed.image_uri_png = scryfallCard.image_uris.png;
-    if (scryfallCard.related_uris?.gatherer) transformed.gatherer_uri = scryfallCard.related_uris.gatherer;
-    if (scryfallCard.related_uris?.edhrec) transformed.edhrec_uri = scryfallCard.related_uris.edhrec;
-    if (scryfallCard.purchase_uris?.tcgplayer) transformed.tcgplayer_uri = scryfallCard.purchase_uris.tcgplayer;
-    if (scryfallCard.purchase_uris?.cardmarket) transformed.cardmarket_uri = scryfallCard.purchase_uris.cardmarket;
-    if (scryfallCard.purchase_uris?.cardhoarder) transformed.cardhoard_uri = scryfallCard.purchase_uris.cardhoarder;
+    // Truncate URIs to fit VARCHAR(500) columns
+    if (scryfallCard.image_uris?.png) transformed.image_uri_png = scryfallCard.image_uris.png.substring(0, 500);
+    if (scryfallCard.related_uris?.gatherer) transformed.gatherer_uri = scryfallCard.related_uris.gatherer.substring(0, 500);
+    if (scryfallCard.related_uris?.edhrec) transformed.edhrec_uri = scryfallCard.related_uris.edhrec.substring(0, 500);
+    if (scryfallCard.purchase_uris?.tcgplayer) transformed.tcgplayer_uri = scryfallCard.purchase_uris.tcgplayer.substring(0, 500);
+    if (scryfallCard.purchase_uris?.cardmarket) transformed.cardmarket_uri = scryfallCard.purchase_uris.cardmarket.substring(0, 500);
+    if (scryfallCard.purchase_uris?.cardhoarder) transformed.cardhoard_uri = scryfallCard.purchase_uris.cardhoarder.substring(0, 500);
     if (scryfallCard.legalities) transformed.legalities = scryfallCard.legalities;
     if (scryfallCard.games) transformed.games = scryfallCard.games;
     if (scryfallCard.finishes) transformed.finishes = scryfallCard.finishes;
