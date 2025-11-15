@@ -4,6 +4,9 @@ import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { runMigrations } from '@mtg-tracker/common';
 
+import { Card } from './models/card';
+import { CardPrice } from './models/cardprice';
+
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
@@ -44,8 +47,9 @@ const start = async () => {
   const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
   await runMigrations(pool, migrationsDir, 'bulk');
 
-  // Initialize User model with database pool
-  // User.setPool(pool);
+  // Initialize models with database pool
+  Card.setPool(pool);
+  CardPrice.setPool(pool);
 
   app.listen(3000, () => {
     console.log("Listening on port 3000!");
