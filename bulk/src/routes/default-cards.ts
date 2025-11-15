@@ -66,11 +66,11 @@ const fetchDefaultCards = async () => {
   }
 };
 
-// Schedule to run every 1 day
-cron.schedule('* * */1 * *', () => {
-  console.log('Running scheduled task to fetch default cards');
-  fetchDefaultCards();
-});
+// // Schedule to run every 1 day
+// cron.schedule('* * */1 * *', () => {
+//   console.log('Running scheduled task to fetch default cards');
+//   fetchDefaultCards();
+// });
 
 router.get('/api/bulk/card', async (req: Request, res: Response) => {
   try {

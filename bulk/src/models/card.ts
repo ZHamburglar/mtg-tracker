@@ -124,16 +124,22 @@ export class Card {
     return transformed;
   }
 
-  static async bulkCreate(cards: any[]): Promise<CardCreationResult> {
+  static async bulkCreate(cards: any[], batchSize: number = 1000): Promise<CardCreationResult> {
     if (!Card.pool) {
       throw new Error('Database pool not initialized. Call Card.setPool() first.');
     }
 
     const transformedCards = cards.map(card => Card.transformScryfallCard(card));
+    let totalCreated = 0;
     
-    // Build bulk insert query
-    const values: any[] = [];
-    const placeholders = transformedCards.map(card => {
+    // Process in batches to avoid max_allowed_packet error
+    for (let i = 0; i < transformedCards.length; i += batchSize) {
+      const batch = transformedCards.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedCards.length / batchSize)} (${batch.length} cards)...`);
+      
+      // Build bulk insert query for this batch
+      const values: any[] = [];
+      const placeholders = batch.map(card => {
       values.push(
         card.id,
         card.oracle_id,
@@ -244,16 +250,19 @@ export class Card {
         digital = VALUES(digital)
     `;
 
-    try {
-      const [result] = await Card.pool.query(query, values);
-      return {
-        successful: true,
-        cardsCreated: transformedCards.length
-      };
-    } catch (error) {
-      console.error('Error bulk creating cards:', error);
-      throw error;
+      try {
+        await Card.pool.query(query, values);
+        totalCreated += batch.length;
+      } catch (error) {
+        console.error(`Error bulk creating batch ${Math.floor(i / batchSize) + 1}:`, error);
+        throw error;
+      }
     }
+
+    return {
+      successful: true,
+      cardsCreated: totalCreated
+    };
   }
 
   static async create(attrs: CardAttrs): Promise<CardDoc> {
