@@ -93,4 +93,14 @@ export class CardPrice {
       [attrs.card_id, attrs.usd, attrs.usd_foil, attrs.usd_etched, attrs.eur, attrs.eur_foil, attrs.tix]
     );
   }
+
+  static async getTotal(): Promise<number> {
+    if (!CardPrice.pool) {
+      throw new Error('Database pool not initialized. Call CardPrice.setPool() first.');
+    }
+
+    const query = 'SELECT COUNT(*) as total FROM card_prices';
+    const [rows] = await CardPrice.pool.query<mysql.RowDataPacket[]>(query);
+    return rows[0]?.total || 0;
+  }
 }
