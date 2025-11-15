@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
-import { Card } from '../models/card.js';
-import { CardPrice } from '../models/cardprice.js';
+import { Card } from '../models/card';
+import { CardPrice } from '../models/cardprice';
 
 const router = express.Router();
 

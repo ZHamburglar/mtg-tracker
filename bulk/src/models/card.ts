@@ -259,13 +259,6 @@ export class Card {
 
       try {
         const [result] = await Card.pool.query<mysql.ResultSetHeader>(query, values);
-        // For ON DUPLICATE KEY UPDATE with bulk inserts:
-        // - Each row that is inserted adds 1 to affectedRows
-        // - Each row that is updated adds 2 to affectedRows
-        // - Total affectedRows = (inserts * 1) + (updates * 2)
-        // - We know: inserts + updates = batch.length
-        // - Solving: updates = affectedRows - batch.length
-        // - Therefore: inserts = batch.length - updates
         const batchSize = batch.length;
         const updates = Math.max(0, result.affectedRows - batchSize);
         const inserts = batchSize - updates;
