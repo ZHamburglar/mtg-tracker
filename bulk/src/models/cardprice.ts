@@ -23,11 +23,70 @@ export interface CardPriceDoc {
   updated_at: Date;
 }
 
+export interface CardPriceCreationResult {
+  successful: boolean;
+  pricesCreated: number;
+}
+
 export class CardPrice {
   private static pool: mysql.Pool;
 
   static setPool(pool: mysql.Pool) {
     CardPrice.pool = pool;
+  }
+
+  static async bulkCreate(prices: CardPriceAttrs[], batchSize: number = 1000): Promise<CardPriceCreationResult> {
+    if (!CardPrice.pool) {
+      throw new Error('Database pool not initialized. Call CardPrice.setPool() first.');
+    }
+
+    let totalCreated = 0;
+
+    // Process in batches
+    for (let i = 0; i < prices.length; i += batchSize) {
+      const batch = prices.slice(i, i + batchSize);
+      console.log(`Processing card price batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(prices.length / batchSize)} (${batch.length} prices)...`);
+
+      // Build bulk insert query for this batch
+      const values: any[] = [];
+      const placeholders = batch.map(price => {
+        values.push(
+          price.card_id,
+          price.usd,
+          price.usd_foil,
+          price.usd_etched,
+          price.eur,
+          price.eur_foil,
+          price.tix
+        );
+        return '(?, ?, ?, ?, ?, ?, ?)';
+      }).join(',');
+
+      const query = `
+        INSERT INTO card_prices (card_id, price_usd, price_usd_foil, price_usd_etched, price_eur, price_eur_foil, price_tix) 
+        VALUES ${placeholders}
+        ON DUPLICATE KEY UPDATE
+          price_usd = VALUES(price_usd),
+          price_usd_foil = VALUES(price_usd_foil),
+          price_usd_etched = VALUES(price_usd_etched),
+          price_eur = VALUES(price_eur),
+          price_eur_foil = VALUES(price_eur_foil),
+          price_tix = VALUES(price_tix)
+      `;
+
+      try {
+        await CardPrice.pool.query(query, values);
+        totalCreated += batch.length;
+      } catch (error) {
+        console.error(`Error bulk creating price batch ${Math.floor(i / batchSize) + 1}:`, error);
+        throw error;
+      }
+    }
+
+    return {
+      successful: true,
+      pricesCreated: totalCreated
+    };
   }
 
   static async create(attrs: CardPriceAttrs): Promise<void> {

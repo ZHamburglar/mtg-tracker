@@ -12,7 +12,10 @@ const router = express.Router();
 const fetchDefaultCards = async () => {
   try {
     console.log('Fetching default cards from Scryfall...');
-    const response = await axios.get('https://data.scryfall.io/default-cards/default-cards-20251114101320.json');
+
+    const bulkDataResponse = await axios.get('https://api.scryfall.com/bulk-data/default_cards');
+    const download_uri = bulkDataResponse.data.download_uri;
+    const response = await axios.get(download_uri);
     const cards = response.data;
     
     if (!Array.isArray(cards)) {
@@ -29,48 +32,35 @@ const fetchDefaultCards = async () => {
 
     // Process card prices
     console.log('Processing card prices...');
-    let pricesCreated = 0;
-    let pricesSkipped = 0;
+    const pricesData = cards
+      .filter(card => card.prices && (card.prices.usd || card.prices.usd_foil || card.prices.usd_etched || card.prices.eur || card.prices.eur_foil || card.prices.tix))
+      .map(card => ({
+        card_id: card.id,
+        usd: card.prices.usd ? parseFloat(card.prices.usd) : 0,
+        usd_foil: card.prices.usd_foil ? parseFloat(card.prices.usd_foil) : 0,
+        usd_etched: card.prices.usd_etched ? parseFloat(card.prices.usd_etched) : 0,
+        eur: card.prices.eur ? parseFloat(card.prices.eur) : 0,
+        eur_foil: card.prices.eur_foil ? parseFloat(card.prices.eur_foil) : 0,
+        tix: card.prices.tix ? parseFloat(card.prices.tix) : 0,
+      }));
 
-    for (const card of cards) {
-      // Only create price record if prices exist
-      if (card.prices && (card.prices.usd || card.prices.usd_foil || card.prices.usd_etched || card.prices.eur || card.prices.eur_foil || card.prices.tix)) {
-        try {
-          await CardPrice.create({
-            card_id: card.id,
-            usd: card.prices.usd ? parseFloat(card.prices.usd) : 0,
-            usd_foil: card.prices.usd_foil ? parseFloat(card.prices.usd_foil) : 0,
-            usd_etched: card.prices.usd_etched ? parseFloat(card.prices.usd_etched) : 0,
-            eur: card.prices.eur ? parseFloat(card.prices.eur) : 0,
-            eur_foil: card.prices.eur_foil ? parseFloat(card.prices.eur_foil) : 0,
-            tix: card.prices.tix ? parseFloat(card.prices.tix) : 0,
-          });
-          pricesCreated++;
-        } catch (error) {
-          console.error(`Error creating price for card ${card.id}:`, error);
-        }
-      } else {
-        pricesSkipped++;
-      }
-
-      // Log progress every 10,000 cards
-      if ((pricesCreated + pricesSkipped) % 10000 === 0) {
-        console.log(`Processed ${pricesCreated + pricesSkipped} card prices...`);
-      }
-    }
-
-    console.log(`Card prices processing complete: ${pricesCreated} created, ${pricesSkipped} skipped`);
+    console.log(`Found ${pricesData.length} cards with prices out of ${cards.length} total cards`);
+    
+    const priceResult = await CardPrice.bulkCreate(pricesData);
+    console.log(`Successfully created/updated ${priceResult.pricesCreated} card prices`);
     console.log('Default cards import completed successfully!');
   } catch (error) {
     console.error('Error fetching default cards:', error);
   }
 };
 
-// // Schedule to run every 1 day
-// cron.schedule('* * */1 * *', () => {
-//   console.log('Running scheduled task to fetch default cards');
-//   fetchDefaultCards();
-// });
+// Schedule to run every night at midnight
+cron.schedule('0 0 * * *', () => {
+  console.log('Running scheduled task to fetch default cards at midnight');
+  fetchDefaultCards().catch(err => {
+    console.error('Error in scheduled card import:', err);
+  });
+});
 
 router.get('/api/bulk/card', async (req: Request, res: Response) => {
   try {
