@@ -51,25 +51,25 @@ const start = async () => {
   Card.setPool(pool);
   CardPrice.setPool(pool);
 
-  process.on("SIGINT", async () => {
-    console.log("SIGINT received, closing database connection...");
-    if (pool) {
-      await pool.end();
-    }
-    process.exit(0);
-  });
-
-  process.on("SIGTERM", async () => {
-    console.log("SIGTERM received, closing database connection...");
-    if (pool) {
-      await pool.end();
-    }
-    process.exit(0);
-  });
-
   app.listen(3000, () => {
     console.log("Listening on port 3000!");
   });
 };
 
 start();
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, closing database connection...");
+  if (pool) {
+    await pool.end();
+  }
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, closing database connection...");
+  if (pool) {
+    await pool.end();
+  }
+  process.exit(0);
+});
