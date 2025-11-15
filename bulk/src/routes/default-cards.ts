@@ -88,6 +88,14 @@ cron.schedule('1 0 * * *', () => {
   });
 });
 
+// Schedule to run once a week on Sunday at 12:01 AM
+cron.schedule('1 0 * * 0', () => {
+  console.log('Running scheduled task to fetch sets once a week');
+  fetchSets().catch(err => {
+    console.error('Error in scheduled set import:', err);
+  });
+});
+
 router.get('/api/bulk/card', async (req: Request, res: Response) => {
   try {
     console.log('Manual trigger: Fetching and importing default cards...');
