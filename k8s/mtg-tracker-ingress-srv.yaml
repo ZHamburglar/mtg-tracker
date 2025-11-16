@@ -36,6 +36,13 @@ spec:
                 name: bulk-srv
                 port:
                   number: 3000
+          - path: /api/search(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: search-srv
+                port:
+                  number: 3000
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:
