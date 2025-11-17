@@ -286,6 +286,28 @@ export class Card {
     // Get paginated results
     let dataQuery: string;
     if (!uniquePrints) {
+      // Build WHERE clause with c1 prefix for subquery
+      const prefixedWhereClauses = whereClauses.map(clause => {
+        // Replace column names with c1. prefix for disambiguation
+        return clause
+          .replace(/^name /i, 'c1.name ')
+          .replace(/^released_at /i, 'c1.released_at ')
+          .replace(/^mana_cost /i, 'c1.mana_cost ')
+          .replace(/^cmc /i, 'c1.cmc ')
+          .replace(/^type_line /i, 'c1.type_line ')
+          .replace(/^oracle_text /i, 'c1.oracle_text ')
+          .replace(/^power /i, 'c1.power ')
+          .replace(/^toughness /i, 'c1.toughness ')
+          .replace(/^rarity /i, 'c1.rarity ')
+          .replace(/^set_id /i, 'c1.set_id ')
+          .replace(/^set_code /i, 'c1.set_code ')
+          .replace(/^set_name /i, 'c1.set_name ')
+          .replace(/JSON_CONTAINS\(colors/g, 'JSON_CONTAINS(c1.colors')
+          .replace(/JSON_CONTAINS\(color_identity/g, 'JSON_CONTAINS(c1.color_identity')
+          .replace(/JSON_CONTAINS\(keywords/g, 'JSON_CONTAINS(c1.keywords')
+          .replace(/JSON_EXTRACT\(legalities/g, 'JSON_EXTRACT(c1.legalities');
+      });
+
       // Get one card per oracle_id
       dataQuery = `
         SELECT * FROM cards 
@@ -296,7 +318,7 @@ export class Card {
             AND c1.oracle_id IS NOT NULL
             AND (c2.released_at > c1.released_at OR (c2.released_at = c1.released_at AND c2.id > c1.id))
           WHERE c2.id IS NULL
-          ${whereClauses.length > 0 ? `AND (${whereClauses.join(' AND ')})` : ''}
+          ${prefixedWhereClauses.length > 0 ? `AND (${prefixedWhereClauses.join(' AND ')})` : ''}
         )
         ORDER BY name ASC
         LIMIT ${limit} OFFSET ${offset}
