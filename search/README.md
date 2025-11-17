@@ -80,6 +80,13 @@ Search for cards using various filters. All parameters are optional and can be c
 
 **Note:** Both `legality_format` and `legality_status` must be provided together.
 
+### Print Handling
+- `unique_prints` (optional, default: false) - Controls duplicate card handling
+  - `false` (default) - Returns only one printing per unique card (grouped by `oracle_id`, selects most recent)
+  - `true` - Returns all printings/versions of matching cards
+
+**Note:** By default, the API groups cards by their `oracle_id` to avoid showing duplicate versions of the same card (e.g., Lightning Bolt from different sets). Use `unique_prints=true` to see all printings.
+
 ### Pagination
 - `limit` (optional, default: 100, max: 1000) - Results per page
 - `page` (optional, default: 1) - Page number
@@ -90,8 +97,11 @@ Search for cards using various filters. All parameters are optional and can be c
 
 ### Search by Name
 ```bash
-# Find all cards with "Lightning" in the name
+# Find all cards with "Lightning" in the name (one per unique card)
 curl "https://mtg-tracker.local/api/search?name=Lightning"
+
+# Find all printings of cards with "Lightning" in the name
+curl "https://mtg-tracker.local/api/search?name=Lightning&unique_prints=true"
 ```
 
 ### Search by Type
@@ -239,11 +249,29 @@ curl "https://mtg-tracker.local/api/search?mana_cost=%7B2%7D%7BU%7D%7BU%7D"
 - `banned`
 - `restricted`
 
+### Oracle ID Grouping (Duplicate Handling)
+
+**Default Behavior** (`unique_prints=false` or omitted):
+- Returns only ONE printing per unique card
+- Groups by `oracle_id` (Scryfall's unique card identifier)
+- Selects the most recent printing by `released_at` date
+- Useful for card lookup and avoiding duplicates in search results
+
+**Example:** Searching for "Lightning Bolt" returns 1 card (most recent printing)
+
+**All Prints Mode** (`unique_prints=true`):
+- Returns ALL printings/versions of matching cards
+- Includes every set, art variation, and edition
+- Useful for collectors tracking specific printings or comparing prices across versions
+
+**Example:** Searching for "Lightning Bolt" with `unique_prints=true` returns 50+ cards (from Alpha, Beta, Revised, Modern Masters, etc.)
+
 ### Performance Tips
 1. **Use indexes**: The database has indexes on `name`, `set_code`, `type_line`, `cmc`, and `color_identity`
 2. **Limit results**: Use the `limit` parameter to reduce response size
 3. **Specific searches**: More specific queries perform better (e.g., combining `set_code` with `name`)
 4. **Avoid wildcards**: When possible, use exact matches instead of fuzzy searches
+5. **Default grouping**: The default `unique_prints=false` performs better for general searches
 
 ---
 
@@ -271,14 +299,3 @@ curl "https://mtg-tracker.local/api/search?mana_cost=%7B2%7D%7BU%7D%7BU%7D"
   "message": "Database connection error"
 }
 ```
-
-
-General Search:
-GET /api/search/:id
-
-Search by prices:
-GET /api/search/:id/prices
-GET /api/search/:id/prices/latest
-Prices with query params:
-GET /api/search/:id/prices?limit=50&page=1
-GET /api/search/:id/prices?limit=100&page=5

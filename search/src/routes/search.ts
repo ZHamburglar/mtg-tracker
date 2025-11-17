@@ -171,6 +171,7 @@ router.get('/api/search', async (req: Request, res: Response) => {
       set_name,
       legality_format,
       legality_status,
+      unique_prints,
       limit,
       page
     } = req.query;
@@ -241,6 +242,9 @@ router.get('/api/search', async (req: Request, res: Response) => {
         status: legality_status as string
       };
     }
+
+    // Parse unique_prints flag (default false - group by oracle_id)
+    searchParams.unique_prints = unique_prints === 'true' || unique_prints === '1';
 
     // Perform search
     const { cards, total } = await Card.search(searchParams);
