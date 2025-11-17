@@ -1,53 +1,124 @@
-import mysql from 'mysql2/promise';
 import { User } from '../models/user';
 
-let connection: mysql.Connection;
+// Mock user storage for testing
+let mockUsers: any[] = [];
+let mockUserId = 1;
+
+// Mock mysql2/promise module
+jest.mock('mysql2/promise', () => {
+  return {
+    createPool: () => ({
+      query: async (sql: string, params?: any[]) => {
+        const sqlLower = sql.toLowerCase().trim();
+
+        // INSERT user
+        if (sqlLower.startsWith('insert into users')) {
+          const [email, password, role] = params || [];
+          const existingUser = mockUsers.find(u => u.email === email);
+          
+          if (existingUser) {
+            throw new Error('Duplicate entry');
+          }
+
+          const newUser = {
+            id: mockUserId++,
+            email,
+            password,
+            role: role || 'user',
+            is_active: true,
+            is_verified: false,
+            created_at: new Date(),
+            updated_at: new Date()
+          };
+          
+          mockUsers.push(newUser);
+          
+          return [{ insertId: newUser.id }];
+        }
+
+        // SELECT by id
+        if (sqlLower.includes('where id = ?')) {
+          const id = params?.[0];
+          const user = mockUsers.find(u => u.id === id);
+          return [user ? [user] : []];
+        }
+
+        // SELECT by email
+        if (sqlLower.includes('where email = ?')) {
+          const email = params?.[0];
+          const user = mockUsers.find(u => u.email === email);
+          return [user ? [user] : []];
+        }
+
+        // SELECT all users
+        if (sqlLower.includes('select * from users')) {
+          return [mockUsers];
+        }
+
+        // UPDATE user
+        if (sqlLower.startsWith('update users')) {
+          const id = params?.[params.length - 1];
+          const userIndex = mockUsers.findIndex(u => u.id === id);
+          
+          if (userIndex !== -1) {
+            // Parse SET clause updates
+            if (sqlLower.includes('email = ?')) {
+              mockUsers[userIndex].email = params?.[0];
+            }
+            if (sqlLower.includes('password = ?')) {
+              const passwordIndex = sqlLower.includes('email = ?') ? 1 : 0;
+              mockUsers[userIndex].password = params?.[passwordIndex];
+            }
+            if (sqlLower.includes('role = ?')) {
+              const roleIndex = params!.length - 2;
+              mockUsers[userIndex].role = params?.[roleIndex];
+            }
+            if (sqlLower.includes('is_verified = ?')) {
+              mockUsers[userIndex].is_verified = params?.[0];
+            }
+            if (sqlLower.includes('is_active = ?')) {
+              mockUsers[userIndex].is_active = params?.[0];
+            }
+            mockUsers[userIndex].updated_at = new Date();
+          }
+          
+          return [{ affectedRows: userIndex !== -1 ? 1 : 0 }];
+        }
+
+        // DELETE user
+        if (sqlLower.startsWith('delete from users')) {
+          const id = params?.[0];
+          const userIndex = mockUsers.findIndex(u => u.id === id);
+          
+          if (userIndex !== -1) {
+            mockUsers.splice(userIndex, 1);
+            return [{ affectedRows: 1 }];
+          }
+          
+          return [{ affectedRows: 0 }];
+        }
+
+        return [[]];
+      }
+    })
+  };
+});
 
 beforeAll(async () => {
   process.env.JWT_KEY = 'test-jwt-secret';
   
-  // Create MySQL connection for testing
-  connection = await mysql.createConnection({
-    host: process.env.MYSQL_HOST || 'localhost',
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || 'password',
-    database: process.env.MYSQL_DATABASE || 'mtg_auth_test',
-    multipleStatements: true
-  });
-
-  // Create users table for testing
-  await connection.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      role ENUM('user', 'admin') DEFAULT 'user',
-      is_active BOOLEAN DEFAULT TRUE,
-      is_verified BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Set up connection pool for User model
-  const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST || 'localhost',
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || 'password',
-    database: process.env.MYSQL_DATABASE || 'mtg_auth_test',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  });
-
+  // Set up mocked connection pool for User model
+  const mysql = require('mysql2/promise');
+  const pool = mysql.createPool();
   User.setPool(pool);
 });
 
-beforeEach(async () => {
-  // Clear users table before each test
-  await connection.execute('DELETE FROM users');
+beforeEach(() => {
+  // Clear mock users before each test
+  mockUsers = [];
+  mockUserId = 1;
 });
 
 afterAll(async () => {
-  await connection.end();
+  // No cleanup needed for mocks
 });
