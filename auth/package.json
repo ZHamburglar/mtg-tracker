@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node-dev src/index.ts",
+    "dev:local": "ts-node-dev -r dotenv/config src/index.ts dotenv_config_path=.env.local",
     "test": "jest --watchAll --no-cache",
     "test:ci": "jest"
   },
@@ -24,6 +25,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "cookie-session": "^2.1.1",
+    "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "express-validator": "^7.3.0",

@@ -106,32 +106,18 @@ check_services() {
         echo "127.0.0.1 mtg-tracker.local"
     fi
     
-    # Check auth service
-    if curl -s -k https://mtg-tracker.local/api/users/health > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Auth service is reachable${NC}"
-    else
-        echo -e "${YELLOW}! Auth service not reachable (may not have health endpoint)${NC}"
-    fi
-
-    # Check bulk service
-    if curl -s -k https://mtg-tracker.local/api/bulk/health > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Bulk service is reachable${NC}"
-    else
-        echo -e "${YELLOW}! Bulk service not reachable (may not have health endpoint)${NC}"
-    fi
-
-    # Check collection service
-    if curl -s -k https://mtg-tracker.local/api/collection/health > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Collection service is reachable${NC}"
-    else
-        echo -e "${YELLOW}! Collection service not reachable (may not have health endpoint)${NC}"
-    fi
-
     # Check search service
     if curl -s -k https://mtg-tracker.local/api/search/health > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Search service is reachable${NC}"
     else
         echo -e "${RED}✗ Search service not reachable${NC}"
+    fi
+    
+    # Check auth service
+    if curl -s -k https://mtg-tracker.local/api/users/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ Auth service is reachable${NC}"
+    else
+        echo -e "${YELLOW}! Auth service not reachable (may not have health endpoint)${NC}"
     fi
 }
 
