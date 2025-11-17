@@ -44,8 +44,9 @@ const start = async () => {
 
   // Initialize models with database pool
 
-  app.listen(3000, () => {
-    console.log("Listening on port 3000!");
+  const port = parseInt(process.env.PORT || '3000');
+  app.listen(port, () => {
+    console.log(`Listening on port ${port}!`);
   });
 };
 
