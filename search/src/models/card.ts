@@ -116,6 +116,7 @@ export class Card {
     set_code?: string;
     set_name?: string;
     legalities?: { format: string; status: string };
+    unique_prints?: boolean; // If true, returns all prints; if false (default), groups by oracle_id
     limit?: number;
     offset?: number;
   }): Promise<{ cards: CardDoc[]; total: number }> {
@@ -125,6 +126,7 @@ export class Card {
 
     const whereClauses: string[] = [];
     const queryParams: any[] = [];
+    const uniquePrints = params.unique_prints === true;
 
     // Fuzzy search for name (case-insensitive)
     if (params.name) {
@@ -244,18 +246,70 @@ export class Card {
     const limit = Math.min(params.limit || 100, 1000);
     const offset = params.offset || 0;
 
-    // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM cards ${whereClause}`;
+    // Group by oracle_id unless unique_prints is true
+    // When grouping, select the most recent printing (by released_at)
+    let groupByClause = '';
+    let selectClause = '*';
+    
+    if (!uniquePrints) {
+      // Use a subquery to get one card per oracle_id (most recent by released_at)
+      // For cards without oracle_id, treat each as unique
+      groupByClause = `
+        AND id IN (
+          SELECT c1.id FROM cards c1
+          LEFT JOIN cards c2 
+            ON c1.oracle_id = c2.oracle_id 
+            AND c1.oracle_id IS NOT NULL
+            AND (c2.released_at > c1.released_at OR (c2.released_at = c1.released_at AND c2.id > c1.id))
+          WHERE c2.id IS NULL
+          ${whereClauses.length > 0 ? `AND ${whereClauses.join(' AND ')}` : ''}
+        )
+      `;
+    }
+
+    // Get total count (of unique oracle_ids if not showing all prints)
+    let countQuery: string;
+    if (!uniquePrints) {
+      // Count distinct oracle_ids (treating NULL oracle_ids as separate)
+      countQuery = `
+        SELECT COUNT(DISTINCT COALESCE(oracle_id, id)) as total 
+        FROM cards 
+        ${whereClause}
+      `;
+    } else {
+      countQuery = `SELECT COUNT(*) as total FROM cards ${whereClause}`;
+    }
+    
     const [countRows] = await Card.pool.query<mysql.RowDataPacket[]>(countQuery, queryParams);
     const total = countRows[0]?.total || 0;
 
     // Get paginated results
-    const dataQuery = `
-      SELECT * FROM cards 
-      ${whereClause}
-      ORDER BY name ASC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
+    let dataQuery: string;
+    if (!uniquePrints) {
+      // Get one card per oracle_id
+      dataQuery = `
+        SELECT * FROM cards 
+        WHERE id IN (
+          SELECT c1.id FROM cards c1
+          LEFT JOIN cards c2 
+            ON c1.oracle_id = c2.oracle_id 
+            AND c1.oracle_id IS NOT NULL
+            AND (c2.released_at > c1.released_at OR (c2.released_at = c1.released_at AND c2.id > c1.id))
+          WHERE c2.id IS NULL
+          ${whereClauses.length > 0 ? `AND (${whereClauses.join(' AND ')})` : ''}
+        )
+        ORDER BY name ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    } else {
+      dataQuery = `
+        SELECT * FROM cards 
+        ${whereClause}
+        ORDER BY name ASC, released_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    }
+    
     const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(dataQuery, queryParams);
 
     const cards = rows.map(row => ({
