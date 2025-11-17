@@ -5,11 +5,11 @@ export async function createMysqlPoolWithRetry({
   delay = 2000,
 } = {}) {
   const pool = mysql.createPool({
-    host: 'mysql',
+    host: process.env.MYSQL_HOST || 'mysql',
+    port: parseInt(process.env.MYSQL_PORT || '3306'),
     user: process.env.MYSQL_USER!,
     password: process.env.MYSQL_PASSWORD!,
     database: process.env.MYSQL_DATABASE!,
-    port: 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
