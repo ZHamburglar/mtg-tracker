@@ -53,6 +53,18 @@ export interface CardDoc {
 export class Card {
   private static pool: mysql.Pool;
 
+  private static safeJsonParse(value: any): any {
+    if (!value) return undefined;
+    if (typeof value !== 'string') return value;
+    
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('Failed to parse JSON field:', value);
+      return undefined;
+    }
+  }
+
   static setPool(pool: mysql.Pool) {
     Card.pool = pool;
   }
@@ -71,17 +83,17 @@ export class Card {
 
     const row = rows[0];
     
-    // Parse JSON fields
+    // Parse JSON fields safely
     return {
       ...row,
-      colors: row.colors ? JSON.parse(row.colors) : undefined,
-      color_identity: row.color_identity ? JSON.parse(row.color_identity) : undefined,
-      keywords: row.keywords ? JSON.parse(row.keywords) : undefined,
-      produced_mana: row.produced_mana ? JSON.parse(row.produced_mana) : undefined,
-      artist_ids: row.artist_ids ? JSON.parse(row.artist_ids) : undefined,
-      legalities: row.legalities ? JSON.parse(row.legalities) : undefined,
-      games: row.games ? JSON.parse(row.games) : undefined,
-      finishes: row.finishes ? JSON.parse(row.finishes) : undefined,
+      colors: Card.safeJsonParse(row.colors),
+      color_identity: Card.safeJsonParse(row.color_identity),
+      keywords: Card.safeJsonParse(row.keywords),
+      produced_mana: Card.safeJsonParse(row.produced_mana),
+      artist_ids: Card.safeJsonParse(row.artist_ids),
+      legalities: Card.safeJsonParse(row.legalities),
+      games: Card.safeJsonParse(row.games),
+      finishes: Card.safeJsonParse(row.finishes),
     } as CardDoc;
   }
 }
