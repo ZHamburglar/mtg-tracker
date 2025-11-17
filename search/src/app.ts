@@ -6,9 +6,8 @@ import cookieSession from "cookie-session";
 import { errorHandler } from "@mtg-tracker/common"
 
 // Import routes here and use them
-// import { defaultCardsRouter } from "./routes/default-cards";
 import { healthRouter } from "./routes/health";
-// import { cardsRouter } from "./routes/get-cards";
+import { searchRouter } from "./routes/search";
 
 const app = express();
 app.set("trust proxy", true);
@@ -31,6 +30,7 @@ app.use(
 console.log("Search service up and running!!");
 // Use the imported routes here
 app.use(healthRouter);
+app.use(searchRouter);
 
 // Error handler must be added AFTER all routes
 // app.use(errorHandler);
