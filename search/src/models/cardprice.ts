@@ -29,7 +29,7 @@ export class CardPrice {
       throw new Error('Database pool not initialized. Call CardPrice.setPool() first.');
     }
 
-    // Only select the columns we need, add LIMIT and OFFSET for pagination
+    // Build query with numeric LIMIT and OFFSET directly (mysql2 issue with binding numeric values)
     const query = `
       SELECT 
         id, card_id, price_usd, price_usd_foil, price_usd_etched, 
@@ -37,11 +37,11 @@ export class CardPrice {
       FROM card_prices 
       WHERE card_id = ? 
       ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${parseInt(String(limit))} OFFSET ${parseInt(String(offset))}
     `;
     const [rows] = await CardPrice.pool.query<mysql.RowDataPacket[]>(
       query, 
-      [cardId, limit, offset]
+      [cardId]
     );
     
     return rows as CardPriceDoc[];
