@@ -43,8 +43,6 @@ const start = async () => {
   // await runMigrations(pool, migrationsDir, 'search');
 
   // Initialize models with database pool
-  Card.setPool(pool);
-  CardPrice.setPool(pool);
 
   app.listen(3000, () => {
     console.log("Listening on port 3000!");
