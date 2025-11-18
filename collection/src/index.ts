@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise';
+import path from 'path';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
+import { runMigrations } from '@mtg-tracker/common';
 
 let pool: mysql.Pool | undefined;
 
@@ -39,8 +41,8 @@ const start = async () => {
 
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
-  // const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-  // await runMigrations(pool, migrationsDir, 'search');
+  const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
+  await runMigrations(pool, migrationsDir, 'collection');
 
   // Initialize models with database pool
 
