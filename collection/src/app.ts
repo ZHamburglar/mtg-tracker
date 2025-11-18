@@ -7,7 +7,7 @@ import { errorHandler } from "@mtg-tracker/common"
 
 // Import routes here and use them
 import { healthRouter } from "./routes/health";
-import { collectionRouter } from "./routes/collection.js";
+import { collectionRouter } from "./routes/collection";
 
 const app = express();
 app.set("trust proxy", true);
