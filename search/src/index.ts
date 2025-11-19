@@ -10,6 +10,11 @@ import { TrendingCard } from './models/trending-card';
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
+  console.log('[Search Service] Starting up...', {
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV || 'development'
+  });
+
   if (!process.env.MYSQL_HOST) {
     throw new Error("MYSQL_HOST must be defined");
   }
@@ -26,17 +31,15 @@ const start = async () => {
     throw new Error("MYSQL_DATABASE must be defined");
   }
 
-  if (process.env.MYSQL_DATABASE && process.env.MYSQL_PASSWORD && process.env.MYSQL_USER && process.env.MYSQL_HOST) {
-    console.log("Connecting to MySQL with the following config:");
-    console.log(`Host: ${process.env.MYSQL_HOST}`);
-    console.log(`User: ${process.env.MYSQL_USER}`);
-    console.log(`Database: ${process.env.MYSQL_DATABASE}`);
-  }
+  console.log("[Search Service] MySQL configuration:", {
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    database: process.env.MYSQL_DATABASE
+  });
 
-
+  console.log("[Search Service] Connecting to MySQL...");
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
-  // You can export the pool or set it in a global variable if needed
-  console.log('pool created:', pool !== undefined);
+  console.log('[Search Service] MySQL pool created successfully');
 
   if (!pool) {
     throw new Error("Failed to create database pool");
@@ -48,30 +51,48 @@ const start = async () => {
   // await runMigrations(pool, migrationsDir, 'search');
 
   // Initialize models with database pool
+  console.log('[Search Service] Initializing models...');
   Card.setPool(pool);
   CardPrice.setPool(pool);
   TrendingCard.setPool(pool);
+  console.log('[Search Service] Models initialized: Card, CardPrice, TrendingCard');
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
-    console.log(`Listening on port ${port}!`);
+    console.log(`[Search Service] Server started successfully`, {
+      port,
+      timestamp: new Date().toISOString()
+    });
   });
 };
 
-start();
+start().catch(err => {
+  console.error('[Search Service] Fatal error during startup', {
+    error: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString()
+  });
+  process.exit(1);
+});
 
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, closing database connection...");
+  console.log("[Search Service] SIGINT received, shutting down gracefully...", {
+    timestamp: new Date().toISOString()
+  });
   if (pool) {
     await pool.end();
+    console.log("[Search Service] Database connection closed");
   }
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, closing database connection...");
+  console.log("[Search Service] SIGTERM received, shutting down gracefully...", {
+    timestamp: new Date().toISOString()
+  });
   if (pool) {
     await pool.end();
+    console.log("[Search Service] Database connection closed");
   }
   process.exit(0);
 });
