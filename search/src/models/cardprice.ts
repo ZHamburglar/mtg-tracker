@@ -95,8 +95,8 @@ export class CardPrice {
     old_price: number;
     price_change: number;
     percent_change: number;
-    current_date: Date;
-    comparison_date: Date;
+    curr_date: Date;
+    old_date: Date;
   }>> {
     if (!CardPrice.pool) {
       throw new Error('Database pool not initialized. Call CardPrice.setPool() first.');
@@ -122,8 +122,8 @@ export class CardPrice {
           WHEN old.${priceType} > 0 THEN ((curr.${priceType} - old.${priceType}) / old.${priceType} * 100)
           ELSE 0 
         END as percent_change,
-        curr.created_at as current_date,
-        old.created_at as comparison_date
+        curr.created_at as curr_date,
+        old.created_at as old_date
       FROM (
         SELECT card_id, ${priceType}, created_at,
                ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at DESC) as rn
@@ -154,8 +154,8 @@ export class CardPrice {
       old_price: number;
       price_change: number;
       percent_change: number;
-      current_date: Date;
-      comparison_date: Date;
+      curr_date: Date;
+      old_date: Date;
     }>;
   }
 }
