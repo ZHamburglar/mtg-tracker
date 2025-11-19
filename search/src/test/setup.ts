@@ -11,6 +11,9 @@ jest.mock('mysql2/promise', () => {
     createPool: () => ({
       query: async (sql: string, params?: any[]) => {
         const sqlLower = sql.toLowerCase().trim();
+        if (sqlLower.includes('row_number')) {
+          console.log('[DEBUG] SQL Query:', sql.substring(0, 300));
+        }
 
         // ========== CARD OPERATIONS ==========
         
@@ -145,6 +148,79 @@ jest.mock('mysql2/promise', () => {
           return [[{ total: count }]];
         }
 
+        // SELECT trending cards (price changes)
+        const hasRowNum = sqlLower.includes('row_number()');
+        const hasPartition = sqlLower.includes('partition by card_id');
+        const hasPercent = sqlLower.includes('percent_change');
+        if (hasRowNum || hasPartition || hasPercent) {
+          console.log('[DEBUG] hasRowNum:', hasRowNum, 'hasPartition:', hasPartition, 'hasPercent:', hasPercent);
+        }
+        console.log('[DEBUG2] Before trending check - hasRowNum:', hasRowNum, 'hasPartition:', hasPartition, 'hasPercent:', hasPercent);
+        if (hasRowNum && hasPartition && hasPercent) {
+          console.log('[DEBUG TRENDING] Query matched!');
+          
+          // Extract the interval and price field from the query
+          const intervalMatch = sql.match(/INTERVAL (\d+ \w+)/i);
+          const priceFieldMatch = sql.match(/(price_usd|price_usd_foil|price_eur)/);
+          const limitMatch = sqlLower.match(/limit\s+(\d+)/);
+          
+          const priceField = (priceFieldMatch ? priceFieldMatch[1] : 'price_usd') as 'price_usd' | 'price_usd_foil' | 'price_eur';
+          const limit = limitMatch && limitMatch[1] ? parseInt(limitMatch[1]) : 15;
+          
+          // Group prices by card_id
+          const cardPriceGroups = new Map<string, any[]>();
+          mockPrices.forEach(price => {
+            if (!cardPriceGroups.has(price.card_id)) {
+              cardPriceGroups.set(price.card_id, []);
+            }
+            cardPriceGroups.get(price.card_id)!.push(price);
+          });
+
+          // Calculate price changes for each card
+          const results: any[] = [];
+          cardPriceGroups.forEach((prices, cardId) => {
+            // Sort by created_at
+            const sortedPrices = prices.sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+
+            if (sortedPrices.length >= 2) {
+              const oldPrice = sortedPrices[0];
+              const currentPrice = sortedPrices[sortedPrices.length - 1];
+              
+              const oldValue = oldPrice[priceField];
+              const currentValue = currentPrice[priceField];
+              
+              if (oldValue > 0 && currentValue > 0) {
+                const priceChange = currentValue - oldValue;
+                const percentChange = (priceChange / oldValue) * 100;
+                
+                const card = mockCards.find(c => c.id === cardId);
+                
+                if (card && Math.abs(priceChange) > 0.01) {
+                  results.push({
+                    card_id: cardId,
+                    card_name: card.name,
+                    current_price: currentValue,
+                    old_price: oldValue,
+                    price_change: priceChange,
+                    percent_change: percentChange,
+                    current_date: currentPrice.created_at,
+                    comparison_date: oldPrice.created_at
+                  });
+                }
+              }
+            }
+          });
+
+          // Sort by percent_change
+          const orderDirection = sqlLower.includes('order by percent_change desc') ? -1 : 1;
+          results.sort((a, b) => orderDirection * (b.percent_change - a.percent_change));
+
+          return [results.slice(0, limit)];
+        }
+
+        console.log('[DEBUG] No query matched, returning empty array. SQL:', sql.substring(0, 100));
         return [[]];
       }
     })
