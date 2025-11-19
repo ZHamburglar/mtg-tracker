@@ -33,6 +33,6 @@ app.use(healthRouter);
 app.use(collectionRouter);
 
 // Error handler must be added AFTER all routes
-// app.use(errorHandler);
+app.use(errorHandler);
 
 export { app };
