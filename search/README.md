@@ -142,8 +142,8 @@ curl "https://mtg-tracker.local/api/search/trending?timeframe=30d&direction=incr
       "old_price": 1.00,
       "price_change": 0.50,
       "percent_change": 50.0,
-      "current_date": "2025-11-18T12:00:00.000Z",
-      "comparison_date": "2025-11-17T12:00:00.000Z"
+      "curr_date": "2025-11-18T12:00:00.000Z",
+      "old_date": "2025-11-17T12:00:00.000Z"
     }
   ],
   "timestamp": "2025-11-18T12:34:56.789Z"
