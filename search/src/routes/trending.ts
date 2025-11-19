@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { query } from 'express-validator';
 import { validateRequest } from '@mtg-tracker/common';
-import { CardPrice } from '../models/cardprice';
+import { TrendingCard } from '../models/trending-card';
 
 const router = express.Router();
 
@@ -37,12 +37,16 @@ router.get(
       const priceType = (req.query.priceType as 'price_usd' | 'price_usd_foil' | 'price_eur') || 'price_usd';
       const direction = (req.query.direction as 'increase' | 'decrease') || 'increase';
 
-      const trendingCards = await CardPrice.getTrendingCards(
+      // Query pre-calculated trending data from the database
+      const trendingCards = await TrendingCard.getTrendingCards(
         timeframe,
         limit,
         priceType,
         direction
       );
+
+      // Get last update time to inform users when data was calculated
+      const lastUpdate = await TrendingCard.getLastUpdateTime();
 
       res.status(200).json({
         timeframe,
@@ -50,6 +54,7 @@ router.get(
         direction,
         count: trendingCards.length,
         cards: trendingCards,
+        lastUpdate,
         timestamp: new Date().toISOString()
       });
     } catch (error) {

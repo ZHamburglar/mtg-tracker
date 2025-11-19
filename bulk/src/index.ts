@@ -7,6 +7,7 @@ import { runMigrations } from '@mtg-tracker/common';
 import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
 import { Set } from './models/set';
+import { TrendingCard } from './models/trending-card';
 
 let pool: mysql.Pool | undefined;
 
@@ -52,6 +53,7 @@ const start = async () => {
   Card.setPool(pool);
   CardPrice.setPool(pool);
   Set.setPool(pool);
+  TrendingCard.setPool(pool);
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {

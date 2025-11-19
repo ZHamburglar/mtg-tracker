@@ -3,6 +3,7 @@ import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
+import { TrendingCard } from './models/trending-card';
 
 
 
@@ -49,6 +50,7 @@ const start = async () => {
   // Initialize models with database pool
   Card.setPool(pool);
   CardPrice.setPool(pool);
+  TrendingCard.setPool(pool);
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {

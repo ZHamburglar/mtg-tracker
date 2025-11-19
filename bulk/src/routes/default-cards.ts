@@ -4,6 +4,7 @@ import cron from 'node-cron';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
 import { Set } from '../models/set';
+import { TrendingCard } from '../models/trending-card';
 
 const router = express.Router();
 
@@ -96,6 +97,14 @@ cron.schedule('9 0 * * 0', () => {
   });
 });
 
+// Schedule to calculate trending cards daily at 12:15 AM (after cards/prices import)
+cron.schedule('15 0 * * *', () => {
+  console.log('Running scheduled task to calculate trending cards');
+  TrendingCard.calculateAndStoreTrendingCards().catch(err => {
+    console.error('Error in scheduled trending calculation:', err);
+  });
+});
+
 router.get('/api/bulk/card', async (req: Request, res: Response) => {
   try {
     console.log('Manual trigger: Fetching and importing default cards...');
@@ -133,6 +142,31 @@ router.get('/api/bulk/set', async (req: Request, res: Response) => {
     console.error('Error starting set import:', error);
     res.status(500).json({
       message: 'Failed to start set import',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/bulk/trending', async (req: Request, res: Response) => {
+  try {
+    console.log('Manual trigger: Calculating trending cards...');
+    res.status(202).json({
+      message: 'Trending cards calculation started',
+      status: 'processing'
+    });
+
+    // Run the calculation asynchronously
+    TrendingCard.calculateAndStoreTrendingCards()
+      .then(result => {
+        console.log(`Trending calculation completed: ${result.totalRecordsCreated} records in ${result.calculationTime}ms`);
+      })
+      .catch(err => {
+        console.error('Error in background trending calculation:', err);
+      });
+  } catch (error) {
+    console.error('Error starting trending calculation:', error);
+    res.status(500).json({
+      message: 'Failed to start trending calculation',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
