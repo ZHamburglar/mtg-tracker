@@ -113,16 +113,16 @@ export class CardPrice {
 
     const query = `
       SELECT 
-        current.card_id,
+        curr.card_id,
         c.name as card_name,
-        current.${priceType} as current_price,
+        curr.${priceType} as current_price,
         old.${priceType} as old_price,
-        (current.${priceType} - old.${priceType}) as price_change,
+        (curr.${priceType} - old.${priceType}) as price_change,
         CASE 
-          WHEN old.${priceType} > 0 THEN ((current.${priceType} - old.${priceType}) / old.${priceType} * 100)
+          WHEN old.${priceType} > 0 THEN ((curr.${priceType} - old.${priceType}) / old.${priceType} * 100)
           ELSE 0 
         END as percent_change,
-        current.created_at as current_date,
+        curr.created_at as current_date,
         old.created_at as comparison_date
       FROM (
         SELECT card_id, ${priceType}, created_at,
@@ -130,18 +130,18 @@ export class CardPrice {
         FROM card_prices
         WHERE created_at >= DATE_SUB(NOW(), INTERVAL ${interval})
           AND ${priceType} > 0
-      ) current
+      ) curr
       INNER JOIN (
         SELECT card_id, ${priceType}, created_at,
                ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at ASC) as rn
         FROM card_prices
         WHERE created_at <= DATE_SUB(NOW(), INTERVAL ${interval})
           AND ${priceType} > 0
-      ) old ON current.card_id = old.card_id AND old.rn = 1
-      INNER JOIN cards c ON current.card_id = c.id
-      WHERE current.rn = 1
+      ) old ON curr.card_id = old.card_id AND old.rn = 1
+      INNER JOIN cards c ON curr.card_id = c.id
+      WHERE curr.rn = 1
         AND old.${priceType} > 0
-        AND ABS(current.${priceType} - old.${priceType}) > 0.01
+        AND ABS(curr.${priceType} - old.${priceType}) > 0.01
       ORDER BY percent_change ${orderDirection}
       LIMIT ${parseInt(String(limit))}
     `;
