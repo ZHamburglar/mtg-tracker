@@ -93,6 +93,65 @@ Search for cards using various filters. All parameters are optional and can be c
 
 ---
 
+### 5. Get Trending Cards (Price Changes)
+**GET** `/api/search/trending`
+
+Returns cards with the greatest price changes over a specified timeframe.
+
+**Query Parameters:**
+- `timeframe` (optional, default: "24h") - Time period to analyze
+  - `24h` - Last 24 hours
+  - `7d` - Last 7 days
+  - `30d` - Last 30 days
+- `limit` (optional, default: 15, max: 100) - Number of results to return
+- `priceType` (optional, default: "price_usd") - Which price to track
+  - `price_usd` - Regular USD price
+  - `price_usd_foil` - Foil USD price
+  - `price_eur` - EUR price
+- `direction` (optional, default: "increase") - Sort direction
+  - `increase` - Cards with greatest price increases
+  - `decrease` - Cards with greatest price decreases
+
+**Examples:**
+```bash
+# Get top 15 price increases in last 24 hours
+curl "https://mtg-tracker.local/api/search/trending"
+
+# Get top 10 price decreases in last week
+curl "https://mtg-tracker.local/api/search/trending?timeframe=7d&direction=decrease&limit=10"
+
+# Track foil prices over 30 days
+curl "https://mtg-tracker.local/api/search/trending?timeframe=30d&priceType=price_usd_foil"
+
+# Find biggest gainers in the last month
+curl "https://mtg-tracker.local/api/search/trending?timeframe=30d&direction=increase&limit=20"
+```
+
+**Response Format:**
+```json
+{
+  "timeframe": "24h",
+  "priceType": "price_usd",
+  "direction": "increase",
+  "count": 15,
+  "cards": [
+    {
+      "card_id": "57b852b6-4388-4a41-a5c0-bba37a5c1451",
+      "card_name": "Lightning Bolt",
+      "current_price": 1.50,
+      "old_price": 1.00,
+      "price_change": 0.50,
+      "percent_change": 50.0,
+      "current_date": "2025-11-18T12:00:00.000Z",
+      "comparison_date": "2025-11-17T12:00:00.000Z"
+    }
+  ],
+  "timestamp": "2025-11-18T12:34:56.789Z"
+}
+```
+
+---
+
 ## Example Queries
 
 ### Search by Name
@@ -266,12 +325,30 @@ curl "https://mtg-tracker.local/api/search?mana_cost=%7B2%7D%7BU%7D%7BU%7D"
 
 **Example:** Searching for "Lightning Bolt" with `unique_prints=true` returns 50+ cards (from Alpha, Beta, Revised, Modern Masters, etc.)
 
+### Trending Cards Use Cases
+
+**For Traders & Investors:**
+- Monitor 24h price spikes to identify trending cards
+- Track weekly trends to spot emerging meta shifts
+- Compare foil vs non-foil price movements
+
+**For Players:**
+- Find budget alternatives (cards with price decreases)
+- Identify when to buy or sell cards
+- Track price history before major tournaments
+
+**For Collectors:**
+- Monitor high-value card price trends
+- Track foil and special edition pricing
+- Identify good times to complete sets
+
 ### Performance Tips
 1. **Use indexes**: The database has indexes on `name`, `set_code`, `type_line`, `cmc`, and `color_identity`
 2. **Limit results**: Use the `limit` parameter to reduce response size
 3. **Specific searches**: More specific queries perform better (e.g., combining `set_code` with `name`)
 4. **Avoid wildcards**: When possible, use exact matches instead of fuzzy searches
 5. **Default grouping**: The default `unique_prints=false` performs better for general searches
+6. **Trending queries**: Optimized with window functions for efficient price change calculations across 100k+ cards
 
 ---
 
