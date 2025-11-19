@@ -96,7 +96,13 @@ Search for cards using various filters. All parameters are optional and can be c
 ### 5. Get Trending Cards (Price Changes)
 **GET** `/api/search/trending`
 
-Returns cards with the greatest price changes over a specified timeframe.
+Returns cards with the greatest price changes over a specified timeframe. **Data is pre-calculated daily by the Bulk service for fast queries.**
+
+**Architecture Note:** 
+- The Bulk service calculates trending data daily at 12:15 AM (after price imports)
+- Results are stored in the `trending_cards` table for instant retrieval
+- This endpoint queries pre-calculated data instead of computing on-demand
+- Manual recalculation can be triggered via `GET /api/bulk/trending`
 
 **Query Parameters:**
 - `timeframe` (optional, default: "24h") - Time period to analyze
@@ -143,10 +149,12 @@ curl "https://mtg-tracker.local/api/search/trending?timeframe=30d&direction=incr
       "price_change": 0.50,
       "percent_change": 50.0,
       "curr_date": "2025-11-18T12:00:00.000Z",
-      "old_date": "2025-11-17T12:00:00.000Z"
+      "old_date": "2025-11-17T12:00:00.000Z",
+      "rank": 1
     }
   ],
-  "timestamp": "2025-11-18T12:34:56.789Z"
+  "lastUpdate": "2025-11-19T00:15:32.000Z",
+  "timestamp": "2025-11-19T12:34:56.789Z"
 }
 ```
 
