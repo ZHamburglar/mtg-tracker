@@ -5,10 +5,17 @@ import { CardPrice } from '../models/cardprice';
 const router = express.Router();
 
 router.get('/api/search/:id', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const { id } = req.params;
+  
+  console.log('[Search] GET /api/search/:id - Request started', {
+    cardId: id,
+    timestamp: new Date().toISOString()
+  });
+
   try {
-    const { id } = req.params;
-    
     if (!id) {
+      console.log('[Search] GET /api/search/:id - Bad request: Missing card ID');
       return res.status(400).json({
         error: 'Card ID is required'
       });
@@ -17,18 +24,33 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
     const card = await Card.findById(id);
     
     if (!card) {
+      console.log('[Search] GET /api/search/:id - Card not found', {
+        cardId: id,
+        duration: Date.now() - startTime
+      });
       return res.status(404).json({
         error: 'Card not found',
         id
       });
     }
 
+    console.log('[Search] GET /api/search/:id - Success', {
+      cardId: id,
+      cardName: card.name,
+      duration: Date.now() - startTime
+    });
+
     res.status(200).json({
       card,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error searching for card:', error);
+    console.error('[Search] GET /api/search/:id - Error', {
+      cardId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
     res.status(500).json({
       error: 'Failed to search for card',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -37,10 +59,17 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
 });
 
 router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const { id } = req.params;
+  
+  console.log('[Search] GET /api/search/:id/prices/latest - Request started', {
+    cardId: id,
+    timestamp: new Date().toISOString()
+  });
+
   try {
-    const { id } = req.params;
-    
     if (!id) {
+      console.log('[Search] GET /api/search/:id/prices/latest - Bad request: Missing card ID');
       return res.status(400).json({
         error: 'Card ID is required'
       });
@@ -49,6 +78,10 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
     const card = await Card.findById(id);
     
     if (!card) {
+      console.log('[Search] GET /api/search/:id/prices/latest - Card not found', {
+        cardId: id,
+        duration: Date.now() - startTime
+      });
       return res.status(404).json({
         error: 'Card not found',
         id
@@ -58,11 +91,23 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
     const latestPrice = await CardPrice.getLatestByCardId(id);
 
     if (!latestPrice) {
+      console.log('[Search] GET /api/search/:id/prices/latest - No price data', {
+        cardId: id,
+        cardName: card.name,
+        duration: Date.now() - startTime
+      });
       return res.status(404).json({
         error: 'No price data found for this card',
         id
       });
     }
+
+    console.log('[Search] GET /api/search/:id/prices/latest - Success', {
+      cardId: id,
+      cardName: card.name,
+      priceUsd: latestPrice.price_usd,
+      duration: Date.now() - startTime
+    });
 
     res.status(200).json({
       card: {
@@ -75,7 +120,12 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching latest card price:', error);
+    console.error('[Search] GET /api/search/:id/prices/latest - Error', {
+      cardId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
     res.status(500).json({
       error: 'Failed to fetch latest card price',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -84,13 +134,22 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
 });
 
 router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const { id } = req.params;
+  const limit = parseInt(req.query.limit as string) || 100;
+  const page = parseInt(req.query.page as string) || 1;
+  const offset = (page - 1) * limit;
+  
+  console.log('[Search] GET /api/search/:id/prices - Request started', {
+    cardId: id,
+    limit,
+    page,
+    timestamp: new Date().toISOString()
+  });
+
   try {
-    const { id } = req.params;
-    const limit = parseInt(req.query.limit as string) || 100;
-    const page = parseInt(req.query.page as string) || 1;
-    const offset = (page - 1) * limit;
-    
     if (!id) {
+      console.log('[Search] GET /api/search/:id/prices - Bad request: Missing card ID');
       return res.status(400).json({
         error: 'Card ID is required'
       });
@@ -98,6 +157,10 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 
     // Validate pagination parameters
     if (limit > 1000) {
+      console.log('[Search] GET /api/search/:id/prices - Bad request: Limit exceeds max', {
+        cardId: id,
+        limit
+      });
       return res.status(400).json({
         error: 'Limit cannot exceed 1000'
       });
@@ -121,6 +184,16 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 
     const totalPages = Math.ceil(total / limit);
 
+    console.log('[Search] GET /api/search/:id/prices - Success', {
+      cardId: id,
+      cardName: card.name,
+      totalRecords: total,
+      page,
+      limit,
+      recordsReturned: prices.length,
+      duration: Date.now() - startTime
+    });
+
     res.status(200).json({
       card: {
         id: card.id,
@@ -140,7 +213,14 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching card prices:', error);
+    console.error('[Search] GET /api/search/:id/prices - Error', {
+      cardId: id,
+      limit,
+      page,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
     res.status(500).json({
       error: 'Failed to fetch card prices',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -149,6 +229,13 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 });
 
 router.get('/api/search', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  console.log('[Search] GET /api/search - Request started', {
+    queryParams: Object.keys(req.query).length,
+    timestamp: new Date().toISOString()
+  });
+
   try {
     // Extract and parse query parameters
     const {
@@ -246,10 +333,32 @@ router.get('/api/search', async (req: Request, res: Response) => {
     // Parse unique_prints flag (default false - group by oracle_id)
     searchParams.unique_prints = unique_prints === 'true' || unique_prints === '1';
 
+    console.log('[Search] GET /api/search - Executing search', {
+      filters: {
+        name: name ? true : false,
+        type_line: type_line ? true : false,
+        oracle_text: oracle_text ? true : false,
+        set_code: set_code ? true : false,
+        rarity: rarity ? true : false,
+        colors: colors ? true : false
+      },
+      limit: parsedLimit,
+      page: parsedPage,
+      unique_prints: searchParams.unique_prints
+    });
+
     // Perform search
     const { cards, total } = await Card.search(searchParams);
 
     const totalPages = Math.ceil(total / parsedLimit);
+
+    console.log('[Search] GET /api/search - Success', {
+      totalRecords: total,
+      cardsReturned: cards.length,
+      page: parsedPage,
+      totalPages,
+      duration: Date.now() - startTime
+    });
 
     res.status(200).json({
       cards,
@@ -264,7 +373,11 @@ router.get('/api/search', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error searching for cards:', error);
+    console.error('[Search] GET /api/search - Error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
     res.status(500).json({
       error: 'Failed to search for cards',
       message: error instanceof Error ? error.message : 'Unknown error'
