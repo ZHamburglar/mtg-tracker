@@ -1,0 +1,65 @@
+import express, { Request, Response } from 'express';
+import { query } from 'express-validator';
+import { validateRequest } from '@mtg-tracker/common';
+import { CardPrice } from '../models/cardprice';
+
+const router = express.Router();
+
+/**
+ * GET /api/search/trending
+ * Get cards with the greatest price changes over a specified timeframe
+ */
+router.get(
+  '/api/search/trending',
+  [
+    query('timeframe')
+      .optional()
+      .isIn(['24h', '7d', '30d'])
+      .withMessage('Timeframe must be 24h, 7d, or 30d'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
+    query('priceType')
+      .optional()
+      .isIn(['price_usd', 'price_usd_foil', 'price_eur'])
+      .withMessage('Price type must be price_usd, price_usd_foil, or price_eur'),
+    query('direction')
+      .optional()
+      .isIn(['increase', 'decrease'])
+      .withMessage('Direction must be increase or decrease')
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const timeframe = (req.query.timeframe as '24h' | '7d' | '30d') || '24h';
+      const limit = parseInt(req.query.limit as string) || 15;
+      const priceType = (req.query.priceType as 'price_usd' | 'price_usd_foil' | 'price_eur') || 'price_usd';
+      const direction = (req.query.direction as 'increase' | 'decrease') || 'increase';
+
+      const trendingCards = await CardPrice.getTrendingCards(
+        timeframe,
+        limit,
+        priceType,
+        direction
+      );
+
+      res.status(200).json({
+        timeframe,
+        priceType,
+        direction,
+        count: trendingCards.length,
+        cards: trendingCards,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching trending cards:', error);
+      res.status(500).json({
+        error: 'Failed to fetch trending cards',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+export { router as trendingRouter };
