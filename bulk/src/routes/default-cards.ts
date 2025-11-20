@@ -13,7 +13,7 @@ const router = express.Router();
 // Function to fetch default cards
 const fetchDefaultCards = async () => {
   try {
-    console.log('Fetching default cards from Scryfall...');
+    console.log('Fetching default cards from Scryfall....');
 
     const bulkDataResponse = await axios.get('https://api.scryfall.com/bulk-data/default_cards', {
       timeout: 30000 // 30 second timeout
@@ -28,7 +28,7 @@ const fetchDefaultCards = async () => {
       decompress: true // Explicitly enable decompression
     });
     const cards = response.data;
-    console.log(`Successfully downloaded data, parsing...`);
+    console.log(`Successfully downloaded data, parsing....`);
     
     if (!Array.isArray(cards)) {
       console.error('Expected array of cards but got:', typeof cards);
