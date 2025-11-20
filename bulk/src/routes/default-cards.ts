@@ -15,10 +15,19 @@ const fetchDefaultCards = async () => {
   try {
     console.log('Fetching default cards from Scryfall...');
 
-    const bulkDataResponse = await axios.get('https://api.scryfall.com/bulk-data/default_cards');
+    const bulkDataResponse = await axios.get('https://api.scryfall.com/bulk-data/default_cards', {
+      timeout: 30000 // 30 second timeout
+    });
     const download_uri = bulkDataResponse.data.download_uri;
-    const response = await axios.get(download_uri);
+    console.log(`Downloading bulk data from: ${download_uri}`);
+    
+    const response = await axios.get(download_uri, {
+      timeout: 300000, // 5 minute timeout for large file
+      maxContentLength: 200 * 1024 * 1024, // 200MB max
+      maxBodyLength: 200 * 1024 * 1024
+    });
     const cards = response.data;
+    console.log(`Successfully downloaded data, parsing...`);
     
     if (!Array.isArray(cards)) {
       console.error('Expected array of cards but got:', typeof cards);
