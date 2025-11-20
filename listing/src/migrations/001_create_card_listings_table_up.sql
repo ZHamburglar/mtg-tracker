@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS card_listings (
   -- Listing details
   quantity INT NOT NULL DEFAULT 1,
   finish_type ENUM('normal', 'foil', 'etched') NOT NULL DEFAULT 'normal',
-  condition ENUM('near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged') NOT NULL DEFAULT 'near_mint',
+  `condition` ENUM('near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged') NOT NULL DEFAULT 'near_mint',
   language VARCHAR(10) NOT NULL DEFAULT 'en',
   
   -- Listing type and location
