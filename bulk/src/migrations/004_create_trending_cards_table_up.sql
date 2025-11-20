@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS trending_cards (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  card_id VARCHAR(36) NOT NULL,
+  card_id CHAR(36) NOT NULL,
   card_name VARCHAR(255) NOT NULL,
   timeframe ENUM('24h', '7d', '30d') NOT NULL,
   price_type ENUM('price_usd', 'price_usd_foil', 'price_eur') NOT NULL,
