@@ -28,6 +28,8 @@ spec:
               memory: "3Gi"
               cpu: "1000m"
           env:
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=2560"
             - name: MYSQL_HOST
               value: "mysql"
             - name: MYSQL_USER
