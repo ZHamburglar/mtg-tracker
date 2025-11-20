@@ -55,7 +55,7 @@ export class TrendingCard {
     for (const timeframe of timeframes) {
       for (const priceType of priceTypes) {
         for (const direction of directions) {
-          console.log(`Calculating trending for ${timeframe} ${priceType} ${direction}...`);
+          console.log(`[Trending] Calculating ${timeframe} ${priceType} ${direction}...`);
 
           const intervalMap = {
             '24h': '1 DAY',
@@ -65,7 +65,25 @@ export class TrendingCard {
           const interval = intervalMap[timeframe];
           const orderDirection = direction === 'increase' ? 'DESC' : 'ASC';
 
-          // Use the same SQL logic as the original getTrendingCards method
+          // Debug: Check if we have price data in the timeframe
+          const [debugRows] = await TrendingCard.pool.query<mysql.RowDataPacket[]>(
+            `SELECT COUNT(*) as total_prices,
+                    COUNT(DISTINCT card_id) as unique_cards,
+                    MIN(created_at) as oldest_price,
+                    MAX(created_at) as newest_price
+             FROM card_prices 
+             WHERE ${priceType} > 0`,
+            []
+          );
+          console.log(`[Trending] Price data available:`, {
+            totalPrices: debugRows[0]?.total_prices,
+            uniqueCards: debugRows[0]?.unique_cards,
+            oldestPrice: debugRows[0]?.oldest_price,
+            newestPrice: debugRows[0]?.newest_price,
+            lookingBack: interval
+          });
+
+          // Get the most recent prices as "current" and prices from X days ago as "old"
           const query = `
             INSERT INTO trending_cards (
               card_id, card_name, timeframe, price_type, direction,
@@ -97,12 +115,11 @@ export class TrendingCard {
               SELECT card_id, ${priceType}, created_at,
                      ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at DESC) as rn
               FROM card_prices
-              WHERE created_at >= DATE_SUB(NOW(), INTERVAL ${interval})
-                AND ${priceType} > 0
+              WHERE ${priceType} > 0
             ) curr
             INNER JOIN (
               SELECT card_id, ${priceType}, created_at,
-                     ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at ASC) as rn
+                     ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at DESC) as rn
               FROM card_prices
               WHERE created_at <= DATE_SUB(NOW(), INTERVAL ${interval})
                 AND ${priceType} > 0
@@ -122,9 +139,36 @@ export class TrendingCard {
             );
             const recordsCreated = result.affectedRows;
             totalRecordsCreated += recordsCreated;
-            console.log(`  ✓ Created ${recordsCreated} records for ${timeframe} ${priceType} ${direction}`);
+            
+            if (recordsCreated === 0) {
+              console.log(`[Trending] ⚠️  No records created for ${timeframe} ${priceType} ${direction}`);
+              
+              // Debug: Check the subqueries individually
+              const [currCount] = await TrendingCard.pool.query<mysql.RowDataPacket[]>(
+                `SELECT COUNT(*) as count FROM (
+                  SELECT card_id, ${priceType}, created_at,
+                         ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at DESC) as rn
+                  FROM card_prices
+                  WHERE ${priceType} > 0
+                ) tmp WHERE rn = 1`
+              );
+              
+              const [oldCount] = await TrendingCard.pool.query<mysql.RowDataPacket[]>(
+                `SELECT COUNT(*) as count FROM (
+                  SELECT card_id, ${priceType}, created_at,
+                         ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at DESC) as rn
+                  FROM card_prices
+                  WHERE created_at <= DATE_SUB(NOW(), INTERVAL ${interval})
+                    AND ${priceType} > 0
+                ) tmp WHERE rn = 1`
+              );
+              
+              console.log(`[Trending] Debug: curr prices found: ${currCount[0]?.count}, old prices found: ${oldCount[0]?.count}`);
+            } else {
+              console.log(`[Trending] ✓ Created ${recordsCreated} records for ${timeframe} ${priceType} ${direction}`);
+            }
           } catch (error) {
-            console.error(`  ✗ Error calculating ${timeframe} ${priceType} ${direction}:`, error);
+            console.error(`[Trending] ✗ Error calculating ${timeframe} ${priceType} ${direction}:`, error);
             throw error;
           }
         }
