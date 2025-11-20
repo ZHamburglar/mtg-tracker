@@ -82,26 +82,29 @@ const fetchSets = async () => {
 };
 
 // Schedule to run every night at midnight
+console.log('[Bulk Service] Registering cron job: Card import at 00:01 daily');
 cron.schedule('1 0 * * *', () => {
-  console.log('Running scheduled task to fetch default cards at midnight');
+  console.log('[Bulk Service] Running scheduled task to fetch default cards at midnight');
   fetchDefaultCards().catch(err => {
-    console.error('Error in scheduled card import:', err);
+    console.error('[Bulk Service] Error in scheduled card import:', err);
   });
 });
 
 // Schedule to run once a week on Sunday at 12:09 AM
+console.log('[Bulk Service] Registering cron job: Set import at 00:09 on Sundays');
 cron.schedule('9 0 * * 0', () => {
-  console.log('Running scheduled task to fetch sets once a week');
+  console.log('[Bulk Service] Running scheduled task to fetch sets once a week');
   fetchSets().catch(err => {
-    console.error('Error in scheduled set import:', err);
+    console.error('[Bulk Service] Error in scheduled set import:', err);
   });
 });
 
 // Schedule to calculate trending cards daily at 12:15 AM (after cards/prices import)
+console.log('[Bulk Service] Registering cron job: Trending calculation at 00:15 daily');
 cron.schedule('15 0 * * *', () => {
-  console.log('Running scheduled task to calculate trending cards');
+  console.log('[Bulk Service] Running scheduled task to calculate trending cards');
   TrendingCard.calculateAndStoreTrendingCards().catch(err => {
-    console.error('Error in scheduled trending calculation:', err);
+    console.error('[Bulk Service] Error in scheduled trending calculation:', err);
   });
 });
 
