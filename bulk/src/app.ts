@@ -28,7 +28,7 @@ app.use(
   })
 );
 
-console.log("Auth service up and running!!");
+console.log("Bulk service up and running!!");
 // Use the imported routes here
 app.use(healthRouter);
 app.use(defaultCardsRouter);
