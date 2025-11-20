@@ -22,7 +22,5 @@ CREATE TABLE IF NOT EXISTS trending_cards (
   INDEX idx_timeframe_pricetype_direction (timeframe, price_type, direction),
   INDEX idx_card_id (card_id),
   INDEX idx_rank (`rank`),
-  INDEX idx_created_at (created_at),
-  
-  FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB;
