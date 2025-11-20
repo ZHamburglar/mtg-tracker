@@ -23,8 +23,9 @@ const fetchDefaultCards = async () => {
     
     const response = await axios.get(download_uri, {
       timeout: 300000, // 5 minute timeout for large file
-      maxContentLength: 200 * 1024 * 1024, // 200MB max
-      maxBodyLength: 200 * 1024 * 1024
+      maxContentLength: 750 * 1024 * 1024, // 750MB max (decompressed size)
+      maxBodyLength: 750 * 1024 * 1024,
+      decompress: true // Explicitly enable decompression
     });
     const cards = response.data;
     console.log(`Successfully downloaded data, parsing...`);
