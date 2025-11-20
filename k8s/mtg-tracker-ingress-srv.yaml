@@ -50,6 +50,13 @@ spec:
                 name: collection-srv
                 port:
                   number: 3000
+          - path: /api/listing(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: listing-srv
+                port:
+                  number: 3000
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:
