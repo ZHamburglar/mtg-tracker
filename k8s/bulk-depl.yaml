@@ -22,10 +22,10 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              memory: "1Gi"
+              memory: "2Gi"
               cpu: "500m"
             limits:
-              memory: "2Gi"
+              memory: "3Gi"
               cpu: "1000m"
           env:
             - name: MYSQL_HOST
