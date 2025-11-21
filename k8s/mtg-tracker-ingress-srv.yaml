@@ -58,13 +58,13 @@ spec:
                 name: listing-srv
                 port:
                   number: 3000
-          - path: /nats(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: nats-srv
-                port:
-                  number: 8222
+          # - path: /nats(/|$)(.*)
+          #   pathType: ImplementationSpecific
+          #   backend:
+          #     service:
+          #       name: nats-srv
+          #       port:
+          #         number: 8222
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:
