@@ -21,6 +21,14 @@ spec:
           image: zhamburglar/mtg-tracker-listing:latest
           imagePullPolicy: Always
           env:
+            - name: NATS_URL
+              value: "nats://nats-srv:4222"
+            - name: NATS_CLUSTER_ID
+              value: "mtg-tracker"
+            - name: NATS_CLIENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: MYSQL_HOST
               value: "mysql"
             - name: MYSQL_USER
