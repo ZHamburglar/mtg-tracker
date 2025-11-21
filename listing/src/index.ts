@@ -4,12 +4,25 @@ import { runMigrations } from '@mtg-tracker/common';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { ListingModel } from './models/listing';
+import { natsWrapper } from './nats-wrapper';
 
 
 
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
+  if (!process.env.NATS_URL) {
+    throw new Error("NATS_URL must be defined");
+  }
+
+  if (!process.env.NATS_CLUSTER_ID) {
+    throw new Error("NATS_CLUSTER_ID must be defined");
+  }
+
+  if (!process.env.NATS_CLIENT_ID) {
+    throw new Error("NATS_CLIENT_ID must be defined");
+  }
+
   if (!process.env.MYSQL_HOST) {
     throw new Error("MYSQL_HOST must be defined");
   }
@@ -33,6 +46,18 @@ const start = async () => {
     console.log(`Database: ${process.env.MYSQL_DATABASE}`);
   }
 
+  // Connect to NATS
+  try {
+    await natsWrapper.connect(
+      process.env.NATS_URL,
+      process.env.NATS_CLUSTER_ID,
+      process.env.NATS_CLIENT_ID
+    );
+    console.log('Connected to NATS JetStream');
+  } catch (err) {
+    console.error('Failed to connect to NATS:', err);
+    throw err;
+  }
 
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
   // You can export the pool or set it in a global variable if needed
@@ -59,7 +84,8 @@ const start = async () => {
 start();
 
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, closing database connection...");
+  console.log("SIGINT received, closing connections...");
+  await natsWrapper.close();
   if (pool) {
     await pool.end();
   }
@@ -67,7 +93,8 @@ process.on("SIGINT", async () => {
 });
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, closing database connection...");
+  console.log("SIGTERM received, closing connections...");
+  await natsWrapper.close();
   if (pool) {
     await pool.end();
   }
