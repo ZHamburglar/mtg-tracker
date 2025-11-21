@@ -1,17 +1,19 @@
 import express, { Request, Response } from 'express';
 import { ListingModel, CreateListingInput, UpdateListingInput } from '../models/listing';
+import { validateRequest, currentUser, requireAuth } from '@mtg-tracker/common';
 import { body, param, query, validationResult } from 'express-validator';
 
 const router = express.Router();
 
 /**
  * POST /api/listing
- * Create a new listing
+ * Create a new listing (Protected route - requires authentication)
  */
 router.post(
   '/api/listing',
+  currentUser,
+  requireAuth,
   [
-    body('user_id').isInt({ min: 1 }).withMessage('Valid user_id is required'),
     body('card_id').notEmpty().withMessage('card_id is required'),
     body('collection_id').isInt({ min: 1 }).withMessage('Valid collection_id is required'),
     body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
@@ -24,17 +26,14 @@ router.post(
     body('currency').optional().isString().isLength({ min: 3, max: 3 }),
     body('notes').optional().isString()
   ],
+  validateRequest,
   async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
-      console.log(`[Listing] Creating listing for user ${req.body.user_id}, card ${req.body.card_id}`);
+      const userId = parseInt(req.currentUser!.id);
+      console.log(`[Listing] Creating listing for user ${userId}, card ${req.body.card_id}`);
       
       const input: CreateListingInput = {
-        user_id: req.body.user_id,
+        user_id: userId,
         card_id: req.body.card_id,
         collection_id: req.body.collection_id,
         quantity: req.body.quantity,
@@ -57,6 +56,39 @@ router.post(
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Failed to create listing' 
       });
+    }
+  }
+);
+
+/**
+ * GET /api/listing/user
+ * Get all listings for the current authenticated user
+ */
+router.get(
+  '/api/listing/user',
+  currentUser,
+  requireAuth,
+  [
+    query('status').optional().isIn(['active', 'sold', 'cancelled', 'expired']),
+    query('listing_type').optional().isIn(['physical', 'online'])
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.currentUser!.id);
+      const status = req.query.status as any;
+      const listingType = req.query.listing_type as any;
+
+      console.log(`[Listing] Fetching listings for current user ${userId}`);
+      const listings = await ListingModel.getUserListings(userId, status, listingType);
+
+      res.json({
+        count: listings.length,
+        listings
+      });
+    } catch (error) {
+      console.error('[Listing] Error fetching current user listings:', error);
+      res.status(500).json({ error: 'Failed to fetch user listings' });
     }
   }
 );
