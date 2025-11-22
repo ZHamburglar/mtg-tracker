@@ -15,12 +15,32 @@ export default () => {
   }
 
   if (isDevelopment) {
-    // In development, use localhost:3000 which proxies to mtg-tracker.local
-    // This ensures cookies are set on localhost:3000 domain
-    console.log('Development mode - using localhost:3000 (proxied)');
+    // In development, use the backend at mtg-tracker.local
+    // Use session cookie from environment variable
+    const sessionCookie = process.env.NEXT_PUBLIC_SESSION_COOKIE;
+    
+    console.log('Development mode - using mtg-tracker.local');
+    console.log('Session cookie available:', !!sessionCookie);
+    console.log('Cookie length:', sessionCookie ? sessionCookie.length : 0);
+    
+    const headers = {};
+    
+    if (sessionCookie) {
+      // The cookie value already includes the full session data
+      // Just needs to be formatted as: session=<value>
+      headers['cookie'] = `session=${sessionCookie}`;
+      console.log('Cookie header set:', headers['cookie'].substring(0, 50) + '...');
+    } else {
+      console.warn('WARNING: No NEXT_PUBLIC_SESSION_COOKIE found in environment!');
+    }
+    
     return axios.create({
       baseURL: "https://mtg-tracker.local",
-      withCredentials: true,
+      headers,
+      // Disable SSL verification for local development
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false
+      })
     });
   }
 
