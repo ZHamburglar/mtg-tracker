@@ -47,7 +47,15 @@ const start = async () => {
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
   const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-  await runMigrations(pool, migrationsDir, 'bulk');
+  console.log('Starting migrations from:', migrationsDir);
+  
+  try {
+    await runMigrations(pool, migrationsDir, 'bulk');
+    console.log('Migrations completed successfully');
+  } catch (error) {
+    console.error('Error running migrations:', error);
+    throw error;
+  }
 
   // Initialize models with database pool
   Card.setPool(pool);
@@ -61,7 +69,10 @@ const start = async () => {
   });
 };
 
-start();
+start().catch(err => {
+  console.error('Fatal error during startup:', err);
+  process.exit(1);
+});
 
 process.on("SIGINT", async () => {
   console.log("SIGINT received, closing database connection...");
