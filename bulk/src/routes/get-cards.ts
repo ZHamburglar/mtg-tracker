@@ -57,22 +57,22 @@ router.get('/api/bulk/cards/pricesduplicatedelete', async (req: Request, res: Re
   try {
     console.log('Starting duplicate price deletion process...');
     
-    // Find duplicates - same card_id on the same day (DATE(price_date))
+    // Find duplicates - same card_id on the same day (DATE(created_at))
     // Keep the earliest timestamp and delete the rest
     const deleteQuery = `
       DELETE cp1 FROM card_prices cp1
       INNER JOIN (
         SELECT 
           card_id,
-          DATE(price_date) as price_day,
-          MIN(price_date) as earliest_time
+          DATE(created_at) as price_day,
+          MIN(created_at) as earliest_time
         FROM card_prices
-        GROUP BY card_id, DATE(price_date)
+        GROUP BY card_id, DATE(created_at)
         HAVING COUNT(*) > 1
       ) cp2 
       ON cp1.card_id = cp2.card_id 
-      AND DATE(cp1.price_date) = cp2.price_day
-      AND cp1.price_date > cp2.earliest_time
+      AND DATE(cp1.created_at) = cp2.price_day
+      AND cp1.created_at > cp2.earliest_time
     `;
 
     const [result] = await CardPrice.getPool().execute(deleteQuery);
