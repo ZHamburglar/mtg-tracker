@@ -35,6 +35,16 @@ export class CardPrice {
     CardPrice.pool = pool;
   }
 
+  // Accessor needed for maintenance queries that operate directly on the pool
+  // (e.g., complex DELETE joins). Throws if pool not initialized to prevent
+  // silent runtime failures.
+  static getPool(): mysql.Pool {
+    if (!CardPrice.pool) {
+      throw new Error('Database pool not initialized. Call CardPrice.setPool() first.');
+    }
+    return CardPrice.pool;
+  }
+
   static async bulkCreate(prices: CardPriceAttrs[], batchSize: number = 1000): Promise<CardPriceCreationResult> {
     if (!CardPrice.pool) {
       throw new Error('Database pool not initialized. Call CardPrice.setPool() first.');
