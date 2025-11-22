@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 
 import { NavigationMenu,
   NavigationMenuList,
@@ -28,9 +28,15 @@ import { Button } from "@/components/ui/button";
 import buildClient from "../app/api/build-client";
 
 
-const Header = ({ currentUser }) => {
+const Header = ({ currentUser: initialUser }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState(initialUser);
+
+  useEffect(() => {
+    console.log('Current user in Header:', currentUser);
+  }, [currentUser]);
+
 
 
   const signIn = () => {

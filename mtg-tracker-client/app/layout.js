@@ -14,24 +14,23 @@ export const metadata = {
 async function getCurrentUser() {
   try {
     const client = buildClient();
+    console.log('Fetching current user from server-side...');
     const { data } = await client.get('/api/users/currentuser');
-    console.log('data in layout:', data);
+    console.log('Current user data:', data);
     return data.currentUser;
   } catch (error) {
-    // During build time or if service is unavailable, return null
     console.error('Error fetching current user:', error.message);
     return null;
   }
 }
 
 export default async function RootLayout({ children }) {
-  // const currentUser = await getCurrentUser();
-  const currentUser = null; // Disable auth for now
+  const currentUser = await getCurrentUser();
   
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
-        <Header currentUser={currentUser}/>
+        <Header currentUser={currentUser} />
         
         {children}
       </body>
