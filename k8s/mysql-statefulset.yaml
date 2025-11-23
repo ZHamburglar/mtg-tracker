@@ -21,9 +21,22 @@ spec:
                 name: mysql-secret
           ports:
             - containerPort: 3306
+          resources:
+            requests:
+              memory: "3Gi"
+              cpu: "500m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: mysql-storage
+            - mountPath: /etc/mysql/conf.d
+              name: mysql-config
+      volumes:
+        - name: mysql-config
+          configMap:
+            name: mysql-config
   volumeClaimTemplates:
     - metadata:
         name: mysql-storage
