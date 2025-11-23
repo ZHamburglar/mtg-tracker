@@ -201,6 +201,8 @@ cron.schedule('1 0 * * *', () => {
       console.error('[Bulk Service] Error in scheduled card import:', err);
     });
   });
+}, {
+  timezone: "America/Chicago"
 });
 
 // Schedule to run once a week on Sunday at 12:20 AM
@@ -213,10 +215,12 @@ cron.schedule('20 0 * * 0', () => {
       console.error('[Bulk Service] Error in scheduled set import:', err);
     });
   });
+}, {
+  timezone: "America/Chicago"
 });
 
-// Schedule to calculate trending cards daily at 12:15 AM (after cards/prices import)
-console.log('[Bulk Service] Registering cron job: Trending calculation at 00:15 daily');
+// Schedule to calculate trending cards daily at 12:30 AM (after cards/prices import)
+console.log('[Bulk Service] Registering cron job: Trending calculation at 00:30 daily');
 cron.schedule('30 0 * * *', () => {
   console.log('[Bulk Service] Running scheduled task to calculate trending cards');
   // Run asynchronously without blocking the cron scheduler
@@ -225,6 +229,8 @@ cron.schedule('30 0 * * *', () => {
       console.error('[Bulk Service] Error in scheduled trending calculation:', err);
     });
   });
+}, {
+  timezone: "America/Chicago"
 });
 
 router.get('/api/bulk/card', async (req: Request, res: Response) => {
