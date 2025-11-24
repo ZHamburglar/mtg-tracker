@@ -20,6 +20,13 @@ spec:
         - name: listing
           image: zhamburglar/mtg-tracker-listing:latest
           imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
           env:
             - name: NATS_URL
               value: "nats://nats-srv:4222"
