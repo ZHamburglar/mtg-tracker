@@ -72,7 +72,7 @@ export class TrendingCard {
                     MIN(created_at) as oldest_price,
                     MAX(created_at) as newest_price
              FROM card_prices 
-             WHERE ${priceType} > 0`,
+             WHERE ${priceType} > 0.50`,
             []
           );
           console.log(`[Trending] Price data available:`, {
