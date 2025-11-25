@@ -3,7 +3,18 @@
 Testing Action
 
 ## Feature Addition Timeline
-- [ ] Horizontal Pod Autoscaling
+- [x] Horizontal Pod Autoscaling - 11/25/25
+- [] Health Checks
+- [] Redis Caching on Trending 24h/7d/30d calls
+- [] Rate Limiting
+- [] Auth Enforcement
+- [] Monitoring and Alerting
+- [] Connection Pool Management and Logging
+- [] Input validations
+- [] Metrics: Request rates
+- [] Metrics: Error rate (%failed requests)
+- [] Metrics: Response times (p50, p95, p99)
+- [] Metrics: Concurrent requests
 
 ## Architecture
 
