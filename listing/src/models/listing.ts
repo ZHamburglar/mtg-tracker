@@ -55,6 +55,13 @@ export class ListingModel {
     this.pool = pool;
   }
 
+  static getPool(): Pool {
+    if (!this.pool) {
+      throw new Error('Database pool not initialized. Call ListingModel.setPool() first.');
+    }
+    return this.pool;
+  }
+
   /**
    * Create a new listing
    * Also decreases the available count in user_card_collection

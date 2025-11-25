@@ -33,6 +33,13 @@ export class UserCardCollection {
     UserCardCollection.pool = pool;
   }
 
+  static getPool(): mysql.Pool {
+    if (!UserCardCollection.pool) {
+      throw new Error('Database pool not initialized. Call UserCardCollection.setPool() first.');
+    }
+    return UserCardCollection.pool;
+  }
+
   /**
    * Add a card to user's collection or update quantity if it exists
    */

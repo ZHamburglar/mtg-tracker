@@ -1,4 +1,6 @@
 import express, { Request, Response } from 'express';
+import { ListingModel } from '../models/listing';
+import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
@@ -8,6 +10,29 @@ router.get('/api/listing/health', (req: Request, res: Response) => {
     service: 'listing',
     timestamp: new Date().toISOString()
   });
+});
+
+router.get('/api/listing/ready', async (req: Request, res: Response) => {
+  try {
+    const pool = ListingModel.getPool();
+    const conn = await pool.getConnection();
+    await conn.query('SELECT 1');
+    conn.release();
+
+    const natsClient = natsWrapper.client;
+    const natsConnected = !natsClient.isClosed();
+
+    res.status(200).json({ 
+      status: 'ready',
+      database: 'connected',
+      nats: natsConnected ? 'connected' : 'disconnected'
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'not ready',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 export { router as healthRouter };
