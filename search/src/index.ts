@@ -5,12 +5,14 @@ import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
 import { TrendingCard } from './models/trending-card';
 
+import { logger } from './logger';
+
 
 
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
-  console.log('[Search Service] Starting up...', {
+  logger.info('Starting up...', {
     timestamp: new Date().toISOString(),
     nodeEnv: process.env.NODE_ENV || 'development'
   });
@@ -31,15 +33,15 @@ const start = async () => {
     throw new Error("MYSQL_DATABASE must be defined");
   }
 
-  console.log("[Search Service] MySQL configuration:", {
+  logger.log("MySQL configuration:", {
     host: process.env.MYSQL_HOST,
     user: process.env.MYSQL_USER,
     database: process.env.MYSQL_DATABASE
   });
 
-  console.log("[Search Service] Connecting to MySQL...");
+  logger.log("Connecting to MySQL...");
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
-  console.log('[Search Service] MySQL pool created successfully');
+  logger.info('MySQL pool created successfully');
 
   if (!pool) {
     throw new Error("Failed to create database pool");
@@ -51,15 +53,14 @@ const start = async () => {
   // await runMigrations(pool, migrationsDir, 'search');
 
   // Initialize models with database pool
-  console.log('[Search Service] Initializing models...');
+  logger.info('Initializing models...');
   Card.setPool(pool);
   CardPrice.setPool(pool);
   TrendingCard.setPool(pool);
-  console.log('[Search Service] Models initialized: Card, CardPrice, TrendingCard');
-
+  logger.info('Models initialized: Card, CardPrice, TrendingCard');
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
-    console.log(`[Search Service] Server started successfully`, {
+    logger.info('Server started successfully', {
       port,
       timestamp: new Date().toISOString()
     });
@@ -67,7 +68,7 @@ const start = async () => {
 };
 
 start().catch(err => {
-  console.error('[Search Service] Fatal error during startup', {
+  logger.error('Fatal error during startup', {
     error: err.message,
     stack: err.stack,
     timestamp: new Date().toISOString()
@@ -76,23 +77,23 @@ start().catch(err => {
 });
 
 process.on("SIGINT", async () => {
-  console.log("[Search Service] SIGINT received, shutting down gracefully...", {
+  logger.info("SIGINT received, shutting down gracefully...", {
     timestamp: new Date().toISOString()
   });
   if (pool) {
     await pool.end();
-    console.log("[Search Service] Database connection closed");
+    logger.info("Database connection closed");
   }
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("[Search Service] SIGTERM received, shutting down gracefully...", {
+  logger.info("SIGTERM received, shutting down gracefully...", {
     timestamp: new Date().toISOString()
   });
   if (pool) {
     await pool.end();
-    console.log("[Search Service] Database connection closed");
+    logger.info("Database connection closed");
   }
   process.exit(0);
 });
