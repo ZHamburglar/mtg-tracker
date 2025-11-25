@@ -25,6 +25,13 @@ export class User {
     User.pool = pool;
   }
 
+  static getPool(): mysql.Pool {
+    if (!User.pool) {
+      throw new Error('Database pool not initialized. Call User.setPool() first.');
+    }
+    return User.pool;
+  }
+
   static async create(attrs: UserAttrs): Promise<UserDoc> {
     // Hash the password
     const hashedPassword = await bcrypt.hash(attrs.password, 10);
