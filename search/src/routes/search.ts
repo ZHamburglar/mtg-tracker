@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
+import { Set } from '../models/set';
 
 const router = express.Router();
 
@@ -223,6 +224,38 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
     });
     res.status(500).json({
       error: 'Failed to fetch card prices',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/search/sets', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  console.log('[Search] GET /api/search/sets - Request started', {
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    const sets = await Set.getAllSets();
+
+    console.log('[Search] GET /api/search/sets - Success', {
+      totalSets: sets.length,
+      duration: Date.now() - startTime
+    });
+
+    res.status(200).json({
+      sets,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[Search] GET /api/search/sets - Error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
+    res.status(500).json({
+      error: 'Failed to fetch sets',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }

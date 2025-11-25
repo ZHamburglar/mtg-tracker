@@ -191,33 +191,31 @@ const fetchSets = async () => {
   }
 };
 
-// Schedule to run every night at midnight
+// Schedule to run sets import first, then cards (sets must exist before cards due to FK constraint)
 if (process.env.ENABLE_CRON !== 'false') {
-  console.log('[Bulk Service] Registering cron job: Card import at 00:01 daily');
+  console.log('[Bulk Service] Registering cron job: Set import at 00:01 daily');
   cron.schedule('1 0 * * *', () => {
-    console.log('[Bulk Service] Running scheduled task to fetch default cards at midnight');
+    console.log('[Bulk Service] Running scheduled task to fetch sets');
     // Run asynchronously without blocking the cron scheduler
     setImmediate(() => {
-      fetchDefaultCards().catch(err => {
-        console.error('[Bulk Service] Error in scheduled card import:', err);
+      fetchSets().catch(err => {
+        console.error('[Bulk Service] Error in scheduled set import:', err);
       });
     });
   }, {
     timezone: "America/Chicago"
   });
-} else {
-  console.log('[Bulk Service] Cron jobs disabled (ENABLE_CRON=false)');
 }
 
-// Schedule to run once a week on Sunday at 12:20 AM
+// Schedule to run card import after sets have been imported
 if (process.env.ENABLE_CRON !== 'false') {
-  console.log('[Bulk Service] Registering cron job: Set import at 00:20 on Sundays');
-  cron.schedule('20 0 * * 0', () => {
-    console.log('[Bulk Service] Running scheduled task to fetch sets once a week');
+  console.log('[Bulk Service] Registering cron job: Card import at 00:10 daily');
+  cron.schedule('10 0 * * *', () => {
+    console.log('[Bulk Service] Running scheduled task to fetch default cards');
     // Run asynchronously without blocking the cron scheduler
     setImmediate(() => {
-      fetchSets().catch(err => {
-        console.error('[Bulk Service] Error in scheduled set import:', err);
+      fetchDefaultCards().catch(err => {
+        console.error('[Bulk Service] Error in scheduled card import:', err);
       });
     });
   }, {
