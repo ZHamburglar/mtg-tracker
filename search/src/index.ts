@@ -4,10 +4,9 @@ import { createMysqlPoolWithRetry } from './config/mysql';
 import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
 import { TrendingCard } from './models/trending-card';
+import { Set } from './models/set';
 
 import { logger } from './logger';
-
-
 
 let pool: mysql.Pool | undefined;
 
@@ -57,6 +56,8 @@ const start = async () => {
   Card.setPool(pool);
   CardPrice.setPool(pool);
   TrendingCard.setPool(pool);
+  Set.setPool(pool);
+
   logger.info('Models initialized: Card, CardPrice, TrendingCard');
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
