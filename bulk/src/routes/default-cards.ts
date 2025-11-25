@@ -191,33 +191,37 @@ const fetchSets = async () => {
   }
 };
 
-// Schedule to run every night at midnight
-console.log('[Bulk Service] Registering cron job: Card import at 00:01 daily');
-cron.schedule('1 0 * * *', () => {
-  console.log('[Bulk Service] Running scheduled task to fetch default cards at midnight');
-  // Run asynchronously without blocking the cron scheduler
-  setImmediate(() => {
-    fetchDefaultCards().catch(err => {
-      console.error('[Bulk Service] Error in scheduled card import:', err);
+// Schedule to run sets import first, then cards (sets must exist before cards due to FK constraint)
+if (process.env.ENABLE_CRON !== 'false') {
+  console.log('[Bulk Service] Registering cron job: Set import at 00:01 daily');
+  cron.schedule('1 0 * * *', () => {
+    console.log('[Bulk Service] Running scheduled task to fetch sets');
+    // Run asynchronously without blocking the cron scheduler
+    setImmediate(() => {
+      fetchSets().catch(err => {
+        console.error('[Bulk Service] Error in scheduled set import:', err);
+      });
     });
+  }, {
+    timezone: "America/Chicago"
   });
-}, {
-  timezone: "America/Chicago"
-});
+}
 
-// Schedule to run once a week on Sunday at 12:20 AM
-console.log('[Bulk Service] Registering cron job: Set import at 00:20 on Sundays');
-cron.schedule('20 0 * * 0', () => {
-  console.log('[Bulk Service] Running scheduled task to fetch sets once a week');
-  // Run asynchronously without blocking the cron scheduler
-  setImmediate(() => {
-    fetchSets().catch(err => {
-      console.error('[Bulk Service] Error in scheduled set import:', err);
+// Schedule to run card import after sets have been imported
+if (process.env.ENABLE_CRON !== 'false') {
+  console.log('[Bulk Service] Registering cron job: Card import at 00:10 daily');
+  cron.schedule('10 0 * * *', () => {
+    console.log('[Bulk Service] Running scheduled task to fetch default cards');
+    // Run asynchronously without blocking the cron scheduler
+    setImmediate(() => {
+      fetchDefaultCards().catch(err => {
+        console.error('[Bulk Service] Error in scheduled card import:', err);
+      });
     });
+  }, {
+    timezone: "America/Chicago"
   });
-}, {
-  timezone: "America/Chicago"
-});
+}
 
 // Schedule to calculate trending cards daily at 12:30 AM (after cards/prices import)
 console.log('[Bulk Service] Registering cron job: Trending calculation at 00:30 daily');
