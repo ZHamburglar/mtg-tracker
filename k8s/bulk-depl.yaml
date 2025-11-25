@@ -27,6 +27,22 @@ spec:
             limits:
               memory: "3Gi"
               cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /api/bulk/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/bulk/ready
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           env:
             - name: ENABLE_CRON
               value: "true"

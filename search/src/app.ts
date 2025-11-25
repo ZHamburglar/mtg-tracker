@@ -18,7 +18,7 @@ app.set("trust proxy", true);
 app.use(json());
 app.use((req, res, next) => {
   const clientIP = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  logger.info('Client IP:', clientIP);
+  // logger.info('Client IP:', clientIP);
   next();
 });
 

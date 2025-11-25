@@ -69,6 +69,13 @@ export class Card {
     Card.pool = pool;
   }
 
+  static getPool(): mysql.Pool {
+    if (!Card.pool) {
+      throw new Error('Database pool not initialized. Call Card.setPool() first.');
+    }
+    return Card.pool;
+  }
+
   static async findById(id: string): Promise<CardDoc | null> {
     if (!Card.pool) {
       throw new Error('Database pool not initialized. Call Card.setPool() first.');
