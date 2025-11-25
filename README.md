@@ -2,132 +2,103 @@
 
 Testing Action
 
+## Feature Addition Timeline
+- [x] Horizontal Pod Autoscaling - 11/25/25
+- [ ] Health Checks
+- [ ] Redis Caching on Trending 24h/7d/30d calls
+- [ ] Rate Limiting
+- [ ] Auth Enforcement
+- [ ] Monitoring and Alerting
+- [ ] Connection Pool Management and Logging
+- [ ] Input validations
+- [ ] Metrics: Request rates
+- [ ] Metrics: Error rate (%failed requests)
+- [ ] Metrics: Response times (p50, p95, p99)
+- [ ] Metrics: Concurrent requests
+
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Client Layer                                    │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  Next.js Client (mtg-tracker-client)                                 │   │
-│  │  - React UI with TypeScript                                          │   │
-│  │  - Port: 3000                                                         │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Ingress (ingress-nginx)                              │
-│  - Routes: /api/auth/*, /api/bulk/*, /api/search/*, /api/collection/*,      │
-│            /api/listing/*                                                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                    ┌─────────────────┼─────────────────┐
-                    │                 │                 │
-                    ▼                 ▼                 ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Microservices Layer                                │
-│                                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │ Auth Service │  │ Bulk Service │  │Search Service│  │Collection Srv│   │
-│  │              │  │              │  │              │  │              │   │
-│  │ Port: 3000   │  │ Port: 3000   │  │ Port: 3000   │  │ Port: 3000   │   │
-│  │              │  │              │  │              │  │              │   │
-│  │ - User auth  │  │ - Card data  │  │ - Card search│  │ - User cards │   │
-│  │ - New user   │  │ - Prices     │  │ - Search by  │  │ - Collection │   │
-│  │   creation   │  │ - Sets       │  │   ID/name    │  │   mgmt       │   │
-│  │              │  │ - Trending   │  │              │  │              │   │
-│  │              │  │              │  │              │  │              │   │
-│  │              │  │ Cron Jobs:   │  │              │  │              │   │
-│  │              │  │ - 00:01 Card │  │              │  │              │   │
-│  │              │  │   import     │  │              │  │              │   │
-│  │              │  │ - 00:20 Sets │  │              │  │              │   │
-│  │              │  │   (Sunday)   │  │              │  │              │   │
-│  │              │  │ - 00:30      │  │              │  │              │   │
-│  │              │  │   Trending   │  │              │  │              │   │
-│  │              │  │              │  │              │  │              │   │
-│  │ Resources:   │  │ Resources:   │  │ Resources:   │  │ Resources:   │   │
-│  │ (default)    │  │ 2-3Gi RAM    │  │ (default)    │  │ (default)    │   │
-│  │              │  │ 500m-1 CPU   │  │              │  │              │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘   │
-│                                                                               │
-│  ┌──────────────┐                                                            │
-│  │Listing Svc   │                                                            │
-│  │              │                                                            │
-│  │ Port: 3000   │                                                            │
-│  │              │                                                            │
-│  │ - Card       │                                                            │
-│  │   listings   │                                                            │
-│  │ - Marketplace│                                                            │
-│  │              │                                                            │
-│  │ Resources:   │                                                            │
-│  │ 512Mi-1Gi    │                                                            │
-│  │ 250m-1 CPU   │                                                            │
-│  └──────────────┘                                                            │
-└─────────────────────────────────────────────────────────────────────────────┘
-                    │                                     │
-                    ▼                                     ▼
-┌─────────────────────────────────────┐  ┌──────────────────────────────────┐
-│        Message Queue (NATS)         │  │    Database Layer (MySQL 8.0)    │
-│                                     │  │                                  │
-│  - URL: nats://nats-srv:4222       │  │  - Host: mysql:3306              │
-│  - Cluster ID: mtg-tracker         │  │  - Database: mtgtrackerdb        │
-│  - JetStream enabled               │  │                                  │
-│                                     │  │  Tables:                         │
-│  Event-driven communication        │  │  - users                         │
-│  between services                  │  │  - cards                         │
-│                                     │  │  - card_prices                   │
-│                                     │  │  - sets                          │
-│                                     │  │  - trending_cards                │
-│                                     │  │  - card_listings                 │
-│                                     │  │  - collections                   │
-│                                     │  │                                  │
-│                                     │  │  StatefulSet:                    │
-│                                     │  │  - 20Gi Longhorn PVC             │
-│                                     │  │  - InnoDB buffer: 2GB            │
-│                                     │  │  - Max connections: 200          │
-│                                     │  │                                  │
-│                                     │  │  Resources:                      │
-│                                     │  │  - 3-4Gi RAM                     │
-│                                     │  │  - 500m-2 CPU                    │
-└─────────────────────────────────────┘  └──────────────────────────────────┘
-                                                         │
-                                                         ▼
-                                         ┌──────────────────────────────────┐
-                                         │   External Data Source           │
-                                         │                                  │
-                                         │  Scryfall API                    │
-                                         │  - Card data import              │
-                                         │  - Price data import             │
-                                         │  - Set information               │
-                                         └──────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Client["Next.js Client<br/>React UI with TypeScript<br/>Port: 3000"]
+    end
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        Observability Stack (Loki)                            │
-│                                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                      │
-│  │   Grafana    │  │   Loki 3.5.7 │  │Promtail 3.5.1│                      │
-│  │   11.0.0     │  │              │  │              │                      │
-│  │              │  │ SingleBinary │  │ DaemonSet    │                      │
-│  │ Port: 3000   │  │ Gateway: 80  │  │              │                      │
-│  │ LB: 192.168  │  │ Direct: 3100 │  │ Log collector│                      │
-│  │   .1.170     │  │              │  │ from all pods│                      │
-│  │              │  │ 10Gi PVC     │  │              │                      │
-│  └──────────────┘  └──────────────┘  └──────────────┘                      │
-│         │                  ▲                  │                              │
-│         └──────────────────┴──────────────────┘                              │
-│              (Log aggregation & visualization)                               │
-└─────────────────────────────────────────────────────────────────────────────┘
+    subgraph "Ingress Layer"
+        Ingress["Ingress Nginx<br/>Routes: /api/auth/*, /api/bulk/*,<br/>/api/search/*, /api/collection/*,<br/>/api/listing/*"]
+    end
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      Infrastructure (Kubernetes)                             │
-│                                                                               │
-│  - 3-node cluster                                                            │
-│  - Longhorn for persistent storage                                           │
-│  - Skaffold for local development                                            │
-│  - ArgoCD for image updates (GitOps)                                         │
-│  - Namespace: default (services), loki (observability)                       │
-└─────────────────────────────────────────────────────────────────────────────┘
+    subgraph "Microservices Layer"
+        Auth["Auth Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Authentication<br/>New User Creation<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>100m-500m CPU"]
+        
+        Bulk["Bulk Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Data Import<br/>Price Management<br/>Set Information<br/>Trending Calculation<br/><br/>Cron Jobs:<br/>• 00:01 - Sets Import<br/>• 00:10 - Cards Import<br/>• 00:30 - Trending Calc<br/><br/>HPA: 1-2 replicas<br/>2-3Gi RAM<br/>500m-1 CPU"]
+        
+        Search["Search Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Search by ID/Name<br/>Price History<br/>Set Queries<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
+        
+        Collection["Collection Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Card Collections<br/>Collection Management<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
+        
+        Listing["Listing Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Listings<br/>Marketplace<br/><br/>HPA: 1-3 replicas<br/>512Mi-1Gi RAM<br/>250m-1 CPU"]
+    end
+
+    subgraph "Data Layer"
+        NATS["NATS Message Queue<br/>━━━━━━━━━━<br/>URL: nats://nats-srv:4222<br/>Cluster ID: mtg-tracker<br/>JetStream Enabled<br/><br/>Event-driven communication"]
+        
+        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• collections<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
+    end
+
+    subgraph "External Services"
+        Scryfall["Scryfall API<br/>━━━━━━━━━━<br/>Card Data Import<br/>Price Data Import<br/>Set Information"]
+    end
+
+    subgraph "Observability Stack"
+        Grafana["Grafana 11.0.0<br/>Port: 3000<br/>LB: 192.168.1.170"]
+        Loki["Loki 3.5.7<br/>SingleBinary Mode<br/>Gateway: 80<br/>Direct: 3100<br/>10Gi PVC"]
+        Promtail["Promtail 3.5.1<br/>DaemonSet<br/>Log Collector"]
+    end
+
+    Client -->|HTTP/HTTPS| Ingress
+    Ingress -->|Route| Auth
+    Ingress -->|Route| Bulk
+    Ingress -->|Route| Search
+    Ingress -->|Route| Collection
+    Ingress -->|Route| Listing
+
+    Auth -->|Query| MySQL
+    Bulk -->|Write/Read| MySQL
+    Search -->|Query| MySQL
+    Collection -->|Write/Read| MySQL
+    Listing -->|Write/Read| MySQL
+
+    Collection -->|Events| NATS
+    Listing -->|Events| NATS
+
+    Bulk -.->|Import| Scryfall
+
+    Promtail -->|Push Logs| Loki
+    Grafana -->|Query Logs| Loki
+
+    classDef service fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff
+    classDef data fill:#13aa52,stroke:#fff,stroke-width:2px,color:#fff
+    classDef external fill:#ff6b6b,stroke:#fff,stroke-width:2px,color:#fff
+    classDef observability fill:#ffa500,stroke:#fff,stroke-width:2px,color:#fff
+    classDef infra fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff
+
+    class Auth,Bulk,Search,Collection,Listing service
+    class MySQL,NATS data
+    class Scryfall external
+    class Grafana,Loki,Promtail observability
+    class Client,Ingress infra
 ```
+
+### Infrastructure
+- **Kubernetes**: 3-node cluster
+- **Storage**: Longhorn for persistent volumes
+- **GitOps**: ArgoCD for automated image updates
+- **Development**: Skaffold for local development
+- **Namespaces**: default (services), loki (observability)
+- **Autoscaling**: Horizontal Pod Autoscalers (HPA) on all services
+  - Scale based on CPU (80%) and Memory (85%) utilization
+  - Conservative scaling policies to prevent flapping
 
 ### Key Features
 - **Microservices Architecture**: Independent services for auth, bulk operations, search, collections, and listings
