@@ -13,6 +13,9 @@ export async function createMysqlPoolWithRetry({
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+    connectTimeout: 60000,
   });
 
   while (retries > 0) {
