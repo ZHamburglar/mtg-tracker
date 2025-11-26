@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 
+import { logger } from '../logger';
+
 export interface CardDoc {
   id: string;
   oracle_id?: string;
@@ -60,7 +62,7 @@ export class Card {
     try {
       return JSON.parse(value);
     } catch (error) {
-      console.warn('Failed to parse JSON field:', value);
+      logger.warn('Failed to parse JSON field:', value);
       return undefined;
     }
   }

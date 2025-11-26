@@ -5,8 +5,7 @@ import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { ListingModel } from './models/listing';
 import { natsWrapper } from './nats-wrapper';
-
-
+import { logger } from './logger';
 
 let pool: mysql.Pool | undefined;
 
@@ -40,10 +39,10 @@ const start = async () => {
   }
 
   if (process.env.MYSQL_DATABASE && process.env.MYSQL_PASSWORD && process.env.MYSQL_USER && process.env.MYSQL_HOST) {
-    console.log("Connecting to MySQL with the following config:");
-    console.log(`Host: ${process.env.MYSQL_HOST}`);
-    console.log(`User: ${process.env.MYSQL_USER}`);
-    console.log(`Database: ${process.env.MYSQL_DATABASE}`);
+    logger.log("Connecting to MySQL with the following config:");
+    logger.log(`Host: ${process.env.MYSQL_HOST}`);
+    logger.log(`User: ${process.env.MYSQL_USER}`);
+    logger.log(`Database: ${process.env.MYSQL_DATABASE}`);
   }
 
   // Connect to NATS
@@ -53,15 +52,15 @@ const start = async () => {
       process.env.NATS_CLUSTER_ID,
       process.env.NATS_CLIENT_ID
     );
-    console.log('Connected to NATS JetStream');
+    logger.log('Connected to NATS JetStream');
   } catch (err) {
-    console.error('Failed to connect to NATS:', err);
+    logger.error('Failed to connect to NATS:', err);
     throw err;
   }
 
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
   // You can export the pool or set it in a global variable if needed
-  console.log('pool created:', pool !== undefined);
+  logger.log('pool created:', pool !== undefined);
 
   if (!pool) {
     throw new Error("Failed to create database pool");
@@ -77,14 +76,14 @@ const start = async () => {
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
-    console.log(`Listening on port ${port}!`);
+    logger.log(`Listening on port ${port}!`);
   });
 };
 
 start();
 
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, closing connections...");
+  logger.log("SIGINT received, closing connections...");
   await natsWrapper.close();
   if (pool) {
     await pool.end();
@@ -93,7 +92,7 @@ process.on("SIGINT", async () => {
 });
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, closing connections...");
+  logger.log("SIGTERM received, closing connections...");
   await natsWrapper.close();
   if (pool) {
     await pool.end();

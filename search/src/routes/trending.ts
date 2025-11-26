@@ -3,6 +3,8 @@ import { query } from 'express-validator';
 import { validateRequest } from '@mtg-tracker/common';
 import { TrendingCard } from '../models/trending-card';
 
+import { logger } from '../logger';
+
 const router = express.Router();
 
 /**
@@ -37,7 +39,7 @@ router.get(
     const priceType = (req.query.priceType as 'price_usd' | 'price_usd_foil' | 'price_eur') || 'price_usd';
     const direction = (req.query.direction as 'increase' | 'decrease') || 'increase';
 
-    console.log('[Search] GET /api/search/trending - Request started', {
+    logger.log('GET /api/search/trending - Request started', {
       timeframe,
       limit,
       priceType,
@@ -57,7 +59,7 @@ router.get(
       // Get last update time to inform users when data was calculated
       const lastUpdate = await TrendingCard.getLastUpdateTime();
 
-      console.log('[Search] GET /api/search/trending - Success', {
+      logger.log('GET /api/search/trending - Success', {
         timeframe,
         priceType,
         direction,
@@ -76,7 +78,7 @@ router.get(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('[Search] GET /api/search/trending - Error', {
+      logger.error('GET /api/search/trending - Error', {
         timeframe,
         priceType,
         direction,

@@ -2,20 +2,21 @@ import express, { Request, Response } from 'express';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
 import { Set } from '../models/set';
+import { logger } from '../logger';
 
 const router = express.Router();
 
 router.get('/api/search/sets', async (req: Request, res: Response) => {
   const startTime = Date.now();
   
-  console.log('[Search] GET /api/search/sets - Request started', {
+  logger.log('GET /api/search/sets - Request started', {
     timestamp: new Date().toISOString()
   });
 
   try {
     const sets = await Set.getAllSets();
 
-    console.log('[Search] GET /api/search/sets - Success', {
+    logger.log('GET /api/search/sets - Success', {
       totalSets: sets.length,
       duration: Date.now() - startTime
     });
@@ -25,7 +26,7 @@ router.get('/api/search/sets', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[Search] GET /api/search/sets - Error', {
+    logger.error('GET /api/search/sets - Error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       duration: Date.now() - startTime
@@ -41,14 +42,14 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
   const startTime = Date.now();
   const { id } = req.params;
   
-  console.log('[Search] GET /api/search/:id - Request started', {
+  logger.log('GET /api/search/:id - Request started', {
     cardId: id,
     timestamp: new Date().toISOString()
   });
 
   try {
     if (!id) {
-      console.log('[Search] GET /api/search/:id - Bad request: Missing card ID');
+      logger.log('GET /api/search/:id - Bad request: Missing card ID');
       return res.status(400).json({
         error: 'Card ID is required'
       });
@@ -57,7 +58,7 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
     const card = await Card.findById(id);
     
     if (!card) {
-      console.log('[Search] GET /api/search/:id - Card not found', {
+      logger.log('GET /api/search/:id - Card not found', {
         cardId: id,
         duration: Date.now() - startTime
       });
@@ -67,7 +68,7 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('[Search] GET /api/search/:id - Success', {
+    logger.log('GET /api/search/:id - Success', {
       cardId: id,
       cardName: card.name,
       duration: Date.now() - startTime
@@ -78,7 +79,7 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[Search] GET /api/search/:id - Error', {
+    logger.error('GET /api/search/:id - Error', {
       cardId: id,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
@@ -95,14 +96,14 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
   const startTime = Date.now();
   const { id } = req.params;
   
-  console.log('[Search] GET /api/search/:id/prices/latest - Request started', {
+  logger.log('GET /api/search/:id/prices/latest - Request started', {
     cardId: id,
     timestamp: new Date().toISOString()
   });
 
   try {
     if (!id) {
-      console.log('[Search] GET /api/search/:id/prices/latest - Bad request: Missing card ID');
+      logger.log('GET /api/search/:id/prices/latest - Bad request: Missing card ID');
       return res.status(400).json({
         error: 'Card ID is required'
       });
@@ -111,7 +112,7 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
     const card = await Card.findById(id);
     
     if (!card) {
-      console.log('[Search] GET /api/search/:id/prices/latest - Card not found', {
+      logger.log('GET /api/search/:id/prices/latest - Card not found', {
         cardId: id,
         duration: Date.now() - startTime
       });
@@ -124,7 +125,7 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
     const latestPrice = await CardPrice.getLatestByCardId(id);
 
     if (!latestPrice) {
-      console.log('[Search] GET /api/search/:id/prices/latest - No price data', {
+      logger.log('GET /api/search/:id/prices/latest - No price data', {
         cardId: id,
         cardName: card.name,
         duration: Date.now() - startTime
@@ -135,7 +136,7 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
       });
     }
 
-    console.log('[Search] GET /api/search/:id/prices/latest - Success', {
+    logger.log('GET /api/search/:id/prices/latest - Success', {
       cardId: id,
       cardName: card.name,
       priceUsd: latestPrice.price_usd,
@@ -153,7 +154,7 @@ router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[Search] GET /api/search/:id/prices/latest - Error', {
+    logger.error('GET /api/search/:id/prices/latest - Error', {
       cardId: id,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
@@ -173,7 +174,7 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const offset = (page - 1) * limit;
   
-  console.log('[Search] GET /api/search/:id/prices - Request started', {
+  logger.log('GET /api/search/:id/prices - Request started', {
     cardId: id,
     limit,
     page,
@@ -182,7 +183,7 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 
   try {
     if (!id) {
-      console.log('[Search] GET /api/search/:id/prices - Bad request: Missing card ID');
+      logger.log('GET /api/search/:id/prices - Bad request: Missing card ID');
       return res.status(400).json({
         error: 'Card ID is required'
       });
@@ -190,7 +191,7 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 
     // Validate pagination parameters
     if (limit > 1000) {
-      console.log('[Search] GET /api/search/:id/prices - Bad request: Limit exceeds max', {
+      logger.log('GET /api/search/:id/prices - Bad request: Limit exceeds max', {
         cardId: id,
         limit
       });
@@ -217,7 +218,7 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 
     const totalPages = Math.ceil(total / limit);
 
-    console.log('[Search] GET /api/search/:id/prices - Success', {
+    logger.log('GET /api/search/:id/prices - Success', {
       cardId: id,
       cardName: card.name,
       totalRecords: total,
@@ -246,7 +247,7 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[Search] GET /api/search/:id/prices - Error', {
+    logger.error('GET /api/search/:id/prices - Error', {
       cardId: id,
       limit,
       page,
@@ -264,7 +265,7 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
 router.get('/api/search', async (req: Request, res: Response) => {
   const startTime = Date.now();
   
-  console.log('[Search] GET /api/search - Request started', {
+  logger.log('GET /api/search - Request started', {
     queryParams: Object.keys(req.query).length,
     timestamp: new Date().toISOString()
   });
@@ -366,7 +367,7 @@ router.get('/api/search', async (req: Request, res: Response) => {
     // Parse unique_prints flag (default false - group by oracle_id)
     searchParams.unique_prints = unique_prints === 'true' || unique_prints === '1';
 
-    console.log('[Search] GET /api/search - Executing search', {
+    logger.log('GET /api/search - Executing search', {
       filters: {
         name: name ? true : false,
         type_line: type_line ? true : false,
@@ -385,7 +386,7 @@ router.get('/api/search', async (req: Request, res: Response) => {
 
     const totalPages = Math.ceil(total / parsedLimit);
 
-    console.log('[Search] GET /api/search - Success', {
+    logger.log('GET /api/search - Success', {
       totalRecords: total,
       cardsReturned: cards.length,
       page: parsedPage,
@@ -406,7 +407,7 @@ router.get('/api/search', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[Search] GET /api/search - Error', {
+    logger.error('GET /api/search - Error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       duration: Date.now() - startTime
