@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 
+import { logger } from '../logger';
+
 export interface SetAttrs {
   id: string;                    // Scryfall set ID (UUID)
   code: string;                  // Set code (e.g., "dsk")
@@ -71,7 +73,7 @@ export class Set {
     // Process in batches
     for (let i = 0; i < transformedSets.length; i += batchSize) {
       const batch = transformedSets.slice(i, i + batchSize);
-      console.log(`Processing set batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedSets.length / batchSize)} (${batch.length} sets)...`);
+      logger.log(`Processing set batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedSets.length / batchSize)} (${batch.length} sets)...`);
 
       // Build bulk insert query for this batch
       const values: any[] = [];
@@ -134,10 +136,10 @@ export class Set {
         totalUpdated += actualUpdates;
 
         if (noChanges > 0) {
-          console.log(`  - ${noChanges} sets already up-to-date (no changes needed)`);
+          logger.log(`  - ${noChanges} sets already up-to-date (no changes needed)`);
         }
       } catch (error) {
-        console.error(`Error bulk creating set batch ${Math.floor(i / batchSize) + 1}:`, error);
+        logger.error(`Error bulk creating set batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
       }
     }

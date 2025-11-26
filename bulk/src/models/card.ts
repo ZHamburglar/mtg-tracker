@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 
+import { logger } from '../logger';
+
 export interface CardAttrs {
   id: string;                          // Scryfall card ID (UUID)
   oracle_id?: string;
@@ -142,7 +144,7 @@ export class Card {
     // Process in batches to avoid max_allowed_packet error
     for (let i = 0; i < transformedCards.length; i += batchSize) {
       const batch = transformedCards.slice(i, i + batchSize);
-      console.log(`Processing card batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedCards.length / batchSize)} (${batch.length} cards)...`);
+      logger.log(`Processing card batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(transformedCards.length / batchSize)} (${batch.length} cards)...`);
       
       // Build bulk insert query for this batch
       const values: any[] = [];
@@ -278,10 +280,10 @@ export class Card {
         totalUpdated += actualUpdates;
         
         if (noChanges > 0) {
-          console.log(`  - ${noChanges} cards already up-to-date (no changes needed)`);
+          logger.log(`  - ${noChanges} cards already up-to-date (no changes needed)`);
         }
       } catch (error) {
-        console.error(`Error bulk creating batch ${Math.floor(i / batchSize) + 1}:`, error);
+        logger.error(`Error bulk creating batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
       }
     }

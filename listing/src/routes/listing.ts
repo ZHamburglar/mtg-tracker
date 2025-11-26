@@ -3,6 +3,8 @@ import { ListingModel, CreateListingInput, UpdateListingInput } from '../models/
 import { validateRequest, currentUser, requireAuth } from '@mtg-tracker/common';
 import { body, param, query, validationResult } from 'express-validator';
 
+import { logger } from '../logger';
+
 const router = express.Router();
 
 /**
@@ -30,7 +32,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.currentUser!.id);
-      console.log(`[Listing] Creating listing for user ${userId}, card ${req.body.card_id}`);
+      logger.log(`Creating listing for user ${userId}, card ${req.body.card_id}`);
       
       const input: CreateListingInput = {
         user_id: userId,
@@ -49,10 +51,10 @@ router.post(
 
       const listing = await ListingModel.createListing(input);
       
-      console.log(`[Listing] Created listing ${listing.id}`);
+      logger.log(`Created listing ${listing.id}`);
       res.status(201).json(listing);
     } catch (error) {
-      console.error('[Listing] Error creating listing:', error);
+      logger.error('Error creating listing:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Failed to create listing' 
       });
@@ -79,7 +81,7 @@ router.get(
       const status = req.query.status as any;
       const listingType = req.query.listing_type as any;
 
-      console.log(`[Listing] Fetching listings for current user ${userId}`);
+      logger.log(`Fetching listings for current user ${userId}`);
       const listings = await ListingModel.getUserListings(userId, status, listingType);
 
       res.json({
@@ -87,7 +89,7 @@ router.get(
         listings
       });
     } catch (error) {
-      console.error('[Listing] Error fetching current user listings:', error);
+      logger.error('Error fetching current user listings:', error);
       res.status(500).json({ error: 'Failed to fetch user listings' });
     }
   }
@@ -110,7 +112,7 @@ router.get(
       const listingId = parseInt(req.params.id!);
       const userId = req.query.user_id ? parseInt(req.query.user_id as string) : undefined;
       
-      console.log(`[Listing] Fetching listing ${listingId}`);
+      logger.log(`Fetching listing ${listingId}`);
       const listing = await ListingModel.getListingById(listingId, userId);
 
       if (!listing) {
@@ -119,7 +121,7 @@ router.get(
 
       res.json(listing);
     } catch (error) {
-      console.error('[Listing] Error fetching listing:', error);
+      logger.error('Error fetching listing:', error);
       res.status(500).json({ error: 'Failed to fetch listing' });
     }
   }
@@ -147,7 +149,7 @@ router.get(
       const status = req.query.status as any;
       const listingType = req.query.listing_type as any;
 
-      console.log(`[Listing] Fetching listings for user ${userId}`);
+      logger.log(`Fetching listings for user ${userId}`);
       const listings = await ListingModel.getUserListings(userId, status, listingType);
 
       res.json({
@@ -155,7 +157,7 @@ router.get(
         listings
       });
     } catch (error) {
-      console.error('[Listing] Error fetching user listings:', error);
+      logger.error('Error fetching user listings:', error);
       res.status(500).json({ error: 'Failed to fetch user listings' });
     }
   }
@@ -183,7 +185,7 @@ router.get(
       const status = (req.query.status as any) || 'active';
       const listingType = req.query.listing_type as any;
 
-      console.log(`[Listing] Fetching listings for card ${cardId}`);
+      logger.log(`Fetching listings for card ${cardId}`);
       const listings = await ListingModel.getCardListings(cardId, status, listingType);
 
       res.json({
@@ -192,7 +194,7 @@ router.get(
         listings
       });
     } catch (error) {
-      console.error('[Listing] Error fetching card listings:', error);
+      logger.error('Error fetching card listings:', error);
       res.status(500).json({ error: 'Failed to fetch card listings' });
     }
   }
@@ -231,12 +233,12 @@ router.put(
         notes: req.body.notes
       };
 
-      console.log(`[Listing] Updating listing ${listingId}`);
+      logger.log(`Updating listing ${listingId}`);
       const listing = await ListingModel.updateListing(listingId, userId, updates);
 
       res.json(listing);
     } catch (error) {
-      console.error('[Listing] Error updating listing:', error);
+      logger.error('Error updating listing:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Failed to update listing' 
       });
@@ -264,12 +266,12 @@ router.post(
       const listingId = parseInt(req.params.id!);
       const userId = req.body.user_id;
 
-      console.log(`[Listing] Cancelling listing ${listingId}`);
+      logger.log(`Cancelling listing ${listingId}`);
       const listing = await ListingModel.cancelListing(listingId, userId);
 
       res.json(listing);
     } catch (error) {
-      console.error('[Listing] Error cancelling listing:', error);
+      logger.error('Error cancelling listing:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Failed to cancel listing' 
       });
@@ -297,12 +299,12 @@ router.post(
       const listingId = parseInt(req.params.id!);
       const userId = req.body.user_id;
 
-      console.log(`[Listing] Marking listing ${listingId} as sold`);
+      logger.log(`Marking listing ${listingId} as sold`);
       const listing = await ListingModel.markAsSold(listingId, userId);
 
       res.json(listing);
     } catch (error) {
-      console.error('[Listing] Error marking listing as sold:', error);
+      logger.error('Error marking listing as sold:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Failed to mark listing as sold' 
       });
@@ -330,12 +332,12 @@ router.delete(
       const listingId = parseInt(req.params.id!);
       const userId = parseInt(req.query.user_id as string);
 
-      console.log(`[Listing] Deleting listing ${listingId}`);
+      logger.log(`Deleting listing ${listingId}`);
       await ListingModel.deleteListing(listingId, userId);
 
       res.status(204).send();
     } catch (error) {
-      console.error('[Listing] Error deleting listing:', error);
+      logger.error('Error deleting listing:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'Failed to delete listing' 
       });

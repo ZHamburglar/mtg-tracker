@@ -5,6 +5,8 @@ import cookieSession from "cookie-session";
 
 import { errorHandler } from "@mtg-tracker/common"
 
+import { logger } from "./logger";
+
 // Import routes here and use them
 import { healthRouter } from "./routes/health";
 import { listingRouter } from "./routes/listing";
@@ -29,7 +31,7 @@ app.use(
 
 const now = new Date();
 const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-console.log(`[${timestamp}] Listing service up and running!!`);
+logger.log(`[${timestamp}] Listing service up and running!!`);
 // Use the imported routes here
 app.use(healthRouter);
 app.use(listingRouter);

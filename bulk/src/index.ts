@@ -9,6 +9,8 @@ import { CardPrice } from './models/cardprice';
 import { Set } from './models/set';
 import { TrendingCard } from './models/trending-card';
 
+import { logger } from './logger';
+
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
@@ -29,16 +31,16 @@ const start = async () => {
   }
 
   if (process.env.MYSQL_DATABASE && process.env.MYSQL_PASSWORD && process.env.MYSQL_USER && process.env.MYSQL_HOST) {
-    console.log("Connecting to MySQL with the following config:");
-    console.log(`Host: ${process.env.MYSQL_HOST}`);
-    console.log(`User: ${process.env.MYSQL_USER}`);
-    console.log(`Database: ${process.env.MYSQL_DATABASE}`);
+    logger.info("Connecting to MySQL with the following config:");
+    logger.info(`Host: ${process.env.MYSQL_HOST}`);
+    logger.info(`User: ${process.env.MYSQL_USER}`);
+    logger.info(`Database: ${process.env.MYSQL_DATABASE}`);
   }
 
 
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
   // You can export the pool or set it in a global variable if needed
-  console.log('pool created:', pool !== undefined);
+  logger.log('pool created:', pool !== undefined);
 
   if (!pool) {
     throw new Error("Failed to create database pool");
@@ -47,13 +49,13 @@ const start = async () => {
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
   const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-  console.log('Starting migrations from:', migrationsDir);
+  logger.log('Starting migrations from:', migrationsDir);
   
   try {
     await runMigrations(pool, migrationsDir, 'bulk');
-    console.log('Migrations completed successfully');
+    logger.log('Migrations completed successfully');
   } catch (error) {
-    console.error('Error running migrations:', error);
+    logger.error('Error running migrations:', error);
     throw error;
   }
 
@@ -65,17 +67,17 @@ const start = async () => {
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
-    console.log(`Listening on port ${port}!`);
+    logger.log(`Listening on port ${port}!`);
   });
 };
 
 start().catch(err => {
-  console.error('Fatal error during startup:', err);
+  logger.error('Fatal error during startup:', err);
   process.exit(1);
 });
 
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, closing database connection...");
+  logger.log("SIGINT received, closing database connection...");
   if (pool) {
     await pool.end();
   }
@@ -83,7 +85,7 @@ process.on("SIGINT", async () => {
 });
 
 process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, closing database connection...");
+  logger.log("SIGTERM received, closing database connection...");
   if (pool) {
     await pool.end();
   }

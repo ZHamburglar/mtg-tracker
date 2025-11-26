@@ -9,6 +9,8 @@ import { errorHandler } from "@mtg-tracker/common"
 import { healthRouter } from "./routes/health";
 import { collectionRouter } from "./routes/collection";
 
+import { logger } from "./logger";
+
 const app = express();
 app.set("trust proxy", true);
 app.use(json());
@@ -29,7 +31,7 @@ app.use(
 
 const now = new Date();
 const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-console.log(`[${timestamp}] Collection service up and running!!`);
+logger.log(`[${timestamp}] Collection service up and running!!`);
 // Use the imported routes here
 app.use(healthRouter);
 app.use(collectionRouter);

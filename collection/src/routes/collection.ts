@@ -3,6 +3,8 @@ import { body, query } from 'express-validator';
 import { validateRequest, currentUser, requireAuth } from '@mtg-tracker/common';
 import { UserCardCollection, FinishType } from '../models/user-card-collection';
 
+import { logger } from '../logger';
+
 const router = express.Router();
 
 /**
@@ -63,7 +65,7 @@ router.get(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error fetching user collection:', error);
+      logger.error('Error fetching user collection:', error);
       res.status(500).json({
         error: 'Failed to fetch collection',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -90,7 +92,7 @@ router.get(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error fetching collection stats:', error);
+      logger.error('Error fetching collection stats:', error);
       res.status(500).json({
         error: 'Failed to fetch collection stats',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -136,7 +138,7 @@ router.get(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error fetching card from collection:', error);
+      logger.error('Error fetching card from collection:', error);
       res.status(500).json({
         error: 'Failed to fetch card',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -188,7 +190,7 @@ router.post(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error adding card to collection:', error);
+      logger.error('Error adding card to collection:', error);
       res.status(500).json({
         error: 'Failed to add card to collection',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -251,7 +253,7 @@ router.put(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error updating card quantity:', error);
+      logger.error('Error updating card quantity:', error);
       res.status(500).json({
         error: 'Failed to update card quantity',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -315,7 +317,7 @@ router.delete(
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error removing card from collection:', error);
+      logger.error('Error removing card from collection:', error);
       res.status(500).json({
         error: 'Failed to remove card from collection',
         message: error instanceof Error ? error.message : 'Unknown error'

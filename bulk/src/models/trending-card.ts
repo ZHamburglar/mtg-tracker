@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 
+import { logger } from '../logger';
+
 export interface TrendingCardDoc {
   id: number;
   card_id: string;
@@ -38,7 +40,7 @@ export class TrendingCard {
     }
 
     const startTime = Date.now();
-    console.log('Starting trending cards calculation...');
+    logger.log('Starting trending cards calculation...');
 
     const timeframes: Array<'24h' | '7d' | '30d'> = ['24h', '7d', '30d'];
     const priceTypes: Array<'price_usd' | 'price_usd_foil' | 'price_eur'> = ['price_usd', 'price_usd_foil', 'price_eur'];
@@ -53,13 +55,13 @@ export class TrendingCard {
     try {
       // Clear old trending data
       await connection.query('TRUNCATE TABLE trending_cards');
-      console.log('Cleared old trending data');
+      logger.log('Cleared old trending data');
 
       // Calculate for each combination
       for (const timeframe of timeframes) {
         for (const priceType of priceTypes) {
           for (const direction of directions) {
-            console.log(`[Trending] Calculating ${timeframe} ${priceType} ${direction}...`);
+            logger.log(`Calculating trending ${timeframe} ${priceType} ${direction}...`);
 
             const intervalMap = {
               '24h': '1 DAY',
@@ -79,7 +81,7 @@ export class TrendingCard {
                WHERE ${priceType} > 0.50`,
               []
             );
-            console.log(`[Trending] Price data available:`, {
+            logger.log(`Trending price data available:`, {
               totalPrices: debugRows[0]?.total_prices,
               uniqueCards: debugRows[0]?.unique_cards,
             oldestPrice: debugRows[0]?.oldest_price,
@@ -145,7 +147,7 @@ export class TrendingCard {
               totalRecordsCreated += recordsCreated;
               
               if (recordsCreated === 0) {
-                console.log(`[Trending] ⚠️  No records created for ${timeframe} ${priceType} ${direction}`);
+                logger.log(`Trending: No records created for ${timeframe} ${priceType} ${direction}`);
                 
                 // Debug: Check the subqueries individually
                 const [currCount] = await connection.query<mysql.RowDataPacket[]>(
@@ -167,12 +169,12 @@ export class TrendingCard {
                   ) tmp WHERE rn = 1`
                 );
                 
-                console.log(`[Trending] Debug: curr prices found: ${currCount[0]?.count}, old prices found: ${oldCount[0]?.count}`);
+                logger.log(`Trending Debug: curr prices found: ${currCount[0]?.count}, old prices found: ${oldCount[0]?.count}`);
               } else {
-                console.log(`[Trending] ✓ Created ${recordsCreated} records for ${timeframe} ${priceType} ${direction}`);
+                logger.log(`Trending ✓ Created ${recordsCreated} records for ${timeframe} ${priceType} ${direction}`);
               }
             } catch (error) {
-              console.error(`[Trending] ✗ Error calculating ${timeframe} ${priceType} ${direction}:`, error);
+              logger.error(`Trending ✗ Error calculating ${timeframe} ${priceType} ${direction}:`, error);
               throw error;
             }
           }
@@ -184,8 +186,8 @@ export class TrendingCard {
     }
 
     const calculationTime = Date.now() - startTime;
-    console.log(`Trending cards calculation completed in ${calculationTime}ms`);
-    console.log(`Total records created: ${totalRecordsCreated}`);
+    logger.log(`Trending cards calculation completed in ${calculationTime}ms`);
+    logger.log(`Total records created: ${totalRecordsCreated}`);
 
     return {
       totalRecordsCreated,
