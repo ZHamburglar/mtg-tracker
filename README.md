@@ -4,7 +4,7 @@ Testing Action
 
 ## Feature Addition Timeline
 - [x] Horizontal Pod Autoscaling - 11/25/25
-- [ ] Health Checks
+- [x] Health Checks - 11/25/25
 - [ ] Redis Caching on Trending 24h/7d/30d calls
 - [ ] Rate Limiting
 - [ ] Auth Enforcement
