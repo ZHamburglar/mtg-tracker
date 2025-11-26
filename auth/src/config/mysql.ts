@@ -22,7 +22,7 @@ export async function createMysqlPoolWithRetry({
 
   while (retries > 0) {
     try {
-      logger.log("Attempting MySQL connection...");
+      logger.info("Attempting MySQL connection...");
 
       // Test connection by getting a connection from pool
       const conn = await pool.getConnection();
@@ -32,7 +32,7 @@ export async function createMysqlPoolWithRetry({
 
       conn.release();
 
-      logger.log("MySQL pool connected successfully!");
+      logger.info("MySQL pool connected successfully!");
       return pool;
 
     } catch (err) {
