@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 
+import { logger } from '../logger';
+
 export interface CardPriceAttrs {
   card_id: string;  // UUID from cards table
   usd: number;
@@ -55,7 +57,7 @@ export class CardPrice {
     // Process in batches
     for (let i = 0; i < prices.length; i += batchSize) {
       const batch = prices.slice(i, i + batchSize);
-      console.log(`Processing card price batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(prices.length / batchSize)} (${batch.length} prices)...`);
+      logger.log(`Processing card price batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(prices.length / batchSize)} (${batch.length} prices)...`);
 
       // Build bulk insert query for this batch
       const values: any[] = [];
@@ -81,7 +83,7 @@ export class CardPrice {
         const [result] = await CardPrice.pool.query<mysql.ResultSetHeader>(query, values);
         totalCreated += result.affectedRows;
       } catch (error) {
-        console.error(`Error bulk creating price batch ${Math.floor(i / batchSize) + 1}:`, error);
+        logger.error(`Error bulk creating price batch ${Math.floor(i / batchSize) + 1}:`, error);
         throw error;
       }
     }

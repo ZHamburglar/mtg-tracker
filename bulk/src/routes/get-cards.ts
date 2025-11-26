@@ -3,6 +3,8 @@ import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
 import { Set } from '../models/set';
 
+import { logger } from '../logger';
+
 const router = express.Router();
 
 router.get('/api/bulk/cards/count', async (req: Request, res: Response) => {
@@ -13,7 +15,7 @@ router.get('/api/bulk/cards/count', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching total cards:', error);
+    logger.error('Error fetching total cards:', error);
     res.status(500).json({
       error: 'Failed to fetch total cards',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -29,7 +31,7 @@ router.get('/api/bulk/cards/pricescount', async (req: Request, res: Response) =>
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching total card prices:', error);
+    logger.error('Error fetching total card prices:', error);
     res.status(500).json({
       error: 'Failed to fetch total card prices',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -45,7 +47,7 @@ router.get('/api/bulk/cards/setcount', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching total sets:', error);
+    logger.error('Error fetching total sets:', error);
     res.status(500).json({
       error: 'Failed to fetch total sets',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -55,7 +57,7 @@ router.get('/api/bulk/cards/setcount', async (req: Request, res: Response) => {
 
 router.get('/api/bulk/cards/pricesduplicatedelete', async (req: Request, res: Response) => {
   try {
-    console.log('Starting duplicate price deletion process...');
+    logger.log('Starting duplicate price deletion process...');
     
     // Find duplicates - same card_id on the same day (DATE(created_at))
     // Keep the earliest timestamp and delete the rest
@@ -78,7 +80,7 @@ router.get('/api/bulk/cards/pricesduplicatedelete', async (req: Request, res: Re
     const [result] = await CardPrice.getPool().execute(deleteQuery);
     const deletedCount = (result as any).affectedRows || 0;
 
-    console.log(`Deleted ${deletedCount} duplicate price entries`);
+    logger.log(`Deleted ${deletedCount} duplicate price entries`);
 
     res.status(200).json({
       message: 'Duplicate prices deleted successfully',
@@ -86,7 +88,7 @@ router.get('/api/bulk/cards/pricesduplicatedelete', async (req: Request, res: Re
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error deleting duplicate prices:', error);
+    logger.error('Error deleting duplicate prices:', error);
     res.status(500).json({
       error: 'Failed to delete duplicate prices',
       message: error instanceof Error ? error.message : 'Unknown error'

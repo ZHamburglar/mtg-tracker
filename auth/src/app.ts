@@ -13,6 +13,8 @@ import { userSignoutRouter } from "./routes/signout-user";
 import { userSigninRouter } from "./routes/signin-user";
 import { healthRouter } from "./routes/health";
 
+import { logger } from "./logger";
+
 
 const app = express();
 app.set("trust proxy", true);
@@ -34,7 +36,7 @@ app.use(
 
 const now = new Date();
 const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-console.log(`[${timestamp}] Auth service up and running!!`);
+logger.log(`[${timestamp}] Auth service up and running!!`);
 // Use the imported routes here
 app.use(healthRouter);
 app.use(newUserRouter);
