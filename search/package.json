@@ -28,6 +28,7 @@
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "express-validator": "^7.3.0",
+    "ioredis": "^5.8.2",
     "mysql2": "^3.15.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"

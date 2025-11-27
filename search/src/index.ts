@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
+import { createRedisClient, closeRedisClient } from './config/redis';
 import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
 import { TrendingCard } from './models/trending-card';
@@ -46,6 +47,11 @@ const start = async () => {
     throw new Error("Failed to create database pool");
   }
 
+  // Connect to Redis
+  logger.log("Connecting to Redis...");
+  await createRedisClient();
+  logger.info('Redis client created successfully');
+
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
   // const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
@@ -81,6 +87,7 @@ process.on("SIGINT", async () => {
   logger.info("SIGINT received, shutting down gracefully...", {
     timestamp: new Date().toISOString()
   });
+  await closeRedisClient();
   if (pool) {
     await pool.end();
     logger.info("Database connection closed");
@@ -92,6 +99,7 @@ process.on("SIGTERM", async () => {
   logger.info("SIGTERM received, shutting down gracefully...", {
     timestamp: new Date().toISOString()
   });
+  await closeRedisClient();
   if (pool) {
     await pool.end();
     logger.info("Database connection closed");
