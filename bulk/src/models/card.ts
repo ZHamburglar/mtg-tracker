@@ -36,6 +36,7 @@ export interface CardAttrs {
   edhrec_rank?: string;
   border_color?: string;
   image_uri_png?: string;
+  image_uri_small?: string;
   gatherer_uri?: string;
   edhrec_uri?: string;
   tcgplayer_uri?: string;
@@ -114,6 +115,7 @@ export class Card {
     if (scryfallCard.border_color) transformed.border_color = scryfallCard.border_color;
     // Truncate URIs to fit VARCHAR(500) columns
     if (scryfallCard.image_uris?.png) transformed.image_uri_png = scryfallCard.image_uris.png.substring(0, 500);
+    if (scryfallCard.image_uris?.small) transformed.image_uri_small = scryfallCard.image_uris.small.substring(0, 500);
     if (scryfallCard.related_uris?.gatherer) transformed.gatherer_uri = scryfallCard.related_uris.gatherer.substring(0, 500);
     if (scryfallCard.related_uris?.edhrec) transformed.edhrec_uri = scryfallCard.related_uris.edhrec.substring(0, 500);
     if (scryfallCard.purchase_uris?.tcgplayer) transformed.tcgplayer_uri = scryfallCard.purchase_uris.tcgplayer.substring(0, 500);
@@ -183,6 +185,7 @@ export class Card {
         card.edhrec_rank,
         card.border_color,
         card.image_uri_png,
+        card.image_uri_small,
         card.gatherer_uri,
         card.edhrec_uri,
         card.tcgplayer_uri,
@@ -198,7 +201,7 @@ export class Card {
         card.nonfoil,
         card.digital
       );
-      return '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      return '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     }).join(',');
 
     const query = `
@@ -207,7 +210,7 @@ export class Card {
         power, toughness, colors, color_identity, keywords, produced_mana, rarity, set_id,
         set_code, set_name, collector_number, artist, artist_ids, illustration_id, flavor_text,
         full_art, textless, promo, reprint, frame, edhrec_rank, border_color, image_uri_png,
-        gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
+        image_uri_small, gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
         games, finishes, reserved, oversized, game_changer, foil, nonfoil, digital
       ) VALUES ${placeholders}
       ON DUPLICATE KEY UPDATE
@@ -243,6 +246,7 @@ export class Card {
         edhrec_rank = VALUES(edhrec_rank),
         border_color = VALUES(border_color),
         image_uri_png = VALUES(image_uri_png),
+        image_uri_small = VALUES(image_uri_small),
         gatherer_uri = VALUES(gatherer_uri),
         edhrec_uri = VALUES(edhrec_uri),
         tcgplayer_uri = VALUES(tcgplayer_uri),
@@ -307,9 +311,9 @@ export class Card {
         power, toughness, colors, color_identity, keywords, produced_mana, rarity, set_id,
         set_code, set_name, collector_number, artist, artist_ids, illustration_id, flavor_text,
         full_art, textless, promo, reprint, frame, edhrec_rank, border_color, image_uri_png,
-        gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
+        image_uri_small, gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
         games, finishes, reserved, oversized, game_changer, foil, nonfoil, digital
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
@@ -346,6 +350,7 @@ export class Card {
       attrs.edhrec_rank,
       attrs.border_color,
       attrs.image_uri_png,
+      attrs.image_uri_small,
       attrs.gatherer_uri,
       attrs.edhrec_uri,
       attrs.tcgplayer_uri,
