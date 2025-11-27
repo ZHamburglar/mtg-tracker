@@ -1,9 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import mysql from 'mysql2/promise';
+import { ServiceLogger } from '../logs/service-log';
 
 export async function runMigrations(pool: mysql.Pool, migrationsDir: string, service: string): Promise<void> {
-  console.log(`Running database migrations for the ${service} service...`);
+  const logger = new ServiceLogger(service);
+
+  logger.log(`Running database migrations for the ${service} service...`);
 
   // Sanitize service name
   const sanitizedService = service.replace(/[^a-zA-Z0-9_]/g, '');
@@ -20,7 +23,7 @@ export async function runMigrations(pool: mysql.Pool, migrationsDir: string, ser
 
   // Check if migrations directory exists
   if (!fs.existsSync(migrationsDir)) {
-    console.log(`No migrations directory found at ${migrationsDir}, skipping migrations...`);
+    logger.log(`No migrations directory found at ${migrationsDir}, skipping migrations...`);
     return;
   }
 
@@ -38,11 +41,11 @@ export async function runMigrations(pool: mysql.Pool, migrationsDir: string, ser
   // Run pending migrations
   for (const file of files) {
     if (executedFiles.has(file)) {
-      console.log(`Migration ${file} already executed, skipping...`);
+      logger.log(`Migration ${file} already executed, skipping...`);
       continue;
     }
 
-    console.log(`Running migration: ${file}`);
+    logger.log(`Running migration: ${file}`);
     const filePath = path.join(migrationsDir, file);
     const sql = fs.readFileSync(filePath, 'utf-8');
 
@@ -56,12 +59,12 @@ export async function runMigrations(pool: mysql.Pool, migrationsDir: string, ser
         [file]
       );
       
-      console.log(`Migration ${file} completed successfully`);
+      logger.log(`Migration ${file} completed successfully`);
     } catch (error) {
-      console.error(`Error running migration ${file}:`, error);
+      logger.error(`Error running migration ${file}:`, error);
       throw error;
     }
   }
 
-  console.log('All migrations completed for the ' + service + ' service');
+  logger.log('All migrations completed for the ' + service + ' service');
 }
