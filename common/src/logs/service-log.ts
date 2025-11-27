@@ -16,10 +16,10 @@ export class ServiceLogger {
         options: {
           colorize: true,
           translateTime: 'mm-dd HH:MM:ss',
-          ignore: 'pid,hostname',
+          ignore: 'pid,hostname,name',
           customLevels: 'log:25',
           customColors: 'log:yellow',
-          messageFormat: '{levelLabel} [{name}]: {msg}',
+          messageFormat: '[{name}] {msg}',
         }
       } : undefined,
     });
