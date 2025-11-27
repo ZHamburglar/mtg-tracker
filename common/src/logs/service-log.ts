@@ -10,12 +10,15 @@ export class ServiceLogger {
       customLevels: {
         log: 25
       },
+      useOnlyCustomLevels: false,
       transport: process.env.NODE_ENV !== 'production' ? {
         target: 'pino-pretty',
         options: {
           colorize: true,
           translateTime: 'mm-dd HH:MM:ss',
           ignore: 'pid,hostname',
+          customLevels: 'log:25',
+          customColors: 'log:yellow',
         }
       } : undefined,
     });
