@@ -11,11 +11,6 @@ export class ServiceLogger {
         log: 25
       },
       useOnlyCustomLevels: false,
-      formatters: {
-        level: (label, number) => {
-          return { level: number, levelLabel: label };
-        }
-      },
       transport: process.env.NODE_ENV !== 'production' ? {
         target: 'pino-pretty',
         options: {
@@ -24,6 +19,7 @@ export class ServiceLogger {
           ignore: 'pid,hostname',
           customLevels: 'log:25',
           customColors: 'log:yellow',
+          messageFormat: '{levelLabel} [{name}]: {msg}',
         }
       } : undefined,
     });
