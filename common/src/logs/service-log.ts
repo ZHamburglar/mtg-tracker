@@ -20,6 +20,7 @@ export class ServiceLogger {
           customLevels: 'log:25',
           customColors: 'log:yellow',
           messageFormat: '[{name}] {msg}',
+          singleLine: true,
         }
       } : undefined,
     });
