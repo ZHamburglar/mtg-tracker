@@ -1,41 +1,60 @@
+import pino from 'pino';
+
 export class ServiceLogger {
-  private serviceName: string;
+  private logger: pino.Logger;
 
   constructor(serviceName: string) {
-    this.serviceName = serviceName;
-  }
-
-  // private getTimestamp(): string {
-  //   const now = new Date();
-  //   const month = String(now.getMonth() + 1).padStart(2, '0');
-  //   const day = String(now.getDate()).padStart(2, '0');
-  //   const hours = String(now.getHours()).padStart(2, '0');
-  //   const minutes = String(now.getMinutes()).padStart(2, '0');
-  //   const seconds = String(now.getSeconds()).padStart(2, '0');
-  //   return `${month}-${day} ${hours}:${minutes}:${seconds}`;
-  // }
-
-  private formatMessage(message: string): string {
-    return `[${this.serviceName}] ${message}`;
+    this.logger = pino({
+      name: serviceName,
+      level: process.env.LOG_LEVEL || 'info',
+      transport: process.env.NODE_ENV !== 'production' ? {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'mm-dd HH:MM:ss',
+          ignore: 'pid,hostname',
+        }
+      } : undefined,
+    });
   }
 
   log(message: string, ...optionalParams: any[]): void {
-    console.log(this.formatMessage(message), ...optionalParams);
+    if (optionalParams.length > 0) {
+      this.logger.info({ level: 'log', ...optionalParams[0] }, message);
+    } else {
+      this.logger.info({ level: 'log' }, message);
+    }
   }
 
   info(message: string, ...optionalParams: any[]): void {
-    console.info(this.formatMessage(message), ...optionalParams);
+    if (optionalParams.length > 0) {
+      this.logger.info({ level: 'info', ...optionalParams[0] }, message);
+    } else {
+      this.logger.info({ level: 'info' }, message);
+    }
   }
 
   warn(message: string, ...optionalParams: any[]): void {
-    console.warn(this.formatMessage(message), ...optionalParams);
+    if (optionalParams.length > 0) {
+      this.logger.warn({ level: 'warn', ...optionalParams[0] }, message);
+    } else {
+      this.logger.warn({ level: 'warn' }, message);
+    }
   }
 
   error(message: string, ...optionalParams: any[]): void {
-    console.error(this.formatMessage(message), ...optionalParams);
+    if (optionalParams.length > 0) {
+      this.logger.error({ level: 'error', ...optionalParams[0] }, message);
+    } else {
+      this.logger.error({ level: 'error' }, message);
+    }
   }
 
   debug(message: string, ...optionalParams: any[]): void {
-    console.debug(this.formatMessage(message), ...optionalParams);
+    if (optionalParams.length > 0) {
+      this.logger.debug({ level: 'debug', ...optionalParams[0] }, message);
+    } else {
+      this.logger.debug({ level: 'debug' }, message);
+    }
   }
 }
