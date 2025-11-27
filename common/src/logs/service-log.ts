@@ -1,12 +1,15 @@
 import pino from 'pino';
 
 export class ServiceLogger {
-  private logger: pino.Logger;
+  private logger: pino.Logger<'log'>;
 
   constructor(serviceName: string) {
     this.logger = pino({
       name: serviceName,
-      level: process.env.LOG_LEVEL || 'info',
+      level: process.env.LOG_LEVEL || 'trace',
+      customLevels: {
+        log: 25
+      },
       transport: process.env.NODE_ENV !== 'production' ? {
         target: 'pino-pretty',
         options: {
@@ -20,9 +23,9 @@ export class ServiceLogger {
 
   log(message: string, ...optionalParams: any[]): void {
     if (optionalParams.length > 0) {
-      this.logger.info({ level: 'log', ...optionalParams[0] }, message);
+      (this.logger as any).log(optionalParams[0], message);
     } else {
-      this.logger.info({ level: 'log' }, message);
+      (this.logger as any).log(message);
     }
   }
 
