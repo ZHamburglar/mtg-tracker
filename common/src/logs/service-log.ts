@@ -17,8 +17,8 @@ export class ServiceLogger {
           colorize: true,
           translateTime: 'mm-dd HH:MM:ss',
           ignore: 'pid,hostname,name',
-          customLevels: 'log:25',
-          customColors: 'log:yellow',
+          customLevels: 'trace:10,debug:20,log:25,info:30,warn:40,error:50,fatal:60',
+          customColors: 'trace:gray,debug:blue,log:yellow,info:green,warn:yellow,error:red,fatal:red',
           messageFormat: '[{name}] {msg}',
           singleLine: true,
         }
