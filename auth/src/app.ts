@@ -11,6 +11,7 @@ import { newUserRouter } from "./routes/newuser";
 import { currentUserRouter } from "./routes/current-user";
 import { userSignoutRouter } from "./routes/signout-user";
 import { userSigninRouter } from "./routes/signin-user";
+import { updateUserRouter } from "./routes/update-user";
 import { healthRouter } from "./routes/health";
 
 import { logger } from "./logger";
@@ -43,6 +44,7 @@ app.use(newUserRouter);
 app.use(currentUserRouter);
 app.use(userSignoutRouter);
 app.use(userSigninRouter);
+app.use(updateUserRouter);
 
 // Error handler must be added AFTER all routes
 app.use(errorHandler);

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { NotAuthorizedError } from '../errors/not-authorized-error';
 
 interface UserPayload {
   id: number;
@@ -15,22 +15,18 @@ declare global {
   }
 }
 
-export const currentUser = (
+export const requireAdmin = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.session?.jwt) {
-    return next();
+  if (!req.currentUser) {
+    throw new NotAuthorizedError();
   }
 
-  try {
-    const payload = jwt.verify(
-      req.session.jwt,
-      process.env.JWT_KEY || 'your-secret-key'
-    ) as UserPayload;
-    req.currentUser = payload;
-  } catch (err) {}
+  if (req.currentUser.role !== 'admin') {
+    throw new NotAuthorizedError();
+  }
 
   next();
 };
