@@ -132,7 +132,8 @@ export class TrendingCard {
             ) old ON curr.card_id = old.card_id AND old.rn = 1
             INNER JOIN cards c ON curr.card_id = c.id
             WHERE curr.rn = 1
-              AND old.${priceType} > 0
+              AND old.${priceType} > 0.50
+              AND curr.${priceType} > 0.50
               AND ABS(curr.${priceType} - old.${priceType}) > 0.01
             ORDER BY percent_change ${orderDirection}
             LIMIT ${limit}

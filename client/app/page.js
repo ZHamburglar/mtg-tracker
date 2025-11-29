@@ -32,7 +32,7 @@ export default function Home() {
     setLoading(true);
     try {
       const response = await client.get(`/api/search/trending?timeframe=${timeframe}`);
-      // console.log(`${timeframe} trending prices:`, response.data);
+      console.log(`${timeframe} trending prices:`, response.data);
       
       if (timeframe === '24h') {
         setTrending24h(response.data.cards);
