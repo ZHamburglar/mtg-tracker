@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'mtg-tracker-client/**'
+      - 'client/**'
 
 jobs:
   build:
@@ -30,6 +30,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      # Set up QEMU for ARM64 emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       # Enable Buildx for multi-arch builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -44,7 +50,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: ./mtg-tracker-client
+          context: ./client
           push: true
           tags: |
             zhamburglar/mtg-tracker-client:latest
