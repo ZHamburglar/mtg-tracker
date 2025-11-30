@@ -4,6 +4,12 @@ const nextConfig = {
     unoptimized: true,
   },
   webpack(config, { dev }) {
+    // Handle SVG imports
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
+
     if (dev) {
       // Reduce CPU/memory from file watching
       config.watchOptions = {

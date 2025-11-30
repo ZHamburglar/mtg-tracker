@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d5c8ff"/>
+      <stop offset="100%" stop-color="#a46bff"/>
+    </linearGradient>
+    <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e3d4ff"/>
+      <stop offset="100%" stop-color="#b278ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Card -->
+  <rect x="20" y="10" width="80" height="100" rx="12"
+        stroke="url(#cardGrad)" stroke-width="4" fill="none" />
+
+  <!-- Inner border (moved inward so dots don’t touch it) -->
+  <rect x="28" y="18" width="64" height="84" rx="10"
+        stroke="#ffffff55" stroke-width="2" fill="none"/>
+
+  <!-- Crystal + Dots -->
+  <g transform="translate(60,60)">
+    <!-- Crystal -->
+    <polygon points="0,-20 16,0 0,20 -16,0"
+             fill="url(#crystalGrad)" stroke="#c497ff" stroke-width="2"/>
+    <polygon points="0,-11 9,0 0,11 -9,0"
+             fill="#1a0f2d" stroke="#e1c7ff" stroke-width="1"/>
+
+    <!-- 5 dots @ 72° increments, radius 28 -->
+    <circle cx="0" cy="-28" r="4" fill="#d9c9ff"/>
+    <circle cx="26.6" cy="-8.5" r="4" fill="#c8aaff"/>
+    <circle cx="16.5" cy="24.1" r="4" fill="#b78cff"/>
+    <circle cx="-16.5" cy="24.1" r="4" fill="#a46bff"/>
+    <circle cx="-26.6" cy="-8.5" r="4" fill="#cfb1ff"/>
+  </g>
+</svg>

@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "MTG Collection Tracker",
   description: "Track your Magic: The Gathering card collection and prices",
+  icons: {
+    icon: '/images/logo.svg',
+  },
 };
 
 async function getCurrentUser() {
