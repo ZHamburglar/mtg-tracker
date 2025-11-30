@@ -177,7 +177,7 @@ export default function Home() {
               <Card className="border-border/50">
                 <CardHeader>
                   <TrendingUp className="h-12 w-12 mb-4 text-primary mx-auto" />
-                  <CardTitle>Track Prices</CardTitle>
+                  <CardTitle>Daily Trending Prices</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
