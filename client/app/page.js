@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Trending from '@/components/trending';
 import buildClient from "./api/build-client";
+import Image from 'next/image';
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -128,6 +129,7 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto text-center">
+            <Image src="/images/logo-animated.svg" alt="MTG Collection Tracker" width={128} height={128} className="mx-auto mb-6" />
             <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               MTG Collection Tracker
             </h1>
