@@ -38,9 +38,10 @@ export class User {
     // Hash the password
     const hashedPassword = await bcrypt.hash(attrs.password, 10);
 
+    // Specify columns explicitly to ensure correct order
     const [result] = await User.pool.query<mysql.ResultSetHeader>(
-      `INSERT INTO users (email, username, password, role) VALUES (?, ?, ?, ?)`,
-      [attrs.email, attrs.username || null, hashedPassword, attrs.role || 'user']
+      `INSERT INTO users (email, password, role, username) VALUES (?, ?, ?, ?)`,
+      [attrs.email, hashedPassword, attrs.role || 'user', attrs.username || null]
     );
 
     const user = await User.findById(result.insertId);
