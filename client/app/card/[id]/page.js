@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2, ArrowLeft, Plus, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, Check, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import PriceChart from '@/components/PriceChart';
 import buildClient from '../../api/build-client';
+import { fr } from 'date-fns/locale';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -59,10 +61,12 @@ function CardImage({ card, isHighResLoaded, onHighResLoad }) {
 
 export default function CardDetailPage() {
   const [card, setCard] = useState(null);
+  const [open, setOpen] = useState(false);
   const [priceHistory, setPriceHistory] = useState([]);
   const [currentPrice, setCurrentPrice] = useState({});
   const [loading, setLoading] = useState(true);
   const [inCollection, setInCollection] = useState(false);
+  const [collectionData, setCollectionData] = useState(null);
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const [addingToCollection, setAddingToCollection] = useState(false);
   
@@ -123,13 +127,42 @@ export default function CardDetailPage() {
 
   const checkCollection = async () => {
     try {
-      const response = await fetch(`/api/collection/check/${cardId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setInCollection(data.inCollection);
-      }
+      const client = buildClient();
+      const { data } = await client.get(`/api/collection/check/${cardId}`);
+      setInCollection(data.inCollection);
+      setCollectionData(data);
     } catch (error) {
       console.error('Check collection error:', error);
+    }
+  };
+
+  const incrementCard = async (finishType) => {
+    setAddingToCollection(true);
+    try {
+      const client = buildClient();
+      await client.post(`/api/collection/${cardId}/increment`, {
+        finish_type: finishType
+      });
+      await checkCollection();
+    } catch (error) {
+      console.error('Increment card error:', error);
+    } finally {
+      setAddingToCollection(false);
+    }
+  };
+
+  const decrementCard = async (finishType) => {
+    setAddingToCollection(true);
+    try {
+      const client = buildClient();
+      await client.post(`/api/collection/${cardId}/decrement`, {
+        finish_type: finishType
+      });
+      await checkCollection();
+    } catch (error) {
+      console.error('Decrement card error:', error);
+    } finally {
+      setAddingToCollection(false);
     }
   };
 
@@ -233,24 +266,71 @@ export default function CardDetailPage() {
               {card.type_line && <Badge variant="outline">{card.type_line}</Badge>}
             </div>
 
-            <Button
-              onClick={toggleCollection}
-              disabled={addingToCollection}
-              size="lg"
-              className="mb-6"
-            >
-              {inCollection ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  In Collection
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add to Collection
-                </>
-              )}
-            </Button>
+            {/* Collection Status */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Collection</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Non-Foil */}
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div>
+                      <p className="font-semibold">Non-Foil</p>
+                      <p className="text-sm text-muted-foreground">
+                        Quantity: {collectionData?.summary?.normalQuantity || 0}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => decrementCard('normal')}
+                        disabled={addingToCollection || (collectionData?.summary?.normalQuantity || 0) === 0}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => incrementCard('normal')}
+                        disabled={addingToCollection}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Foil */}
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div>
+                      <p className="font-semibold">Foil</p>
+                      <p className="text-sm text-muted-foreground">
+                        Quantity: {collectionData?.summary?.foilQuantity || 0}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => decrementCard('foil')}
+                        disabled={addingToCollection || (collectionData?.summary?.foilQuantity || 0) === 0}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => incrementCard('foil')}
+                        disabled={addingToCollection}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Current Prices */}
             {

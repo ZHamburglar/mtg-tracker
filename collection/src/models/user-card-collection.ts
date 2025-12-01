@@ -53,16 +53,17 @@ export class UserCardCollection {
 
     // Use INSERT ... ON DUPLICATE KEY UPDATE to add or increment quantity
     const query = `
-      INSERT INTO user_card_collection (user_id, card_id, quantity, finish_type)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO user_card_collection (user_id, card_id, quantity, available, finish_type)
+      VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         quantity = quantity + VALUES(quantity),
+        available = available + VALUES(available),
         updated_at = CURRENT_TIMESTAMP
     `;
 
     const [result] = await UserCardCollection.pool.query<mysql.ResultSetHeader>(
       query,
-      [params.user_id, params.card_id, quantity, finish_type]
+      [params.user_id, params.card_id, quantity, quantity, finish_type]
     );
 
     // Update cache in background (don't await)
@@ -129,13 +130,15 @@ export class UserCardCollection {
     }
 
     if (quantity && quantity > 0) {
-      // Decrement quantity
+      // Decrement quantity and available
       const query = `
         UPDATE user_card_collection 
-        SET quantity = GREATEST(quantity - ?, 0), updated_at = CURRENT_TIMESTAMP
+        SET quantity = GREATEST(quantity - ?, 0),
+            available = GREATEST(available - ?, 0),
+            updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ? AND card_id = ? AND finish_type = ?
       `;
-      await UserCardCollection.pool.query(query, [quantity, user_id, card_id, finish_type]);
+      await UserCardCollection.pool.query(query, [quantity, quantity, user_id, card_id, finish_type]);
 
       // Delete if quantity reaches 0
       const deleteQuery = `
