@@ -50,10 +50,48 @@ router.get(
       }
       const { cards, total } = await UserCardCollection.findByUser(userId, options);
 
+      // Enrich collection with card data and prices
+      const pool = UserCardCollection.getPool();
+      const enrichedCards = await Promise.all(
+        cards.map(async (collectionItem) => {
+          // Get card details
+          const [cardRows] = await pool.query<any[]>(
+            'SELECT id, name, set_name, set_code, rarity, image_uri_png, image_uri_small FROM cards WHERE id = ?',
+            [collectionItem.card_id]
+          );
+          
+          // Get latest price
+          const [priceRows] = await pool.query<any[]>(
+            'SELECT price_usd, price_usd_foil FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
+            [collectionItem.card_id]
+          );
+
+          return {
+            ...collectionItem,
+            cardData: {
+              id: cardRows[0]?.id || null,
+              name: cardRows[0]?.name || 'Unknown Card',
+              set_name: cardRows[0]?.set_name || null,
+              set_code: cardRows[0]?.set_code || null,
+              rarity: cardRows[0]?.rarity || null,
+              image_uri_png: cardRows[0]?.image_uri_png || null,
+              image_uri_small: cardRows[0]?.image_uri_small || null,
+              prices: {
+                usd: priceRows[0]?.price_usd || null,
+                usd_foil: priceRows[0]?.price_usd_foil || null
+              }
+            }
+          };
+        })
+      );
+
       const totalPages = Math.ceil(total / limit);
 
+      // Get cached collection value
+      const cachedValue = await UserCardCollection.getCachedCollectionValue(userId);
+
       res.status(200).json({
-        cards,
+        cards: enrichedCards,
         pagination: {
           currentPage: page,
           pageSize: limit,
@@ -62,6 +100,12 @@ router.get(
           hasNextPage: page < totalPages,
           hasPreviousPage: page > 1
         },
+        collectionValue: cachedValue ? {
+          totalValueUsd: parseFloat(cachedValue.total_value_usd.toString()),
+          totalCards: cachedValue.total_cards,
+          totalQuantity: cachedValue.total_quantity,
+          lastUpdated: cachedValue.last_updated
+        } : null,
         timestamp: new Date().toISOString()
       });
     } catch (error) {

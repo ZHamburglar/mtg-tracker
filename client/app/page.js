@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Trending from '@/components/trending';
 import buildClient from "./api/build-client";
 import Image from 'next/image';
+import Link from "next/link";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -140,8 +141,10 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               <Card className="border-border/50">
                 <CardHeader>
-                  <Search className="h-12 w-12 mb-4 text-primary mx-auto" />
-                  <CardTitle>Search Cards</CardTitle>
+                  <Link href="/search">
+                    <Search className="h-12 w-12 mb-4 text-primary mx-auto" />
+                    <CardTitle>Search Cards</CardTitle>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
@@ -152,8 +155,10 @@ export default function Home() {
               
               <Card className="border-border/50">
                 <CardHeader>
-                  <Library className="h-12 w-12 mb-4 text-primary mx-auto" />
-                  <CardTitle>Build Collection</CardTitle>
+                  <Link href="/collection">
+                    <Library className="h-12 w-12 mb-4 text-primary mx-auto" />
+                    <CardTitle>Build Collection</CardTitle>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
