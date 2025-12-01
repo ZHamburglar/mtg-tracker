@@ -410,20 +410,27 @@ router.post(
         });
       }
 
-      // Remove 1 card
-      const success = await UserCardCollection.removeCard(
+      // Check if card exists before decrementing
+      const existingCard = await UserCardCollection.findByUserCardAndFinish(
         userId,
         cardId,
-        finish_type,
-        1
+        finish_type
       );
 
-      if (!success) {
+      if (!existingCard) {
         return res.status(404).json({
           error: 'Card not found in collection',
           cardId
         });
       }
+
+      // Remove 1 card
+      await UserCardCollection.removeCard(
+        userId,
+        cardId,
+        finish_type,
+        1
+      );
 
       // Get updated card info (may be null if quantity reached 0)
       const card = await UserCardCollection.findByUserCardAndFinish(
