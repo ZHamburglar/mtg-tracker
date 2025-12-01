@@ -79,7 +79,7 @@ export default function CollectionPage() {
             {collection.map((item) => {
               const card = item.cardData;
               const image = getCardImage(card);
-              console.log('Rendering card in collection:', card);
+              console.log('Rendering card in collection:', card, item);
               return (
                 <Card
                   key={item.id}
@@ -100,6 +100,11 @@ export default function CollectionPage() {
                   <CardContent className="p-3">
                     <h3 className="font-semibold text-sm mb-1 truncate">{card.name}</h3>
                     <p className="text-xs text-muted-foreground">{card.set_name}</p>
+                  </CardContent>
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold text-sm mb-1 truncate">{item.finish_type}</h3>
+                    <p className="text-xs text-muted-foreground">Total: {item.quantity}</p>
+                    <p className="text-xs text-muted-foreground">Available: {item.available}</p>
                   </CardContent>
                   <CardFooter className="p-3 pt-0 flex justify-between items-center">
                     <Badge variant="secondary" className="text-xs">
