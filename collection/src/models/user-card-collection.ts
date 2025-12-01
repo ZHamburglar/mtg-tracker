@@ -65,6 +65,11 @@ export class UserCardCollection {
       [params.user_id, params.card_id, quantity, finish_type]
     );
 
+    // Update cache in background (don't await)
+    UserCardCollection.updateCollectionCache(params.user_id).catch(err => 
+      console.error('Failed to update collection cache:', err)
+    );
+
     // Fetch the updated record
     return UserCardCollection.findByUserCardAndFinish(
       params.user_id,
@@ -96,6 +101,11 @@ export class UserCardCollection {
     await UserCardCollection.pool.query(
       query,
       [params.quantity, params.user_id, params.card_id, params.finish_type]
+    );
+
+    // Update cache in background (don't await)
+    UserCardCollection.updateCollectionCache(params.user_id).catch(err => 
+      console.error('Failed to update collection cache:', err)
     );
 
     return UserCardCollection.findByUserCardAndFinish(
@@ -143,8 +153,17 @@ export class UserCardCollection {
         query,
         [user_id, card_id, finish_type]
       );
+      // Update cache in background (don't await)
+      UserCardCollection.updateCollectionCache(user_id).catch(err => 
+        console.error('Failed to update collection cache:', err)
+      );
       return result.affectedRows > 0;
     }
+
+    // Update cache in background (don't await)
+    UserCardCollection.updateCollectionCache(user_id).catch(err => 
+      console.error('Failed to update collection cache:', err)
+    );
 
     return true;
   }
@@ -318,5 +337,81 @@ export class UserCardCollection {
       total_quantity: totalRows[0]?.total_quantity || 0,
       by_finish: finishRows as { finish_type: FinishType; count: number; quantity: number }[]
     };
+  }
+
+  /**
+   * Update cached collection value for a user
+   * Should be called whenever collection changes (add/update/remove)
+   */
+  static async updateCollectionCache(user_id: number): Promise<void> {
+    if (!UserCardCollection.pool) {
+      throw new Error('Database pool not initialized. Call UserCardCollection.setPool() first.');
+    }
+
+    // Calculate total value based on quantity and finish type
+    const query = `
+      INSERT INTO user_collection_cache (user_id, total_value_usd, total_cards, total_quantity)
+      SELECT 
+        ucc.user_id,
+        COALESCE(SUM(
+          ucc.quantity * 
+          CASE 
+            WHEN ucc.finish_type = 'foil' THEN COALESCE(cp.price_usd_foil, 0)
+            ELSE COALESCE(cp.price_usd, 0)
+          END
+        ), 0) as total_value_usd,
+        COUNT(*) as total_cards,
+        SUM(ucc.quantity) as total_quantity
+      FROM user_card_collection ucc
+      LEFT JOIN (
+        SELECT card_id, price_usd, price_usd_foil
+        FROM card_prices cp1
+        WHERE created_at = (
+          SELECT MAX(created_at) 
+          FROM card_prices cp2 
+          WHERE cp2.card_id = cp1.card_id
+        )
+      ) cp ON ucc.card_id = cp.card_id
+      WHERE ucc.user_id = ?
+      GROUP BY ucc.user_id
+      ON DUPLICATE KEY UPDATE 
+        total_value_usd = VALUES(total_value_usd),
+        total_cards = VALUES(total_cards),
+        total_quantity = VALUES(total_quantity),
+        last_updated = CURRENT_TIMESTAMP
+    `;
+
+    await UserCardCollection.pool.query(query, [user_id]);
+  }
+
+  /**
+   * Get cached collection value for a user
+   */
+  static async getCachedCollectionValue(user_id: number): Promise<{
+    total_value_usd: number;
+    total_cards: number;
+    total_quantity: number;
+    last_updated: Date;
+  } | null> {
+    if (!UserCardCollection.pool) {
+      throw new Error('Database pool not initialized. Call UserCardCollection.setPool() first.');
+    }
+
+    const query = `
+      SELECT total_value_usd, total_cards, total_quantity, last_updated
+      FROM user_collection_cache
+      WHERE user_id = ?
+    `;
+
+    const [rows] = await UserCardCollection.pool.query<mysql.RowDataPacket[]>(query, [user_id]);
+    
+    if (rows.length === 0) {
+      // Cache doesn't exist, create it
+      await UserCardCollection.updateCollectionCache(user_id);
+      const [newRows] = await UserCardCollection.pool.query<mysql.RowDataPacket[]>(query, [user_id]);
+      return newRows[0] as any || null;
+    }
+
+    return rows[0] as any;
   }
 }
