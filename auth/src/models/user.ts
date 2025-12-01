@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 
 export interface UserAttrs {
   email: string;
-  username?: string;
+  username: string;
   password: string;
   role?: 'user' | 'admin';
 }
@@ -11,7 +11,7 @@ export interface UserAttrs {
 export interface UserDoc {
   id: number;
   email: string;
-  username?: string;
+  username: string;
   password: string;
   is_active: boolean;
   is_verified: boolean;
@@ -41,7 +41,7 @@ export class User {
     // Specify columns explicitly to ensure correct order
     const [result] = await User.pool.query<mysql.ResultSetHeader>(
       `INSERT INTO users (email, password, role, username) VALUES (?, ?, ?, ?)`,
-      [attrs.email, hashedPassword, attrs.role || 'user', attrs.username || null]
+      [attrs.email, hashedPassword, attrs.role || 'user', attrs.username]
     );
 
     const user = await User.findById(result.insertId);
@@ -67,7 +67,7 @@ export class User {
 
   static async findByEmail(email: string): Promise<UserDoc | null> {
     const [rows] = await User.pool.query<mysql.RowDataPacket[]>(
-      `SELECT * FROM users WHERE email = ?`,
+      `SELECT id, email, username, is_active, is_verified, role, created_at, updated_at FROM users WHERE email = ?`,
       [email]
     );
 
