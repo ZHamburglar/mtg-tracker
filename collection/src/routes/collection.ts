@@ -146,6 +146,94 @@ router.get(
 );
 
 /**
+ * GET /api/collection/check/:cardId
+ * Check if a card exists in user's collection and return all versions
+ */
+router.get(
+  '/api/collection/check/:cardId',
+  currentUser,
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.currentUser!.id);
+      const { cardId } = req.params;
+
+      if (!cardId) {
+        return res.status(400).json({
+          error: 'Card ID is required'
+        });
+      }
+
+      const versions = await UserCardCollection.findAllFinishesByUserAndCard(userId, cardId);
+
+      if (versions.length === 0) {
+        return res.status(200).json({
+          inCollection: false,
+          cardId,
+          versions: [],
+          totalQuantity: 0,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const totalQuantity = await UserCardCollection.getTotalQuantity(userId, cardId);
+
+      // Get card details and prices for each version
+      const pool = UserCardCollection.getPool();
+      const enrichedVersions = await Promise.all(
+        versions.map(async (version) => {
+          const [cardRows] = await pool.query<any[]>(
+            'SELECT id, name, set_name, set_code, rarity, image_uri_png, image_uri_small FROM cards WHERE id = ?',
+            [version.card_id]
+          );
+          
+          const [priceRows] = await pool.query<any[]>(
+            'SELECT price_usd, price_usd_foil FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
+            [version.card_id]
+          );
+
+          return {
+            ...version,
+            cardData: {
+              id: cardRows[0]?.id || null,
+              name: cardRows[0]?.name || 'Unknown Card',
+              set_name: cardRows[0]?.set_name || null,
+              set_code: cardRows[0]?.set_code || null,
+              rarity: cardRows[0]?.rarity || null,
+              image_uri_png: cardRows[0]?.image_uri_png || null,
+              image_uri_small: cardRows[0]?.image_uri_small || null
+            },
+            currentPrice: version.finish_type === 'foil' 
+              ? priceRows[0]?.price_usd_foil 
+              : priceRows[0]?.price_usd,
+            priceType: version.finish_type === 'foil' ? 'usd_foil' : 'usd'
+          };
+        })
+      );
+
+      res.status(200).json({
+        inCollection: true,
+        cardId,
+        versions: enrichedVersions,
+        totalQuantity,
+        summary: {
+          normalQuantity: versions.find(v => v.finish_type === 'normal')?.quantity || 0,
+          foilQuantity: versions.find(v => v.finish_type === 'foil')?.quantity || 0,
+          etchedQuantity: versions.find(v => v.finish_type === 'etched')?.quantity || 0
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error checking card in collection:', error);
+      res.status(500).json({
+        error: 'Failed to check card',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/collection/:cardId
  * Get all versions (finishes) of a specific card in user's collection
  */
