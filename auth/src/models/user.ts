@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 
 export interface UserAttrs {
   email: string;
+  username?: string;
   password: string;
   role?: 'user' | 'admin';
 }
@@ -10,6 +11,7 @@ export interface UserAttrs {
 export interface UserDoc {
   id: number;
   email: string;
+  username?: string;
   password: string;
   is_active: boolean;
   is_verified: boolean;
@@ -37,8 +39,8 @@ export class User {
     const hashedPassword = await bcrypt.hash(attrs.password, 10);
 
     const [result] = await User.pool.query<mysql.ResultSetHeader>(
-      `INSERT INTO users (email, password, role) VALUES (?, ?, ?)`,
-      [attrs.email, hashedPassword, attrs.role || 'user']
+      `INSERT INTO users (email, username, password, role) VALUES (?, ?, ?, ?)`,
+      [attrs.email, attrs.username || null, hashedPassword, attrs.role || 'user']
     );
 
     const user = await User.findById(result.insertId);
@@ -90,6 +92,11 @@ export class User {
     if (updates.email) {
       fields.push('email = ?');
       values.push(updates.email);
+    }
+
+    if (updates.username !== undefined) {
+      fields.push('username = ?');
+      values.push(updates.username);
     }
 
     if (updates.password) {
