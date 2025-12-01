@@ -7,11 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import buildClient from '../api/build-client';
+
 
 function SearchPageContent() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q');
@@ -26,10 +29,15 @@ function SearchPageContent() {
   const searchCards = async (q) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/cards/search?q=${encodeURIComponent(q)}`);
-      if (response.ok) {
-        const data = await response.json();
+      const client = buildClient();
+      const { data } = await client.get(`/api/search?name=${encodeURIComponent(q)}`);
+      console.log('Search response:', data);
+      if (data) {
         setCards(data.cards || []);
+        setPagination({
+          page: data.page || 1,
+          totalPages: data.totalPages || 1,
+        });
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -39,6 +47,7 @@ function SearchPageContent() {
   };
 
   const handleSearch = (e) => {
+    console.log('Handling search for query:', searchQuery);
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
@@ -46,8 +55,8 @@ function SearchPageContent() {
   };
 
   const getCardImage = (card) => {
-    if (card.image_uris?.normal) return card.image_uris.normal;
-    if (card.card_faces?.[0]?.image_uris?.normal) return card.card_faces[0].image_uris.normal;
+    if (card.image_uri_png) return card.image_uri_png;
+    if (card.image_uri_small) return card.image_uri_small;
     return null;
   };
 
@@ -61,10 +70,10 @@ function SearchPageContent() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
+          {/* <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
-          </Button>
+          </Button> */}
           
           <form onSubmit={handleSearch} className="flex gap-2">
             <Input
@@ -98,7 +107,7 @@ function SearchPageContent() {
                   >
                     {image ? (
                       <img
-                        src={image}
+                        src={card.image_uri_png}
                         alt={card.name}
                         className="w-full h-auto object-contain"
                       />
