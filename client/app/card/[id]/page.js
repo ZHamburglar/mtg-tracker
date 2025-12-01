@@ -8,6 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from '@/components/ui/select';
 import PriceChart from '@/components/PriceChart';
 import buildClient from '../../api/build-client';
 import { fr } from 'date-fns/locale';
@@ -103,6 +115,7 @@ export default function CardDetailPage() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prints`);
+      console.log('dAll prints response:', data);
       if (data && data.cards) {
         setAllPrints(data.cards);
       }
@@ -260,15 +273,92 @@ export default function CardDetailPage() {
                 <span className="text-muted-foreground">No Image Available</span>
               </div>
             )}
+
+            {/* All Prints Section */}
+            {allPrints.length > 1 && (
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-4">
+                  All Printings ({allPrints.length})
+                </h2>
+                <div className="grid grid-cols-4 gap-4">
+                  {allPrints.map((print) => (
+                    <Card
+                      key={print.id}
+                      className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                        print.id === cardId ? 'ring-2 ring-primary' : ''
+                      }`}
+                      onClick={() => router.push(`/card/${print.id}`)}
+                    >
+                      <div className="relative">
+                        {print.image_uri_small ? (
+                          <img
+                            src={print.image_uri_small}
+                            alt={`${print.name} - ${print.set_name}`}
+                            className="w-full h-auto object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-muted flex items-center justify-center">
+                            <span className="text-muted-foreground text-xs">No Image</span>
+                          </div>
+                        )}
+                        {print.id === cardId && (
+                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                            Current
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-3">
+                        <p className="text-xs font-semibold truncate">{print.set_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {print.set_code?.toUpperCase()} #{print.collector_number}
+                        </p>
+                        {print.released_at && (
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(print.released_at).getFullYear()}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Card Details */}
           <div>
             <div className="mb-4">
               <h1 className="text-4xl font-bold mb-2">{card.name}</h1>
-              <p className="text-muted-foreground">
-                {card.set_name} ({card.set_name.toUpperCase()}) #{card.collector_number}
-              </p>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <span>Set:</span>
+                {allPrints.length > 1 ? (
+                  <Select value={cardId} onValueChange={(value) => router.push(`/card/${value}`)}>
+                    <SelectTrigger className="w-auto">
+                      <SelectValue>
+                        {card.set_name} ({card.set_code?.toUpperCase()}) #{card.collector_number}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectScrollUpButton />
+                      <SelectGroup>
+                        <SelectLabel>All Prints</SelectLabel>
+                        <SelectSeparator />
+                        {allPrints.map((print) => (
+                          <SelectItem
+                            key={print.id}
+                            value={print.id}
+                          >
+                            {print.set_name} ({print.set_code?.toUpperCase()}) #{print.collector_number}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectScrollDownButton />
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span>{card.set_name} ({card.set_code?.toUpperCase()}) #{card.collector_number}</span>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-2 mb-6">
@@ -469,56 +559,6 @@ export default function CardDetailPage() {
             </Card>
           </div>
         </div>
-
-        {/* All Prints Section */}
-        {allPrints.length > 1 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">
-              All Printings ({allPrints.length})
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {allPrints.map((print) => (
-                <Card
-                  key={print.id}
-                  className={`cursor-pointer hover:shadow-lg transition-shadow ${
-                    print.id === cardId ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => router.push(`/card/${print.id}`)}
-                >
-                  <div className="relative">
-                    {print.image_uri_small ? (
-                      <img
-                        src={print.image_uri_small}
-                        alt={`${print.name} - ${print.set_name}`}
-                        className="w-full h-auto object-contain"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-muted flex items-center justify-center">
-                        <span className="text-muted-foreground text-xs">No Image</span>
-                      </div>
-                    )}
-                    {print.id === cardId && (
-                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                        Current
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-3">
-                    <p className="text-xs font-semibold truncate">{print.set_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {print.set_code?.toUpperCase()} #{print.collector_number}
-                    </p>
-                    {print.released_at && (
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(print.released_at).getFullYear()}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

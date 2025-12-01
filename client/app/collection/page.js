@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import buildClient from './../api/build-client';
-import { set } from 'date-fns';
+import { format, set } from 'date-fns';
 
 export default function CollectionPage() {
   const [collection, setCollection] = useState([]);
@@ -19,6 +19,28 @@ export default function CollectionPage() {
   useEffect(() => {
     loadCollection();
   }, []);
+
+  const formatPrice = (item) => {
+    console.log('Formatting price:', item);
+    
+    // Map finish_type to price field
+    let priceField;
+    if (item.finish_type === 'foil') {
+      priceField = 'usd_foil';
+    } else if (item.finish_type === 'etched') {
+      priceField = 'usd_etched';
+    } else {
+      priceField = 'usd';
+    }
+    
+    const price = item.cardData.prices?.[priceField];
+    
+    if (!price) {
+      return 'N/A';
+    }
+    
+    return `$${parseFloat(price).toFixed(2)}`;
+  };
 
   const loadCollection = async () => {
     setLoading(true);
@@ -112,7 +134,7 @@ export default function CollectionPage() {
                     </Badge>
                     {card.prices?.usd && (
                       <span className="text-sm font-semibold text-green-600">
-                        ${parseFloat(card.prices.usd).toFixed(2)}
+                        {formatPrice(item)}
                       </span>
                     )}
                   </CardFooter>
