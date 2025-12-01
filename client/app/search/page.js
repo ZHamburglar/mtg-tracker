@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,58 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import buildClient from '../api/build-client';
 
+function CardImage({ card, isHighResLoaded, onHighResLoad }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '100px' } // Start loading 100px before entering viewport
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={imgRef} className="relative w-full">
+      <img
+        src={card.image_uri_small}
+        alt={card.name}
+        loading="lazy"
+        className={`w-full h-auto object-contain transition-opacity duration-300 ${
+          isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
+        }`}
+      />
+      {isVisible && (
+        <img
+          src={card.image_uri_png}
+          alt={card.name}
+          className={`w-full h-auto object-contain transition-opacity duration-300 ${
+            isHighResLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={onHighResLoad}
+        />
+      )}
+    </div>
+  );
+}
 
 function SearchPageContent() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
+  const [loadedImages, setLoadedImages] = useState({});
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q');
@@ -99,6 +145,7 @@ function SearchPageContent() {
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {cards.map((card) => {
                 const image = getCardImage(card);
+                const isHighResLoaded = loadedImages[card.id];
                 return (
                   <Card
                     key={card.id}
@@ -106,10 +153,10 @@ function SearchPageContent() {
                     onClick={() => router.push(`/card/${card.id}`)}
                   >
                     {image ? (
-                      <img
-                        src={card.image_uri_png}
-                        alt={card.name}
-                        className="w-full h-auto object-contain"
+                      <CardImage
+                        card={card}
+                        isHighResLoaded={loadedImages[card.id]}
+                        onHighResLoad={() => setLoadedImages(prev => ({ ...prev, [card.id]: true }))}
                       />
                     ) : (
                       <div className="w-full h-64 bg-muted flex items-center justify-center">
