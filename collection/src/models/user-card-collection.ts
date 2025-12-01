@@ -130,22 +130,27 @@ export class UserCardCollection {
     }
 
     if (quantity && quantity > 0) {
-      // Decrement quantity and available
-      const query = `
-        UPDATE user_card_collection 
-        SET quantity = GREATEST(quantity - ?, 0),
-            available = GREATEST(available - ?, 0),
-            updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = ? AND card_id = ? AND finish_type = ?
-      `;
-      await UserCardCollection.pool.query(query, [quantity, quantity, user_id, card_id, finish_type]);
-
-      // Delete if quantity reaches 0
+      // Delete if quantity would reach 0 or below
       const deleteQuery = `
         DELETE FROM user_card_collection 
-        WHERE user_id = ? AND card_id = ? AND finish_type = ? AND quantity = 0
+        WHERE user_id = ? AND card_id = ? AND finish_type = ? AND quantity <= ?
       `;
-      await UserCardCollection.pool.query(deleteQuery, [user_id, card_id, finish_type]);
+      const [deleteResult] = await UserCardCollection.pool.query<mysql.ResultSetHeader>(
+        deleteQuery, 
+        [user_id, card_id, finish_type, quantity]
+      );
+
+      // If not deleted, decrement quantity and available
+      if (deleteResult.affectedRows === 0) {
+        const updateQuery = `
+          UPDATE user_card_collection 
+          SET quantity = quantity - ?,
+              available = available - ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ? AND card_id = ? AND finish_type = ?
+        `;
+        await UserCardCollection.pool.query(updateQuery, [quantity, quantity, user_id, card_id, finish_type]);
+      }
     } else {
       // Remove completely
       const query = `
