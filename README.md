@@ -44,7 +44,7 @@ graph TB
     subgraph "Data Layer"
         NATS["NATS Message Queue<br/>━━━━━━━━━━<br/>URL: nats://nats-srv:4222<br/>Cluster ID: mtg-tracker<br/>JetStream Enabled<br/><br/>Event-driven communication"]
         
-        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• collections<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
+        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• user_card_collection<br/>• user_collection_cache<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
         
         Redis["Redis 7<br/>━━━━━━━━━━<br/>Host: redis-srv:6379<br/><br/>Caching:<br/>• Trending cards (24h/7d USD)<br/>• 24h TTL<br/><br/>HPA: 1-3 replicas<br/>256Mi-512Mi RAM<br/>100m-500m CPU"]
     end
