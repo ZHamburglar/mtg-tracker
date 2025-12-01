@@ -8,11 +8,13 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
 
       expect(response.body.email).toBe('test@example.com');
+      expect(response.body.username).toBe('testuser');
       expect(response.body.id).toBeDefined();
       expect(response.body.role).toBe('user');
       expect(response.body.password).toBeUndefined(); // Should not return password
@@ -23,6 +25,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -35,6 +38,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'newuser@example.com',
+          username: 'newuser',
           password: 'password123'
         })
         .expect(201);
@@ -49,6 +53,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'invalid-email',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(400);
@@ -58,6 +63,7 @@ describe('POST /api/users/newuser', () => {
       await request(app)
         .post('/api/users/newuser')
         .send({
+          username: 'testuser',
           password: 'password123'
         })
         .expect(400);
@@ -68,6 +74,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: '',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(400);
@@ -78,6 +85,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -86,6 +94,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser2',
           password: 'differentpass123'
         })
         .expect(400);
@@ -98,6 +107,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'Test@Example.com',
+          username: 'testuser1',
           password: 'password123'
         })
         .expect(201);
@@ -107,6 +117,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser2',
           password: 'password123'
         })
         .expect(201);
@@ -118,7 +129,8 @@ describe('POST /api/users/newuser', () => {
       await request(app)
         .post('/api/users/newuser')
         .send({
-          email: 'test@example.com'
+          email: 'test@example.com',
+          username: 'testuser'
         })
         .expect(400);
     });
@@ -128,6 +140,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'short'
         })
         .expect(400);
@@ -138,6 +151,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'a'.repeat(26)
         })
         .expect(400);
@@ -148,6 +162,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: '12345678'
         })
         .expect(201);
@@ -158,6 +173,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'a'.repeat(25)
         })
         .expect(201);
@@ -168,6 +184,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: '  password123  '
         })
         .expect(201);
@@ -189,6 +206,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'invalid',
+          username: 'testuser',
           password: 'short'
         })
         .expect(400);
@@ -201,6 +219,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123',
           extraField: 'should be ignored',
           role: 'admin' // Should not be settable via this route
@@ -218,6 +237,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -232,6 +252,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: password
         })
         .expect(201);
@@ -246,6 +267,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -262,12 +284,14 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('email');
+      expect(response.body).toHaveProperty('username');
       expect(response.body).toHaveProperty('role');
       expect(response.body).not.toHaveProperty('password');
       expect(response.body).not.toHaveProperty('is_active');
@@ -279,6 +303,7 @@ describe('POST /api/users/newuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201)

@@ -9,6 +9,7 @@ describe('POST /api/users/signout', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -81,6 +82,7 @@ describe('POST /api/users/signout', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
