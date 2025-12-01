@@ -4,6 +4,7 @@ import { NotAuthorizedError } from '../errors/not-authorized-error';
 interface UserPayload {
   id: number;
   email: string;
+  username: string;
   role: 'user' | 'admin';
 }
 
