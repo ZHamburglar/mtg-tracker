@@ -26,7 +26,6 @@ ChartJS.register(
 
 export default function PriceChart({ priceHistory }) {
   if (!priceHistory || priceHistory.length === 0) {
-    console.log('EARLY RETURN: No price history available');
     return (
       <div className="text-center py-8 text-muted-foreground">
         No price history available
@@ -76,9 +75,6 @@ export default function PriceChart({ priceHistory }) {
       }
     ].filter(dataset => dataset.data.some(value => value > 0))
   };
-
-  console.log('Final chartData:', chartData);
-  console.log('Datasets after filter:', chartData.datasets.length);
 
   const options = {
     responsive: true,
