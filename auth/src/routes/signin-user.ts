@@ -50,7 +50,14 @@ router.post(
       jwt: userJwt
     };
 
-    res.status(200).send(existingUser);
+    res.status(200).send({
+      id: existingUser.id,
+      email: existingUser.email,
+      username: existingUser.username,
+      role: existingUser.role,
+      is_active: existingUser.is_active,
+      is_verified: existingUser.is_verified
+    });
   }
 );
 
