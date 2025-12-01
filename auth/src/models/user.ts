@@ -54,7 +54,7 @@ export class User {
 
   static async findById(id: number): Promise<UserDoc | null> {
     const [rows] = await User.pool.query<mysql.RowDataPacket[]>(
-      `SELECT * FROM users WHERE id = ?`,
+      `SELECT id, email, username, is_active, is_verified, role, created_at, updated_at FROM users WHERE id = ?`,
       [id]
     );
 
@@ -68,6 +68,19 @@ export class User {
   static async findByEmail(email: string): Promise<UserDoc | null> {
     const [rows] = await User.pool.query<mysql.RowDataPacket[]>(
       `SELECT id, email, username, is_active, is_verified, role, created_at, updated_at FROM users WHERE email = ?`,
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return rows[0] as UserDoc;
+  }
+
+  static async findByEmailWithPassword(email: string): Promise<UserDoc | null> {
+    const [rows] = await User.pool.query<mysql.RowDataPacket[]>(
+      `SELECT id, email, password, username, is_active, is_verified, role, created_at, updated_at FROM users WHERE email = ?`,
       [email]
     );
 

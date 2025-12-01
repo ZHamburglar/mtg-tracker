@@ -9,6 +9,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -31,6 +32,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -52,6 +54,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -103,6 +106,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);
@@ -145,6 +149,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'user1@example.com',
+          username: 'user1',
           password: 'password123'
         })
         .expect(201);
@@ -156,6 +161,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'user2@example.com',
+          username: 'user2',
           password: 'password123'
         })
         .expect(201);
@@ -205,6 +211,7 @@ describe('GET /api/users/currentuser', () => {
         .post('/api/users/newuser')
         .send({
           email: 'test@example.com',
+          username: 'testuser',
           password: 'password123'
         })
         .expect(201);

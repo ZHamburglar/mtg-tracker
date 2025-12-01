@@ -13,7 +13,7 @@ jest.mock('mysql2/promise', () => {
 
         // INSERT user
         if (sqlLower.startsWith('insert into users')) {
-          const [email, password, role] = params || [];
+          const [email, password, role, username] = params || [];
           const existingUser = mockUsers.find(u => u.email === email);
           
           if (existingUser) {
@@ -25,6 +25,7 @@ jest.mock('mysql2/promise', () => {
             email,
             password,
             role: role || 'user',
+            username,
             is_active: true,
             is_verified: false,
             created_at: new Date(),
@@ -68,6 +69,13 @@ jest.mock('mysql2/promise', () => {
             if (sqlLower.includes('password = ?')) {
               const passwordIndex = sqlLower.includes('email = ?') ? 1 : 0;
               mockUsers[userIndex].password = params?.[passwordIndex];
+            }
+            if (sqlLower.includes('username = ?')) {
+              // Find the index of username parameter
+              let usernameIndex = 0;
+              if (sqlLower.includes('email = ?')) usernameIndex++;
+              if (sqlLower.includes('password = ?')) usernameIndex++;
+              mockUsers[userIndex].username = params?.[usernameIndex];
             }
             if (sqlLower.includes('role = ?')) {
               const roleIndex = params!.length - 2;
