@@ -120,7 +120,7 @@ function toast({
       id,
       open: true,
       onOpenChange: (open) => {
-        if (!open) dismiss()
+        if (!open) {dismiss()}
       },
     },
   })

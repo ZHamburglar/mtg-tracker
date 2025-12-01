@@ -40,17 +40,15 @@ function CardImage({ card, isHighResLoaded, onHighResLoad }) {
         src={card.image_uri_small}
         alt={card.name}
         loading="lazy"
-        className={`w-full h-auto object-contain transition-opacity duration-300 ${
-          isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
-        }`}
+        className={`w-full h-auto object-contain transition-opacity duration-300 ${isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
+          }`}
       />
       {isVisible && (
         <img
           src={card.image_uri_png}
           alt={card.name}
-          className={`w-full h-auto object-contain transition-opacity duration-300 ${
-            isHighResLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`w-full h-auto object-contain transition-opacity duration-300 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
           onLoad={onHighResLoad}
         />
       )}
@@ -61,6 +59,7 @@ function CardImage({ card, isHighResLoaded, onHighResLoad }) {
 
 export default function CardDetailPage() {
   const [card, setCard] = useState(null);
+  const [allPrints, setAllPrints] = useState([]);
   const [open, setOpen] = useState(false);
   const [priceHistory, setPriceHistory] = useState([]);
   const [currentPrice, setCurrentPrice] = useState({});
@@ -69,7 +68,7 @@ export default function CardDetailPage() {
   const [collectionData, setCollectionData] = useState(null);
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const [addingToCollection, setAddingToCollection] = useState(false);
-  
+
   const router = useRouter();
   const params = useParams();
   const cardId = params.id;
@@ -80,6 +79,7 @@ export default function CardDetailPage() {
       fetchCardPrices();
       fetchPriceHistory();
       checkCollection();
+      fetchAllPrints();
     }
   }, [cardId]);
 
@@ -99,11 +99,22 @@ export default function CardDetailPage() {
     }
   };
 
+  const fetchAllPrints = async () => {
+    try {
+      const client = buildClient();
+      const { data } = await client.get(`/api/search/${cardId}/prints`);
+      if (data && data.cards) {
+        setAllPrints(data.cards);
+      }
+    } catch (error) {
+      console.error('Fetch all prints error:', error);
+    }
+  };
+
   const fetchCardPrices = async () => {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prices/latest`);
-      console.log('Price fetch response:', data.price);
       if (data && data.price) {
         setCurrentPrice(data.price);
       }
@@ -116,7 +127,6 @@ export default function CardDetailPage() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prices`);
-      console.log('Price history response:', data.priceHistory);
       if (data && data.priceHistory) {
         setPriceHistory(data.priceHistory);
       }
@@ -203,8 +213,8 @@ export default function CardDetailPage() {
   }
 
   const getCardImage = (card) => {
-    if (card.image_uri_png) return card.image_uri_png;
-    if (card.image_uri_small) return card.image_uri_small;
+    if (card.image_uri_png) {return card.image_uri_png;}
+    if (card.image_uri_small) {return card.image_uri_small;}
     return null;
   };
 
@@ -274,60 +284,66 @@ export default function CardDetailPage() {
               <CardContent>
                 <div className="space-y-4">
                   {/* Non-Foil */}
-                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                    <div>
-                      <p className="font-semibold">Non-Foil</p>
-                      <p className="text-sm text-muted-foreground">
-                        Quantity: {collectionData?.summary?.normalQuantity || 0}
-                      </p>
+                  {card && card.finishes.length > 0 && card.finishes.includes('nonfoil') && (
+                    <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div>
+                        <p className="font-semibold">Non-Foil</p>
+                        <p className="text-sm text-muted-foreground">
+                          Quantity: {collectionData?.summary?.normalQuantity || 0}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => decrementCard('normal')}
+                          disabled={addingToCollection || (collectionData?.summary?.normalQuantity || 0) === 0}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => incrementCard('normal')}
+                          disabled={addingToCollection}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => decrementCard('normal')}
-                        disabled={addingToCollection || (collectionData?.summary?.normalQuantity || 0) === 0}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => incrementCard('normal')}
-                        disabled={addingToCollection}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Foil */}
-                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                    <div>
-                      <p className="font-semibold">Foil</p>
-                      <p className="text-sm text-muted-foreground">
-                        Quantity: {collectionData?.summary?.foilQuantity || 0}
-                      </p>
+                  {card && card.finishes.length > 0 && card.finishes.includes('foil') && (
+                    <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div>
+                        <p className="font-semibold">Foil</p>
+                        <p className="text-sm text-muted-foreground">
+                          Quantity: {collectionData?.summary?.foilQuantity || 0}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => decrementCard('foil')}
+                          disabled={addingToCollection || (collectionData?.summary?.foilQuantity || 0) === 0}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => incrementCard('foil')}
+                          disabled={addingToCollection}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => decrementCard('foil')}
-                        disabled={addingToCollection || (collectionData?.summary?.foilQuantity || 0) === 0}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => incrementCard('foil')}
-                        disabled={addingToCollection}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  )
+                  }
+
                 </div>
               </CardContent>
             </Card>
@@ -370,7 +386,7 @@ export default function CardDetailPage() {
                 </Card>
               )
             }
-            
+
 
             {/* Price History Chart */}
             {
@@ -416,7 +432,7 @@ export default function CardDetailPage() {
               </Card>
             )}
 
-            
+
             {/* Card Text */}
             {card.oracle_text && (
               <Card className="mt-6">
@@ -453,6 +469,56 @@ export default function CardDetailPage() {
             </Card>
           </div>
         </div>
+
+        {/* All Prints Section */}
+        {allPrints.length > 1 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">
+              All Printings ({allPrints.length})
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {allPrints.map((print) => (
+                <Card
+                  key={print.id}
+                  className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                    print.id === cardId ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => router.push(`/card/${print.id}`)}
+                >
+                  <div className="relative">
+                    {print.image_uri_small ? (
+                      <img
+                        src={print.image_uri_small}
+                        alt={`${print.name} - ${print.set_name}`}
+                        className="w-full h-auto object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-muted flex items-center justify-center">
+                        <span className="text-muted-foreground text-xs">No Image</span>
+                      </div>
+                    )}
+                    {print.id === cardId && (
+                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                        Current
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-3">
+                    <p className="text-xs font-semibold truncate">{print.set_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {print.set_code?.toUpperCase()} #{print.collector_number}
+                    </p>
+                    {print.released_at && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(print.released_at).getFullYear()}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -101,14 +101,14 @@ function SearchPageContent() {
   };
 
   const getCardImage = (card) => {
-    if (card.image_uri_png) return card.image_uri_png;
-    if (card.image_uri_small) return card.image_uri_small;
+    if (card.image_uri_png) {return card.image_uri_png;}
+    if (card.image_uri_small) {return card.image_uri_small;}
     return null;
   };
 
   const getCardPrice = (card) => {
-    if (card.prices?.usd) return `$${parseFloat(card.prices.usd).toFixed(2)}`;
-    if (card.prices?.usd_foil) return `$${parseFloat(card.prices.usd_foil).toFixed(2)} (Foil)`;
+    if (card.prices?.usd) {return `$${parseFloat(card.prices.usd).toFixed(2)}`;}
+    if (card.prices?.usd_foil) {return `$${parseFloat(card.prices.usd_foil).toFixed(2)} (Foil)`;}
     return 'Price N/A';
   };
 
