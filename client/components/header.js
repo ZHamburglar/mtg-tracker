@@ -26,26 +26,43 @@ import {
 } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import buildClient from "../app/api/build-client";
+import Image from "next/image";
+import Link from "next/link";
 
 
-const Header = ({ currentUser: initialUser }) => {
+const Header = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [currentUser, setCurrentUser] = useState(initialUser);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
 
   useEffect(() => {
     console.log('Current user in Header:', currentUser);
-  }, [currentUser]);
+    fetchCurrentUser();
+  }, []);
+
+  const fetchCurrentUser = async () => {
+    console.log('Fetching current user...');
+    const client = buildClient();
+    try {
+      const response = await client.get('/api/users/currentuser');
+      console.log('Fetched current user:', response.data.currentUser);
+      setCurrentUser(response.data.currentUser);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
 
 
   const signIn = () => {
     console.log('Signing in with', email, password);
-    // Implement sign-in logic here, e.g., call an API endpoint
     const client = buildClient();
     client.post('/api/users/signin', { email, password })
       .then(response => {
-        console.log('Sign in successful:', response);
+        console.log('Sign in successful:', response.data);
+        setCurrentUser(response.data);
+        setIsSignInOpen(false);
         // Cookie is automatically set by the browser from Set-Cookie header
         // Reload the page to update the currentUser state
         // window.location.href = '/';
@@ -56,6 +73,19 @@ const Header = ({ currentUser: initialUser }) => {
       });
   };
 
+  const signOut = () => {
+    const client = buildClient();
+    client.post('/api/users/signout')
+      .then(response => {
+        console.log('Sign out successful:', response);
+        // Reload the page to clear the currentUser state
+        window.location.href = '/';
+      })
+      .catch(error => {
+        console.error('Error signing out:', error);
+      });
+  };
+
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -63,24 +93,27 @@ const Header = ({ currentUser: initialUser }) => {
           <NavigationMenuList>
             <NavigationMenuItem>
               <NavigationMenuTrigger>
-                <NavigationMenuLink href="/">Home</NavigationMenuLink>
-              </NavigationMenuTrigger>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>
                 <NavigationMenuLink href="/search">Search</NavigationMenuLink>
               </NavigationMenuTrigger>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
+
+
+        <Link href="/">
+          <Image 
+            src="/images/logo.svg" 
+            alt="Logo" 
+            width={50} 
+            height={50}
+            className="cursor-pointer"
+          />
+        </Link>
+
         
+        {/* Right side of header */}
         <NavigationMenu>
           <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>
-                <NavigationMenuLink href="/">Home</NavigationMenuLink>
-              </NavigationMenuTrigger>
-            </NavigationMenuItem>
             <NavigationMenuItem>
 
               {currentUser ? (
@@ -98,12 +131,12 @@ const Header = ({ currentUser: initialUser }) => {
                     
                     <DialogFooter>
                       <Button variant="outline" onClick={() => console.log('Cancel sign out')}>Cancel</Button>
-                      <Button onClick={() => console.log('Sign out confirmed!')}>Sign Out</Button>
+                      <Button onClick={() => signOut()}>Sign Out</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
               ) : (
-                <Dialog>
+                <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
                   <DialogTrigger asChild>
                     <Button>Sign In</Button>
                   </DialogTrigger>

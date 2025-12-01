@@ -15,28 +15,35 @@ export default () => {
   }
 
   if (isDevelopment) {
-    // In development, use the backend at mtg-tracker.local
-    // Use session cookie from environment variable
-    const sessionCookie = process.env.NEXT_PUBLIC_SESSION_COOKIE;
+    // Check if we're running in the browser or on the server
+    const isBrowser = typeof window !== 'undefined';
     
     console.log('Development mode - using mtg-tracker.local');
-    console.log('Session cookie available:', !!sessionCookie);
-    console.log('Cookie length:', sessionCookie ? sessionCookie.length : 0);
+    console.log('Running in:', isBrowser ? 'browser' : 'server');
     
     const headers = {};
     
-    if (sessionCookie) {
-      // The cookie value already includes the full session data
-      // Just needs to be formatted as: session=<value>
-      headers['cookie'] = `session=${sessionCookie}`;
-      console.log('Cookie header set:', headers['cookie'].substring(0, 50) + '...');
-    } else {
-      console.warn('WARNING: No NEXT_PUBLIC_SESSION_COOKIE found in environment!');
+    // Only set cookie header on server-side requests
+    // Browser automatically sends cookies, and manually setting them is blocked
+    if (!isBrowser) {
+      const sessionCookie = process.env.NEXT_PUBLIC_SESSION_COOKIE;
+      console.log('Session cookie available:', !!sessionCookie);
+      console.log('Cookie length:', sessionCookie ? sessionCookie.length : 0);
+      
+      if (sessionCookie) {
+        // The cookie value already includes the full session data
+        // Just needs to be formatted as: session=<value>
+        headers['cookie'] = `session=${sessionCookie}`;
+        console.log('Cookie header set:', headers['cookie'].substring(0, 50) + '...');
+      } else {
+        console.warn('WARNING: No NEXT_PUBLIC_SESSION_COOKIE found in environment!');
+      }
     }
     
     return axios.create({
       baseURL: "https://mtg-tracker.local",
       headers,
+      withCredentials: true, // Allow cookies to be sent/received in browser
       // Disable SSL verification for local development
       httpsAgent: new https.Agent({
         rejectUnauthorized: false
