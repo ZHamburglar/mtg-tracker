@@ -28,12 +28,12 @@ async function getCurrentUser() {
 }
 
 export default async function RootLayout({ children }) {
-  const currentUser = await getCurrentUser();
+  // const currentUser = await getCurrentUser();
   
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
-        <Header currentUser={currentUser} />
+        <Header />
         
         {children}
       </body>
