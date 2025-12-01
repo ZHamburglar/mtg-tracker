@@ -75,7 +75,6 @@ export default function CardDetailPage() {
       loadCard();
       fetchCardPrices();
       fetchPriceHistory();
-      console.log('Card ID from params:', cardId);
       checkCollection();
     }
   }, [cardId]);
@@ -154,6 +153,21 @@ export default function CardDetailPage() {
       setAddingToCollection(false);
     }
   };
+
+  const formatStatus = (status) => {
+    switch (status) {
+      case 'legal':
+        return 'Legal';
+      case 'not_legal':
+        return 'Not Legal';
+      case 'banned':
+        return 'Banned';
+      case 'restricted':
+        return 'Restricted';
+      default:
+        return status;
+    }
+  }
 
   const getCardImage = (card) => {
     if (card.image_uri_png) return card.image_uri_png;
@@ -279,13 +293,6 @@ export default function CardDetailPage() {
             
 
             {/* Price History Chart */}
-            {(() => {
-              console.log('=== Card Detail Page - Price History Check ===');
-              console.log('priceHistory:', priceHistory);
-              console.log('priceHistory length:', priceHistory?.length);
-              console.log('Condition result:', priceHistory && priceHistory.length > 0);
-              return null;
-            })()}
             {
               priceHistory && priceHistory.length > 0 ? (
                 <Card>
@@ -303,12 +310,32 @@ export default function CardDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-center py-8 text-muted-foreground">
-                      No price history available (Debug: {priceHistory ? `length: ${priceHistory.length}` : 'null/undefined'})
+                      No price history available
                     </p>
                   </CardContent>
                 </Card>
               )
             }
+
+            {/* Legalities */}
+            {card && card.legalities && Object.keys(card.legalities).length > 0 && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Legalities</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.entries(card.legalities).map(([format, status]) => (
+                    <div key={format} className="flex flex-col">
+                      <span className="font-semibold capitalize">{format.replace('_', ' ')}</span>
+                      <span className={status === 'legal' ? 'text-green-600' : 'text-red-600'}>
+                        {formatStatus(status)}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             
             {/* Card Text */}
             {card.oracle_text && (

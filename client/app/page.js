@@ -128,7 +128,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 py-16">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-6xl mx-auto text-center">
             <Image src="/images/logo-animated.svg" alt="MTG Collection Tracker" width={128} height={128} className="mx-auto mb-6" />
             <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               MTG Collection Tracker
