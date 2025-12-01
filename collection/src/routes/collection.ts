@@ -332,6 +332,124 @@ router.post(
 );
 
 /**
+ * POST /api/collection/:cardId/increment
+ * Increment quantity of a card by 1
+ */
+router.post(
+  '/api/collection/:cardId/increment',
+  currentUser,
+  requireAuth,
+  [
+    body('finish_type')
+      .notEmpty()
+      .withMessage('Finish type is required')
+      .isIn(['normal', 'foil', 'etched'])
+      .withMessage('Finish type must be normal, foil, or etched')
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.currentUser!.id);
+      const { cardId } = req.params;
+      const { finish_type } = req.body;
+
+      if (!cardId) {
+        return res.status(400).json({
+          error: 'Card ID is required'
+        });
+      }
+
+      // Add card (will increment by 1 if exists)
+      const card = await UserCardCollection.addCard({
+        user_id: userId,
+        card_id: cardId,
+        quantity: 1,
+        finish_type
+      });
+
+      res.status(200).json({
+        card,
+        message: 'Card quantity incremented successfully',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error incrementing card quantity:', error);
+      res.status(500).json({
+        error: 'Failed to increment card quantity',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/collection/:cardId/decrement
+ * Decrement quantity of a card by 1
+ */
+router.post(
+  '/api/collection/:cardId/decrement',
+  currentUser,
+  requireAuth,
+  [
+    body('finish_type')
+      .notEmpty()
+      .withMessage('Finish type is required')
+      .isIn(['normal', 'foil', 'etched'])
+      .withMessage('Finish type must be normal, foil, or etched')
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.currentUser!.id);
+      const { cardId } = req.params;
+      const { finish_type } = req.body;
+
+      if (!cardId) {
+        return res.status(400).json({
+          error: 'Card ID is required'
+        });
+      }
+
+      // Remove 1 card
+      const success = await UserCardCollection.removeCard(
+        userId,
+        cardId,
+        finish_type,
+        1
+      );
+
+      if (!success) {
+        return res.status(404).json({
+          error: 'Card not found in collection',
+          cardId
+        });
+      }
+
+      // Get updated card info (may be null if quantity reached 0)
+      const card = await UserCardCollection.findByUserCardAndFinish(
+        userId,
+        cardId,
+        finish_type
+      );
+
+      res.status(200).json({
+        card,
+        message: card 
+          ? 'Card quantity decremented successfully'
+          : 'Card removed from collection (quantity reached 0)',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error decrementing card quantity:', error);
+      res.status(500).json({
+        error: 'Failed to decrement card quantity',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
  * PUT /api/collection/:cardId
  * Update the quantity of a specific card in user's collection
  */
