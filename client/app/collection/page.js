@@ -40,8 +40,8 @@ export default function CollectionPage() {
   };
 
   const getCardImage = (card) => {
-    if (card.image_uri_png) return card.image_uri_png;
-    if (card.image_uri_small) return card.image_uri_small;
+    if (card.image_uri_png) {return card.image_uri_png;}
+    if (card.image_uri_small) {return card.image_uri_small;}
     return null;
   };
 

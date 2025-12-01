@@ -55,7 +55,7 @@ export async function getCardById(cardId) {
 
 // Generate mock price history for demonstration
 export function generatePriceHistory(currentPrice, days = 30) {
-  if (!currentPrice) return [];
+  if (!currentPrice) {return [];}
   
   const price = parseFloat(currentPrice);
   const history = [];
@@ -80,7 +80,7 @@ export function generatePriceHistory(currentPrice, days = 30) {
 }
 
 export function generateFoilPriceHistory(currentPrice, days = 30) {
-  if (!currentPrice) return [];
+  if (!currentPrice) {return [];}
   
   const price = parseFloat(currentPrice);
   const history = [];

@@ -92,6 +92,80 @@ router.get('/api/search/:id', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/api/search/:id/prints', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const { id } = req.params;
+  
+  logger.log('GET /api/search/:id/prints - Request started', {
+    cardId: id,
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    if (!id) {
+      logger.log('GET /api/search/:id/prints - Bad request: Missing card ID');
+      return res.status(400).json({
+        error: 'Card ID is required'
+      });
+    }
+
+    // First get the card to find its oracle_id
+    const card = await Card.findById(id);
+    
+    if (!card) {
+      logger.log('GET /api/search/:id/prints - Card not found', {
+        cardId: id,
+        duration: Date.now() - startTime
+      });
+      return res.status(404).json({
+        error: 'Card not found',
+        id
+      });
+    }
+
+    if (!card.oracle_id) {
+      logger.log('GET /api/search/:id/prints - No oracle_id', {
+        cardId: id,
+        cardName: card.name,
+        duration: Date.now() - startTime
+      });
+      return res.status(200).json({
+        cards: [card],
+        count: 1,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get all cards with the same oracle_id
+    const prints = await Card.findByOracleId(card.oracle_id);
+
+    logger.log('GET /api/search/:id/prints - Success', {
+      cardId: id,
+      oracleId: card.oracle_id,
+      printsCount: prints.length,
+      duration: Date.now() - startTime
+    });
+
+    res.status(200).json({
+      cards: prints,
+      count: prints.length,
+      oracle_id: card.oracle_id,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('GET /api/search/:id/prints - Error', {
+      cardId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
+    res.status(500).json({
+      error: 'Failed to fetch card prints',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 router.get('/api/search/:id/prices/latest', async (req: Request, res: Response) => {
   const startTime = Date.now();
   const { id } = req.params;

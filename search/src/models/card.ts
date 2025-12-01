@@ -106,6 +106,32 @@ export class Card {
     } as CardDoc;
   }
 
+  static async findByOracleId(oracleId: string): Promise<CardDoc[]> {
+    if (!Card.pool) {
+      throw new Error('Database pool not initialized. Call Card.setPool() first.');
+    }
+
+    const query = `
+      SELECT * FROM cards 
+      WHERE oracle_id = ? 
+      ORDER BY released_at DESC, set_name ASC
+    `;
+    const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(query, [oracleId]);
+    
+    // Parse JSON fields for all rows
+    return rows.map(row => ({
+      ...row,
+      colors: Card.safeJsonParse(row.colors),
+      color_identity: Card.safeJsonParse(row.color_identity),
+      keywords: Card.safeJsonParse(row.keywords),
+      produced_mana: Card.safeJsonParse(row.produced_mana),
+      artist_ids: Card.safeJsonParse(row.artist_ids),
+      legalities: Card.safeJsonParse(row.legalities),
+      games: Card.safeJsonParse(row.games),
+      finishes: Card.safeJsonParse(row.finishes),
+    } as CardDoc));
+  }
+
   static async search(params: {
     name?: string;
     released_at?: string;
