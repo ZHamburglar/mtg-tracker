@@ -373,34 +373,6 @@ export default function CardDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Other Prints in Collection */}
-                  {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
-                    <div className="p-4 bg-muted rounded-lg mb-4">
-                      <p className="font-semibold mb-2">Other Printings in Collection:</p>
-                      <div className="space-y-2">
-                        {collectionData.otherPrints.map((print) => (
-                          <div
-                            key={`${print.card_id}-${print.finish_type}`}
-                            className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
-                            onClick={() => router.push(`/card/${print.card_id}`)}
-                          >
-                            <div>
-                              <p className="font-medium">
-                                {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="ml-2">
-                              {print.quantity}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Non-Foil */}
                   {card && card.finishes.length > 0 && card.finishes.includes('nonfoil') && (
                     <div className="flex items-center justify-between p-4 border border-border rounded-lg">
@@ -461,6 +433,33 @@ export default function CardDetailPage() {
                     </div>
                   )
                   }
+                  {/* Other Prints in Collection */}
+                  {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
+                    <div className="p-4 bg-muted rounded-lg mb-4">
+                      <p className="font-semibold mb-2">Other Printings in Collection:</p>
+                      <div className="space-y-2">
+                        {collectionData.otherPrints.map((print) => (
+                          <div
+                            key={`${print.card_id}-${print.finish_type}`}
+                            className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
+                            onClick={() => router.push(`/card/${print.card_id}`)}
+                          >
+                            <div>
+                              <p className="font-medium">
+                                {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="ml-2">
+                              {print.quantity}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                 </div>
               </CardContent>
