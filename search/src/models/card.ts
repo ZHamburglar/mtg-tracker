@@ -132,6 +132,22 @@ export class Card {
     } as CardDoc));
   }
 
+  static async getAllArtists(): Promise<string[]> {
+    if (!Card.pool) {
+      throw new Error('Database pool not initialized. Call Card.setPool() first.');
+    }
+
+    const query = `
+      SELECT DISTINCT artist 
+      FROM cards 
+      WHERE artist IS NOT NULL AND artist != ''
+      ORDER BY artist ASC
+    `;
+    const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(query);
+    
+    return rows.map(row => row.artist as string);
+  }
+
   static async search(params: {
     name?: string;
     released_at?: string;
@@ -139,7 +155,7 @@ export class Card {
     cmc?: number;
     cmc_min?: number;
     cmc_max?: number;
-    type_line?: string;
+    type_line?: string | string[];
     oracle_text?: string;
     power?: string;
     toughness?: string;
@@ -147,9 +163,10 @@ export class Card {
     color_identity?: string[];
     keywords?: string[];
     rarity?: string | string[];
+    artist?: string | string[];
     set_id?: string;
     set_code?: string;
-    set_name?: string;
+    set_name?: string | string[];
     legalities?: { format: string; status: string };
     unique_prints?: boolean; // If true, returns all prints; if false (default), groups by oracle_id
     include_all_types?: boolean; // If true, includes all set types; if false (default), excludes token and memorabilia
@@ -199,8 +216,14 @@ export class Card {
 
     // Fuzzy search for type_line
     if (params.type_line) {
-      whereClauses.push('type_line LIKE ?');
-      queryParams.push(`%${params.type_line}%`);
+      if (Array.isArray(params.type_line) && params.type_line.length > 0) {
+        const placeholders = params.type_line.map(() => '?').join(', ');
+        whereClauses.push(`type_line IN (${placeholders})`);
+        params.type_line.forEach(t => queryParams.push(t));
+      } else if (typeof params.type_line === 'string') {
+        whereClauses.push('type_line LIKE ?');
+        queryParams.push(`%${params.type_line}%`);
+      }
     }
 
     // Fuzzy search for oracle_text
@@ -259,7 +282,19 @@ export class Card {
       }
     }
 
-    // Exact search for set_id
+    // Exact search for artist (supports multiple values)
+    if (params.artist) {
+      if (Array.isArray(params.artist) && params.artist.length > 0) {
+        const placeholders = params.artist.map(() => '?').join(', ');
+        whereClauses.push(`artist IN (${placeholders})`);
+        params.artist.forEach(a => queryParams.push(a));
+      } else if (typeof params.artist === 'string') {
+        whereClauses.push('artist = ?');
+        queryParams.push(params.artist);
+      }
+    }
+
+    // Exact search for set_code
     if (params.set_id) {
       whereClauses.push('set_id = ?');
       queryParams.push(params.set_id);
@@ -271,10 +306,16 @@ export class Card {
       queryParams.push(params.set_code);
     }
 
-    // Fuzzy search for set_name
+    // Fuzzy search for set_name (supports array for multiple sets)
     if (params.set_name) {
-      whereClauses.push('set_name LIKE ?');
-      queryParams.push(`%${params.set_name}%`);
+      if (Array.isArray(params.set_name) && params.set_name.length > 0) {
+        const placeholders = params.set_name.map(() => '?').join(', ');
+        whereClauses.push(`set_name IN (${placeholders})`);
+        params.set_name.forEach(s => queryParams.push(s));
+      } else if (typeof params.set_name === 'string') {
+        whereClauses.push('set_name LIKE ?');
+        queryParams.push(`%${params.set_name}%`);
+      }
     }
 
     // JSON object search for legalities

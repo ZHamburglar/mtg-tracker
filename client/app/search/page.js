@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import buildClient from '../api/build-client';
+import { DropdownMultiselect } from '@/components/ui/dropdown-multiselect';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -83,16 +84,23 @@ function SearchPageContent() {
   const [loadedImages, setLoadedImages] = useState({});
   const [accordionValue, setAccordionValue] = useState('');
   const [advancedFilters, setAdvancedFilters] = useState({
-    artist: '',
-    set_name: '',
-    type_line: '',
+    artist: [],
+    set_name: [],
+    type_line: [],
     rarity: [],
     cmc: '',
     colors: '',
   });
-  const [rarityOpen, setRarityOpen] = useState(false);
+  const [sets, setSets] = useState([]);
+  const [artists, setArtists] = useState([]);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Fetch available sets and artists
+    fetchSets();
+    fetchArtists();
+  }, []);
 
   useEffect(() => {
     const params = {};
@@ -109,9 +117,9 @@ function SearchPageContent() {
 
     // Update advanced filters from URL
     setAdvancedFilters({
-      artist: params.artist || '',
-      set_name: params.set_name || '',
-      type_line: params.type_line || '',
+      artist: params.artist ? params.artist.split(',') : [],
+      set_name: params.set_name ? params.set_name.split(',') : [],
+      type_line: params.type_line ? params.type_line.split(',') : [],
       rarity: params.rarity ? params.rarity.split(',') : [],
       cmc: params.cmc || '',
       colors: params.colors || '',
@@ -122,6 +130,36 @@ function SearchPageContent() {
       searchCards(params);
     }
   }, [searchParams]);
+
+  const fetchArtists = async () => {
+    try {
+      const client = buildClient();
+      const { data } = await client.get('/api/search/artists');
+      if (data && data.artists) {
+        setArtists(data.artists);
+      }
+    } catch (error) {
+      console.error('Error fetching artists:', error);
+    }
+  };
+
+  const fetchSets = async () => {
+    try {
+      const client = buildClient();
+      const { data } = await client.get('/api/search/sets');
+      if (data && data.sets) {
+        // Sort sets by release date descending
+        const sortedSets = data.sets.sort((a, b) => {
+          if (!a.released_at) return 1;
+          if (!b.released_at) return -1;
+          return new Date(b.released_at) - new Date(a.released_at);
+        });
+        setSets(sortedSets);
+      }
+    } catch (error) {
+      console.error('Error fetching sets:', error);
+    }
+  };
 
   const searchCards = async (params) => {
     console.log('accordion value:', accordionValue);
@@ -197,106 +235,51 @@ function SearchPageContent() {
             <AccordionItem value="advanced">
               <AccordionContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Artist</label>
-                    <Input 
-                      placeholder="Artist name" 
-                      value={advancedFilters.artist}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, artist: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Set</label>
-                    <Input 
-                      placeholder="Set name or code" 
-                      value={advancedFilters.set_name}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, set_name: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Type</label>
-                    <Input 
-                      placeholder="Card type" 
-                      value={advancedFilters.type_line}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, type_line: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Rarity</label>
-                    <Popover open={rarityOpen} onOpenChange={setRarityOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={rarityOpen}
-                          className="w-full justify-between"
-                        >
-                          {advancedFilters.rarity.length > 0
-                            ? `${advancedFilters.rarity.length} selected`
-                            : "Select rarity..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Search rarity..." />
-                          <CommandList>
-                            <CommandEmpty>No rarity found.</CommandEmpty>
-                            <CommandGroup>
-                              {['common', 'uncommon', 'rare', 'mythic'].map((rarityOption) => (
-                                <CommandItem
-                                  key={rarityOption}
-                                  value={rarityOption}
-                                  onSelect={() => {
-                                    if (advancedFilters.rarity.includes(rarityOption)) {
-                                      setAdvancedFilters({
-                                        ...advancedFilters,
-                                        rarity: advancedFilters.rarity.filter(r => r !== rarityOption)
-                                      });
-                                    } else {
-                                      setAdvancedFilters({
-                                        ...advancedFilters,
-                                        rarity: [...advancedFilters.rarity, rarityOption]
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <Check
-                                    className={`mr-2 h-4 w-4 ${
-                                      advancedFilters.rarity.includes(rarityOption)
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    }`}
-                                  />
-                                  <span className="capitalize">{rarityOption}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    {advancedFilters.rarity.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {advancedFilters.rarity.map((r) => (
-                          <Badge
-                            key={r}
-                            variant="secondary"
-                            className="capitalize cursor-pointer"
-                            onClick={() => {
-                              setAdvancedFilters({
-                                ...advancedFilters,
-                                rarity: advancedFilters.rarity.filter(rarity => rarity !== r)
-                              });
-                            }}
-                          >
-                            {r}
-                            <X className="ml-1 h-3 w-3" />
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  {/* Artists Filter */}
+                  <DropdownMultiselect
+                    label="Artist"
+                    placeholder="Select artists..."
+                    searchPlaceholder="Search artists..."
+                    emptyMessage="No artist found."
+                    options={artists}
+                    value={advancedFilters.artist}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, artist: value})}
+                  />
+                  {/* Sets Filter */}
+                  <DropdownMultiselect
+                    label="Set"
+                    placeholder="Select sets..."
+                    searchPlaceholder="Search sets..."
+                    emptyMessage="No set found."
+                    options={sets}
+                    value={advancedFilters.set_name}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, set_name: value})}
+                    getOptionValue={(set) => set.name}
+                    getOptionLabel={(set) => set.name}
+                    renderOption={(set) => <span>{set.name} ({set.code})</span>}
+                  />
+                  {/* Type Filter */}
+                  <DropdownMultiselect
+                    label="Type"
+                    placeholder="Select types..."
+                    searchPlaceholder="Search types..."
+                    emptyMessage="No type found."
+                    options={['Creature', 'Instant', 'Sorcery', 'Enchantment', 'Artifact', 'Planeswalker', 'Land', 'Battle']}
+                    value={advancedFilters.type_line}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, type_line: value})}
+                  />
+                  {/* Rarity */}
+                  <DropdownMultiselect
+                    label="Rarity"
+                    placeholder="Select rarity..."
+                    searchPlaceholder="Search rarity..."
+                    emptyMessage="No rarity found."
+                    options={['common', 'uncommon', 'rare', 'mythic']}
+                    value={advancedFilters.rarity}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, rarity: value})}
+                    renderBadge={(r) => <span className="capitalize">{r}</span>}
+                  />
+                  {/* CMC */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">CMC</label>
                     <Input 
@@ -306,6 +289,7 @@ function SearchPageContent() {
                       onChange={(e) => setAdvancedFilters({...advancedFilters, cmc: e.target.value})}
                     />
                   </div>
+                  {/* Colors */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Colors</label>
                     <Input 
@@ -321,9 +305,9 @@ function SearchPageContent() {
                     variant="outline"
                     onClick={() => {
                       setAdvancedFilters({
-                        artist: '',
-                        set_name: '',
-                        type_line: '',
+                        artist: [],
+                        set_name: [],
+                        type_line: [],
                         rarity: [],
                         cmc: '',
                         colors: '',

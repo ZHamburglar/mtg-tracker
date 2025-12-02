@@ -6,6 +6,10 @@ import { logger } from '../logger';
 
 const router = express.Router();
 
+// Cache for artists endpoint
+let artistsCache: { data: string[]; timestamp: number } | null = null;
+const ARTISTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
 router.get('/api/search/sets', async (req: Request, res: Response) => {
   const startTime = Date.now();
   
@@ -33,6 +37,59 @@ router.get('/api/search/sets', async (req: Request, res: Response) => {
     });
     res.status(500).json({
       error: 'Failed to fetch sets',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/search/artists', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  logger.log('GET /api/search/artists - Request started', {
+    timestamp: new Date().toISOString(),
+    cacheHit: artistsCache !== null && (Date.now() - artistsCache.timestamp) < ARTISTS_CACHE_TTL
+  });
+
+  try {
+    let artists: string[];
+
+    // Check if cache exists and is still valid
+    if (artistsCache && (Date.now() - artistsCache.timestamp) < ARTISTS_CACHE_TTL) {
+      artists = artistsCache.data;
+      logger.log('GET /api/search/artists - Cache hit', {
+        totalArtists: artists.length,
+        cacheAge: Date.now() - artistsCache.timestamp,
+        duration: Date.now() - startTime
+      });
+    } else {
+      // Fetch from database if cache is invalid or doesn't exist
+      artists = await Card.getAllArtists();
+      
+      // Update cache
+      artistsCache = {
+        data: artists,
+        timestamp: Date.now()
+      };
+
+      logger.log('GET /api/search/artists - Cache miss, fetched from DB', {
+        totalArtists: artists.length,
+        duration: Date.now() - startTime
+      });
+    }
+
+    res.status(200).json({
+      artists,
+      timestamp: new Date().toISOString(),
+      cached: artistsCache !== null && (Date.now() - artistsCache.timestamp) < ARTISTS_CACHE_TTL
+    });
+  } catch (error) {
+    logger.error('GET /api/search/artists - Error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
+    res.status(500).json({
+      error: 'Failed to fetch artists',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -361,6 +418,7 @@ router.get('/api/search', async (req: Request, res: Response) => {
       color_identity,
       keywords,
       rarity,
+      artist,
       set_id,
       set_code,
       set_name,
@@ -402,7 +460,11 @@ router.get('/api/search', async (req: Request, res: Response) => {
       if (cmc_max) searchParams.cmc_max = parseFloat(cmc_max as string);
     }
 
-    if (type_line) searchParams.type_line = type_line as string;
+    if (type_line) {
+      searchParams.type_line = Array.isArray(type_line)
+        ? type_line
+        : (type_line as string).split(',').map(t => t.trim());
+    }
     if (oracle_text) searchParams.oracle_text = oracle_text as string;
     if (power) searchParams.power = power as string;
     if (toughness) searchParams.toughness = toughness as string;
@@ -431,9 +493,18 @@ router.get('/api/search', async (req: Request, res: Response) => {
         ? rarity
         : (rarity as string).split(',').map(r => r.trim());
     }
+    if (artist) {
+      searchParams.artist = Array.isArray(artist)
+        ? artist
+        : (artist as string).split(',').map(a => a.trim());
+    }
     if (set_id) searchParams.set_id = set_id as string;
     if (set_code) searchParams.set_code = set_code as string;
-    if (set_name) searchParams.set_name = set_name as string;
+    if (set_name) {
+      searchParams.set_name = Array.isArray(set_name)
+        ? set_name
+        : (set_name as string).split(',').map(s => s.trim());
+    }
 
     // Parse legalities (format and status must both be provided)
     if (legality_format && legality_status) {
