@@ -387,6 +387,7 @@ export class Card {
           .replace(/^power /i, 'c1.power ')
           .replace(/^toughness /i, 'c1.toughness ')
           .replace(/^rarity /i, 'c1.rarity ')
+          .replace(/^artist /i, 'c1.artist ')
           .replace(/^set_id /i, 'c1.set_id ')
           .replace(/^set_code /i, 'c1.set_code ')
           .replace(/^set_name /i, 'c1.set_name ')
