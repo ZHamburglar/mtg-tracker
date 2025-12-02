@@ -209,7 +209,7 @@ function SearchPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+      <header className="border-border">
         <div className="container mx-auto px-4 py-4">
           
           <form onSubmit={handleSearch} className="flex gap-2 mb-4">
