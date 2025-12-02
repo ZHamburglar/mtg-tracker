@@ -426,7 +426,11 @@ router.get('/api/search', async (req: Request, res: Response) => {
         : (keywords as string).split(',').map(k => k.trim());
     }
 
-    if (rarity) searchParams.rarity = rarity as string;
+    if (rarity) {
+      searchParams.rarity = Array.isArray(rarity)
+        ? rarity
+        : (rarity as string).split(',').map(r => r.trim());
+    }
     if (set_id) searchParams.set_id = set_id as string;
     if (set_code) searchParams.set_code = set_code as string;
     if (set_name) searchParams.set_name = set_name as string;

@@ -146,7 +146,7 @@ export class Card {
     colors?: string[];
     color_identity?: string[];
     keywords?: string[];
-    rarity?: string;
+    rarity?: string | string[];
     set_id?: string;
     set_code?: string;
     set_name?: string;
@@ -247,10 +247,16 @@ export class Card {
       });
     }
 
-    // Exact search for rarity
+    // Exact search for rarity (supports multiple values)
     if (params.rarity) {
-      whereClauses.push('rarity = ?');
-      queryParams.push(params.rarity);
+      if (Array.isArray(params.rarity) && params.rarity.length > 0) {
+        const placeholders = params.rarity.map(() => '?').join(', ');
+        whereClauses.push(`rarity IN (${placeholders})`);
+        params.rarity.forEach(r => queryParams.push(r));
+      } else if (typeof params.rarity === 'string') {
+        whereClauses.push('rarity = ?');
+        queryParams.push(params.rarity);
+      }
     }
 
     // Exact search for set_id

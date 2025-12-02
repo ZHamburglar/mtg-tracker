@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from "next/link";
 import { Loader2, ArrowLeft, Plus, Check, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import PriceChart from '@/components/PriceChart';
 import buildClient from '../../api/build-client';
-import { fr } from 'date-fns/locale';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -573,7 +573,17 @@ export default function CardDetailPage() {
                 {card.power && card.toughness && (
                   <p><strong>P/T:</strong> {card.power}/{card.toughness}</p>
                 )}
-                {card.artist && <p><strong>Artist:</strong> {card.artist}</p>}
+                {card.artist && (
+                  <p>
+                    <strong>Artist:</strong>{' '}
+                    <Link 
+                      href={`/search?artist=${encodeURIComponent(card.artist)}`}
+                      className="text-primary hover:underline"
+                    >
+                      {card.artist}
+                    </Link>
+                  </p>
+                )}
                 <a
                   href={card.scryfall_uri}
                   target="_blank"
