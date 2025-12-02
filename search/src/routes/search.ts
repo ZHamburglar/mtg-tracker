@@ -367,6 +367,7 @@ router.get('/api/search', async (req: Request, res: Response) => {
       legality_format,
       legality_status,
       unique_prints,
+      include_all_types,
       limit,
       page
     } = req.query;
@@ -440,6 +441,9 @@ router.get('/api/search', async (req: Request, res: Response) => {
 
     // Parse unique_prints flag (default false - group by oracle_id)
     searchParams.unique_prints = unique_prints === 'true' || unique_prints === '1';
+
+    // Parse include_all_types flag (default false - exclude token and memorabilia sets)
+    searchParams.include_all_types = include_all_types === 'true' || include_all_types === '1';
 
     logger.log('GET /api/search - Executing search', {
       filters: {

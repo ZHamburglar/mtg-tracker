@@ -152,6 +152,7 @@ export class Card {
     set_name?: string;
     legalities?: { format: string; status: string };
     unique_prints?: boolean; // If true, returns all prints; if false (default), groups by oracle_id
+    include_all_types?: boolean; // If true, includes all set types; if false (default), excludes token and memorabilia
     limit?: number;
     offset?: number;
   }): Promise<{ cards: CardDoc[]; total: number }> {
@@ -275,6 +276,11 @@ export class Card {
       whereClauses.push('JSON_EXTRACT(legalities, ?) = ?');
       queryParams.push(`$.${params.legalities.format}`);
       queryParams.push(params.legalities.status);
+    }
+
+    // Filter out token and memorabilia set types by default
+    if (params.include_all_types !== true) {
+      whereClauses.push('set_id IN (SELECT id FROM sets WHERE set_type NOT IN ("token", "memorabilia"))');
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
