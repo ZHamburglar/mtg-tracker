@@ -6,8 +6,8 @@ WORKDIR /app
 ENV NEXT_PHASE=phase-production-build
 
 # Install dependencies
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 # Copy rest of the source
 COPY . .
