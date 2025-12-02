@@ -148,6 +148,7 @@ router.get(
 /**
  * GET /api/collection/check/:cardId
  * Check if a card exists in user's collection and return all versions
+ * Also returns other printings (same oracle_id) that are in collection
  */
 router.get(
   '/api/collection/check/:cardId',
@@ -165,12 +166,67 @@ router.get(
       }
 
       const versions = await UserCardCollection.findAllFinishesByUserAndCard(userId, cardId);
+      
+      // Get the card's oracle_id
+      const pool = UserCardCollection.getPool();
+      const [cardRows] = await pool.query<any[]>(
+        'SELECT oracle_id FROM cards WHERE id = ? LIMIT 1',
+        [cardId]
+      );
+      
+      const oracleId = cardRows[0]?.oracle_id;
+      let otherPrints: any[] = [];
+      
+      // If card has an oracle_id, find other printings in collection
+      if (oracleId) {
+        const oraclePrints = await UserCardCollection.findByUserAndOracleId(userId, oracleId);
+        
+        // Filter out the current card_id from other prints
+        const otherPrintRecords = oraclePrints.filter(p => p.card_id !== cardId);
+        
+        // Enrich other prints with card details
+        if (otherPrintRecords.length > 0) {
+          otherPrints = await Promise.all(
+            otherPrintRecords.map(async (print) => {
+              const [printCardRows] = await pool.query<any[]>(
+                'SELECT id, name, set_name, set_code, rarity, image_uri_png, image_uri_small FROM cards WHERE id = ?',
+                [print.card_id]
+              );
+              
+              const [priceRows] = await pool.query<any[]>(
+                'SELECT price_usd, price_usd_foil, price_usd_etched FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
+                [print.card_id]
+              );
 
-      if (versions.length === 0) {
+              return {
+                ...print,
+                cardData: {
+                  id: printCardRows[0]?.id || null,
+                  name: printCardRows[0]?.name || 'Unknown Card',
+                  set_name: printCardRows[0]?.set_name || null,
+                  set_code: printCardRows[0]?.set_code || null,
+                  rarity: printCardRows[0]?.rarity || null,
+                  image_uri_png: printCardRows[0]?.image_uri_png || null,
+                  image_uri_small: printCardRows[0]?.image_uri_small || null
+                },
+                currentPrice: print.finish_type === 'foil' 
+                  ? priceRows[0]?.price_usd_foil 
+                  : print.finish_type === 'etched'
+                  ? priceRows[0]?.price_usd_etched
+                  : priceRows[0]?.price_usd,
+                priceType: print.finish_type === 'foil' ? 'usd_foil' : print.finish_type === 'etched' ? 'usd_etched' : 'usd'
+              };
+            })
+          );
+        }
+      }
+
+      if (versions.length === 0 && otherPrints.length === 0) {
         return res.status(200).json({
           inCollection: false,
           cardId,
           versions: [],
+          otherPrints: [],
           totalQuantity: 0,
           timestamp: new Date().toISOString()
         });
@@ -179,7 +235,6 @@ router.get(
       const totalQuantity = await UserCardCollection.getTotalQuantity(userId, cardId);
 
       // Get card details and prices for each version
-      const pool = UserCardCollection.getPool();
       const enrichedVersions = await Promise.all(
         versions.map(async (version) => {
           const [cardRows] = await pool.query<any[]>(
@@ -188,7 +243,7 @@ router.get(
           );
           
           const [priceRows] = await pool.query<any[]>(
-            'SELECT price_usd, price_usd_foil FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
+            'SELECT price_usd, price_usd_foil, price_usd_etched FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
             [version.card_id]
           );
 
@@ -205,16 +260,19 @@ router.get(
             },
             currentPrice: version.finish_type === 'foil' 
               ? priceRows[0]?.price_usd_foil 
+              : version.finish_type === 'etched'
+              ? priceRows[0]?.price_usd_etched
               : priceRows[0]?.price_usd,
-            priceType: version.finish_type === 'foil' ? 'usd_foil' : 'usd'
+            priceType: version.finish_type === 'foil' ? 'usd_foil' : version.finish_type === 'etched' ? 'usd_etched' : 'usd'
           };
         })
       );
 
       res.status(200).json({
-        inCollection: true,
+        inCollection: versions.length > 0,
         cardId,
         versions: enrichedVersions,
+        otherPrints: otherPrints,
         totalQuantity,
         summary: {
           normalQuantity: versions.find(v => v.finish_type === 'normal')?.quantity || 0,

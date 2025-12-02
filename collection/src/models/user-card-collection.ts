@@ -301,6 +301,33 @@ export class UserCardCollection {
   }
 
   /**
+   * Find all cards in user's collection that match the given oracle_id
+   */
+  static async findByUserAndOracleId(
+    user_id: number,
+    oracle_id: string
+  ): Promise<UserCardCollectionDoc[]> {
+    if (!UserCardCollection.pool) {
+      throw new Error('Database pool not initialized. Call UserCardCollection.setPool() first.');
+    }
+
+    const query = `
+      SELECT ucc.* 
+      FROM user_card_collection ucc
+      INNER JOIN cards c ON ucc.card_id = c.id
+      WHERE ucc.user_id = ? AND c.oracle_id = ?
+      ORDER BY c.released_at DESC, ucc.finish_type
+    `;
+
+    const [rows] = await UserCardCollection.pool.query<mysql.RowDataPacket[]>(
+      query,
+      [user_id, oracle_id]
+    );
+
+    return rows as UserCardCollectionDoc[];
+  }
+
+  /**
    * Get collection statistics for a user
    */
   static async getStats(user_id: number): Promise<{
