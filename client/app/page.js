@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Trending from '@/components/trending';
+import DeckIcon from '@/components/DeckIcon';
 import buildClient from "./api/build-client";
 import Image from 'next/image';
 import Link from "next/link";
@@ -18,6 +19,9 @@ export default function Home() {
   const [trending24h, setTrending24h] = useState([]);
   const [trending7d, setTrending7d] = useState([]);
   const [trendingMonthly, setTrendingMonthly] = useState([]);
+  const [trending24hDown, setTrending24hDown] = useState([]);
+  const [trending7dDown, setTrending7dDown] = useState([]);
+  const [trendingMonthlyDown, setTrendingMonthlyDown] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,22 +30,35 @@ export default function Home() {
     getTrendingPrices('24h');
     getTrendingPrices('7d');
     getTrendingPrices('30d');
+    getTrendingPrices('24h', 'decrease');
+    getTrendingPrices('7d', 'decrease');
+    getTrendingPrices('30d', 'decrease');
   }, []);
 
-  const getTrendingPrices = async (timeframe) => {
+  const getTrendingPrices = async (timeframe, direction = 'increase') => {
     const client = buildClient();
     
     setLoading(true);
     try {
-      const response = await client.get(`/api/search/trending?timeframe=${timeframe}`);
-      console.log(`${timeframe} trending prices:`, response.data);
+      const response = await client.get(`/api/search/trending?timeframe=${timeframe}&direction=${direction}`);
+      console.log(`${timeframe} trending prices (${direction}):`, response.data);
       
-      if (timeframe === '24h') {
-        setTrending24h(response.data.cards);
-      } else if (timeframe === '7d') {
-        setTrending7d(response.data.cards);
-      } else if (timeframe === 'monthly') {
-        setTrendingMonthly(response.data.cards);
+      if (direction === 'decrease') {
+        if (timeframe === '24h') {
+          setTrending24hDown(response.data.cards);
+        } else if (timeframe === '7d') {
+          setTrending7dDown(response.data.cards);
+        } else if (timeframe === '30d') {
+          setTrendingMonthlyDown(response.data.cards);
+        }
+      } else {
+        if (timeframe === '24h') {
+          setTrending24h(response.data.cards);
+        } else if (timeframe === '7d') {
+          setTrending7d(response.data.cards);
+        } else if (timeframe === '30d') {
+          setTrendingMonthly(response.data.cards);
+        }
       }
     } catch (error) {
       console.error('Error fetching trending prices:', error);
@@ -170,8 +187,8 @@ export default function Home() {
               
               <Card className="border-border/50">
                 <CardHeader>
-                  <TrendingUp className="h-12 w-12 mb-4 text-primary mx-auto" />
-                  <CardTitle>Daily Trending Prices</CardTitle>
+                  <DeckIcon className="h-12 w-12 mb-4 text-primary mx-auto" />
+                  <CardTitle>Build a Deck</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
@@ -179,6 +196,7 @@ export default function Home() {
                   </CardDescription>
                 </CardContent>
               </Card>
+              {/* Trending Up Cards */}
               <Card className="border-border/50">
                 <CardHeader>
                   <TrendingUp className="h-12 w-12 mb-4 text-primary mx-auto" />
@@ -223,6 +241,58 @@ export default function Home() {
                     {
                       trendingMonthly.length > 0 ? (
                         <Trending trending={trendingMonthly} />
+                      ) : (
+                        <p className="text-sm text-muted-foreground mb-2">No trending data available.</p>
+                      )
+                    }
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              {/* Trending Down Cards */}
+              <Card className="border-border/50">
+                <CardHeader>
+                  <TrendingUp className="h-12 w-12 mb-4 text-primary mx-auto" />
+                  <CardTitle>Daily Declining Prices</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    {
+                      trending24hDown.length > 0 ? (
+                        <Trending trending={trending24hDown} />
+                      ) : (
+                        <p className="text-sm text-muted-foreground mb-2">No trending data available.</p>
+                      )
+                    }
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardHeader>
+                  <TrendingUp className="h-12 w-12 mb-4 text-primary mx-auto" />
+                  <CardTitle>Weekly Declining Prices</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    {
+                      trending7dDown.length > 0 ? (
+                        <Trending trending={trending7dDown} />
+                      ) : (
+                        <p className="text-sm text-muted-foreground mb-2">No trending data available.</p>
+                      )
+                    }
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardHeader>
+                  <TrendingUp className="h-12 w-12 mb-4 text-primary mx-auto" />
+                  <CardTitle>Monthly Declining Prices</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    {
+                      trendingMonthlyDown.length > 0 ? (
+                        <Trending trending={trendingMonthlyDown} />
                       ) : (
                         <p className="text-sm text-muted-foreground mb-2">No trending data available.</p>
                       )
