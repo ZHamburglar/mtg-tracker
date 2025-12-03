@@ -1,9 +1,7 @@
 -- Migration: Create card_faces table for multi-faced cards
 -- This allows proper storage and querying of cards with multiple faces (e.g., transform, modal DFC, split cards)
 
-DROP TABLE IF EXISTS card_faces;
-
-CREATE TABLE card_faces (
+CREATE TABLE IF NOT EXISTS card_faces (
   id INT AUTO_INCREMENT PRIMARY KEY,
   card_id CHAR(36) NOT NULL,
   face_order INT NOT NULL,
