@@ -1,7 +1,9 @@
 -- Migration: Create card_faces table for multi-faced cards
 -- This allows proper storage and querying of cards with multiple faces (e.g., transform, modal DFC, split cards)
 
-CREATE TABLE IF NOT EXISTS card_faces (
+DROP TABLE IF EXISTS card_faces;
+
+CREATE TABLE card_faces (
   id INT AUTO_INCREMENT PRIMARY KEY,
   card_id CHAR(36) NOT NULL,
   face_order INT NOT NULL,
@@ -27,4 +29,4 @@ CREATE TABLE IF NOT EXISTS card_faces (
   FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE,
   INDEX idx_card_id (card_id),
   INDEX idx_face_order (card_id, face_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+)
