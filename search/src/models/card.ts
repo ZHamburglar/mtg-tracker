@@ -214,12 +214,13 @@ export class Card {
       }
     }
 
-    // Fuzzy search for type_line
+    // Fuzzy search for type_line - matches if type_line contains ALL of the provided types
     if (params.type_line) {
       if (Array.isArray(params.type_line) && params.type_line.length > 0) {
-        const placeholders = params.type_line.map(() => '?').join(', ');
-        whereClauses.push(`type_line IN (${placeholders})`);
-        params.type_line.forEach(t => queryParams.push(t));
+        // Use LIKE with AND to match only if ALL types appear in the type_line
+        const typeConditions = params.type_line.map(() => 'type_line LIKE ?').join(' AND ');
+        whereClauses.push(`(${typeConditions})`);
+        params.type_line.forEach(t => queryParams.push(`%${t}%`));
       } else if (typeof params.type_line === 'string') {
         whereClauses.push('type_line LIKE ?');
         queryParams.push(`%${params.type_line}%`);
@@ -384,6 +385,7 @@ export class Card {
           .replace(/^released_at /i, 'c1.released_at ')
           .replace(/^mana_cost /i, 'c1.mana_cost ')
           .replace(/^cmc /i, 'c1.cmc ')
+          .replace(/type_line LIKE/g, 'c1.type_line LIKE')
           .replace(/^type_line /i, 'c1.type_line ')
           .replace(/^oracle_text /i, 'c1.oracle_text ')
           .replace(/^power /i, 'c1.power ')
