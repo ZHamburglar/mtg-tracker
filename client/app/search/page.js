@@ -95,13 +95,15 @@ function SearchPageContent() {
   });
   const [sets, setSets] = useState([]);
   const [artists, setArtists] = useState([]);
+  const [keywords, setKeywords] = useState([]);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Fetch available sets and artists
+    // Fetch available sets, artists, and keywords
     fetchSets();
     fetchArtists();
+    fetchKeywords();
   }, []);
 
   useEffect(() => {
@@ -144,6 +146,18 @@ function SearchPageContent() {
       }
     } catch (error) {
       console.error('Error fetching artists:', error);
+    }
+  };
+
+  const fetchKeywords = async () => {
+    try {
+      const client = buildClient();
+      const { data } = await client.get('/api/search/keywords');
+      if (data && data.keywords) {
+        setKeywords(data.keywords);
+      }
+    } catch (error) {
+      console.error('Error fetching keywords:', error);
     }
   };
 
@@ -313,10 +327,9 @@ function SearchPageContent() {
                     placeholder="Select keywords..."
                     searchPlaceholder="Search keywords..."
                     emptyMessage="No keyword found."
-                    options={['Flying', 'First Strike', 'Deathtouch', 'Lifelink', 'Trample']}
+                    options={keywords}
                     value={advancedFilters.keywords}
                     onChange={(value) => setAdvancedFilters({...advancedFilters, keywords: value})}
-                    renderBadge={(r) => <span className="capitalize">{r}</span>}
                   />
                   {/* Legality Format */}
                   <DropdownMultiselect
