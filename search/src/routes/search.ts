@@ -423,7 +423,6 @@ router.get('/api/search', async (req: Request, res: Response) => {
       set_code,
       set_name,
       legality_format,
-      legality_status,
       unique_prints,
       include_all_types,
       limit,
@@ -506,12 +505,11 @@ router.get('/api/search', async (req: Request, res: Response) => {
         : (set_name as string).split(',').map(s => s.trim());
     }
 
-    // Parse legalities (format and status must both be provided)
-    if (legality_format && legality_status) {
-      searchParams.legalities = {
-        format: legality_format as string,
-        status: legality_status as string
-      };
+    // Parse legality_format - cards must be legal in at least one of the specified formats
+    if (legality_format) {
+      searchParams.legality_format = Array.isArray(legality_format)
+        ? legality_format
+        : (legality_format as string).split(',').map(f => f.trim());
     }
 
     // Parse unique_prints flag (default false - group by oracle_id)

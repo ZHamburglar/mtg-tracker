@@ -167,7 +167,7 @@ export class Card {
     set_id?: string;
     set_code?: string;
     set_name?: string | string[];
-    legalities?: { format: string; status: string };
+    legality_format?: string[];
     unique_prints?: boolean; // If true, returns all prints; if false (default), groups by oracle_id
     include_all_types?: boolean; // If true, includes all set types; if false (default), excludes token and memorabilia
     limit?: number;
@@ -318,11 +318,13 @@ export class Card {
       }
     }
 
-    // JSON object search for legalities
-    if (params.legalities) {
-      whereClauses.push('JSON_EXTRACT(legalities, ?) = ?');
-      queryParams.push(`$.${params.legalities.format}`);
-      queryParams.push(params.legalities.status);
+    // JSON object search for legalities - card must be legal in at least one of the specified formats
+    if (params.legality_format && params.legality_format.length > 0) {
+      const legalityConditions = params.legality_format.map(() => 'JSON_EXTRACT(legalities, ?) = "legal"').join(' OR ');
+      whereClauses.push(`(${legalityConditions})`);
+      params.legality_format.forEach(format => {
+        queryParams.push(`$.${format}`);
+      });
     }
 
     // Filter out token and memorabilia set types by default
@@ -394,7 +396,8 @@ export class Card {
           .replace(/JSON_CONTAINS\(colors/g, 'JSON_CONTAINS(c1.colors')
           .replace(/JSON_CONTAINS\(color_identity/g, 'JSON_CONTAINS(c1.color_identity')
           .replace(/JSON_CONTAINS\(keywords/g, 'JSON_CONTAINS(c1.keywords')
-          .replace(/JSON_EXTRACT\(legalities/g, 'JSON_EXTRACT(c1.legalities');
+          .replace(/JSON_EXTRACT\(legalities/g, 'JSON_EXTRACT(c1.legalities')
+          .replace(/JSON_EXTRACT\(c1\.legalities/g, 'JSON_EXTRACT(c1.legalities');
       });
 
       // Get one card per oracle_id

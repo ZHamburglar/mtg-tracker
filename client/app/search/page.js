@@ -89,7 +89,9 @@ function SearchPageContent() {
     type_line: [],
     rarity: [],
     cmc: '',
-    colors: '',
+    color_identity: [],
+    keywords: [],
+    legality_format: [],
   });
   const [sets, setSets] = useState([]);
   const [artists, setArtists] = useState([]);
@@ -110,9 +112,9 @@ function SearchPageContent() {
       params[key] = value;
     });
 
-    // Update search query if 'q' or 'name' exists
-    if (params.q || params.name) {
-      setSearchQuery(params.q || params.name);
+    // Update search query if 'name' exists
+    if (params.name) {
+      setSearchQuery(params.name);
     }
 
     // Update advanced filters from URL
@@ -122,7 +124,9 @@ function SearchPageContent() {
       type_line: params.type_line ? params.type_line.split(',') : [],
       rarity: params.rarity ? params.rarity.split(',') : [],
       cmc: params.cmc || '',
-      colors: params.colors || '',
+      color_identity: params.color_identity ? params.color_identity.split(',') : [],
+      keywords: params.keywords ? params.keywords.split(',') : [],
+      legality_format: params.legality_format ? params.legality_format.split(',') : [],
     });
 
     // Perform search if any params exist
@@ -191,7 +195,7 @@ function SearchPageContent() {
     console.log('Handling search for query:', searchQuery);
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/search?name=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -212,7 +216,7 @@ function SearchPageContent() {
       <header className="border-border">
         <div className="container mx-auto px-4 py-4">
           
-          <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+          <form onSubmit={handleSearch} className={`flex gap-2 ${accordionValue === 'advanced' ? '' : 'mb-4'}`}>
             <Input
               type="text"
               placeholder="Search for cards..."
@@ -220,7 +224,10 @@ function SearchPageContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit">Search</Button>
+            {
+              accordionValue === '' ? <Button type="submit">Search</Button> : null
+            }
+            
             
             <Button 
               type="button"
@@ -290,27 +297,78 @@ function SearchPageContent() {
                     />
                   </div>
                   {/* Colors */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Colors</label>
-                    <Input 
-                      placeholder="W, U, B, R, G" 
-                      value={advancedFilters.colors}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, colors: e.target.value})}
-                    />
-                  </div>
+                  <DropdownMultiselect
+                    label="Color Identity"
+                    placeholder="Select color identities..."
+                    searchPlaceholder="Search color identities..."
+                    emptyMessage="No color identity found."
+                    options={['W', 'U', 'B', 'R', 'G']}
+                    value={advancedFilters.color_identity}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, color_identity: value})}
+                    renderBadge={(r) => <span className="capitalize">{r}</span>}
+                  />
+                  {/* Keywords */}
+                  <DropdownMultiselect
+                    label="Keywords"
+                    placeholder="Select keywords..."
+                    searchPlaceholder="Search keywords..."
+                    emptyMessage="No keyword found."
+                    options={['Flying', 'First Strike', 'Deathtouch', 'Lifelink', 'Trample']}
+                    value={advancedFilters.keywords}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, keywords: value})}
+                    renderBadge={(r) => <span className="capitalize">{r}</span>}
+                  />
+                  {/* Legality Format */}
+                  <DropdownMultiselect
+                    label="Legal In Format"
+                    placeholder="Select formats..."
+                    searchPlaceholder="Search formats..."
+                    emptyMessage="No format found."
+                    options={[
+                      { value: 'alchemy', label: 'Alchemy' },
+                      { value: 'brawl', label: 'Brawl' },
+                      { value: 'commander', label: 'Commander' },
+                      { value: 'duel', label: 'Duel' },
+                      { value: 'future', label: 'Future' },
+                      { value: 'gladiator', label: 'Gladiator' },
+                      { value: 'historic', label: 'Historic' },
+                      { value: 'legacy', label: 'Legacy' },
+                      { value: 'modern', label: 'Modern' },
+                      { value: 'oathbreaker', label: 'Oathbreaker' },
+                      { value: 'oldschool', label: 'Old School' },
+                      { value: 'pauper', label: 'Pauper' },
+                      { value: 'paupercommander', label: 'Pauper Commander' },
+                      { value: 'penny', label: 'Penny' },
+                      { value: 'pioneer', label: 'Pioneer' },
+                      { value: 'predh', label: 'PreDH' },
+                      { value: 'premodern', label: 'Premodern' },
+                      { value: 'standard', label: 'Standard' },
+                      { value: 'standardbrawl', label: 'Standard Brawl' },
+                      { value: 'timeless', label: 'Timeless' },
+                      { value: 'vintage', label: 'Vintage' }
+                    ]}
+                    value={advancedFilters.legality_format}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, legality_format: value})}
+                    getOptionValue={(opt) => opt.value}
+                    getOptionLabel={(opt) => opt.label}
+                    renderOption={(opt) => <span>{opt.label}</span>}
+                  />
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={() => {
+                      setSearchQuery('');
                       setAdvancedFilters({
                         artist: [],
                         set_name: [],
                         type_line: [],
                         rarity: [],
                         cmc: '',
-                        colors: '',
+                        color_identity: [],
+                        keywords: [],
+                        legality_format: [],
                       });
                       router.push('/search');
                     }}
@@ -332,6 +390,11 @@ function SearchPageContent() {
                           }
                           return { ...acc, [key]: value };
                         }, {});
+                      
+                      // Include search query if it exists
+                      if (searchQuery.trim()) {
+                        filters.name = searchQuery.trim();
+                      }
                       
                       const queryString = Object.entries(filters)
                         .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
