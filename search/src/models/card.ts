@@ -50,6 +50,7 @@ export interface CardDoc {
   foil?: boolean;
   nonfoil?: boolean;
   digital?: boolean;
+  has_multiple_faces?: boolean;
 }
 
 export class Card {

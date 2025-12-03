@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
+import { CardFace } from '../models/cardface';
 import { Set } from '../models/set';
 import { logger } from '../logger';
 
@@ -556,6 +557,66 @@ router.get('/api/search/:id/prices', async (req: Request, res: Response) => {
     });
     res.status(500).json({
       error: 'Failed to fetch card prices',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/search/:id/faces', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const { id } = req.params;
+  
+  logger.log('GET /api/search/:id/faces - Request started', {
+    cardId: id,
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    if (!id) {
+      logger.log('GET /api/search/:id/faces - Bad request: Missing card ID');
+      return res.status(400).json({
+        error: 'Card ID is required'
+      });
+    }
+
+    // First verify the card exists
+    const card = await Card.findById(id);
+    
+    if (!card) {
+      return res.status(404).json({
+        error: 'Card not found',
+        id
+      });
+    }
+
+    // Fetch card faces
+    const faces = await CardFace.findByCardId(id);
+
+    logger.log('GET /api/search/:id/faces - Success', {
+      cardId: id,
+      cardName: card.name,
+      facesCount: faces.length,
+      duration: Date.now() - startTime
+    });
+
+    res.status(200).json({
+      card: {
+        id: card.id,
+        name: card.name,
+        has_multiple_faces: card.has_multiple_faces
+      },
+      faces,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('GET /api/search/:id/faces - Error', {
+      cardId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
+    res.status(500).json({
+      error: 'Failed to fetch card faces',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }

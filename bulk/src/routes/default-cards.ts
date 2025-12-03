@@ -3,6 +3,7 @@ import axios from 'axios';
 import cron from 'node-cron';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
+import { CardFace } from '../models/cardface';
 import { Set } from '../models/set';
 import { TrendingCard } from '../models/trending-card';
 import { chain } from 'stream-chain';
@@ -79,6 +80,40 @@ const fetchDefaultCards = async () => {
           cardsCreated += cardResult.cardsCreated;
           cardsUpdated += cardResult.cardsUpdated;
           
+          // Process card_faces for multi-faced cards
+          for (const c of cardBatch) {
+            if (c.card_faces && Array.isArray(c.card_faces) && c.card_faces.length > 0) {
+              // Delete existing faces for this card (if any) before inserting new ones
+              await CardFace.deleteByCardId(c.id);
+              
+              // Insert each face
+              for (let faceIndex = 0; faceIndex < c.card_faces.length; faceIndex++) {
+                const face = c.card_faces[faceIndex];
+                await CardFace.build({
+                  card_id: c.id,
+                  face_order: faceIndex,
+                  name: face.name,
+                  mana_cost: face.mana_cost,
+                  type_line: face.type_line,
+                  oracle_text: face.oracle_text,
+                  power: face.power,
+                  toughness: face.toughness,
+                  colors: face.colors,
+                  color_indicator: face.color_indicator,
+                  flavor_text: face.flavor_text,
+                  artist: face.artist,
+                  illustration_id: face.illustration_id,
+                  image_uri_small: face.image_uris?.small?.substring(0, 500),
+                  image_uri_normal: face.image_uris?.normal?.substring(0, 500),
+                  image_uri_large: face.image_uris?.large?.substring(0, 500),
+                  image_uri_png: face.image_uris?.png?.substring(0, 500),
+                  image_uri_art_crop: face.image_uris?.art_crop?.substring(0, 500),
+                  image_uri_border_crop: face.image_uris?.border_crop?.substring(0, 500)
+                });
+              }
+            }
+          }
+          
           // Extract prices from this card batch
           for (const c of cardBatch) {
             if (c.prices && (c.prices.usd || c.prices.usd_foil || c.prices.usd_etched || c.prices.eur || c.prices.eur_foil || c.prices.tix)) {
@@ -122,6 +157,40 @@ const fetchDefaultCards = async () => {
           const cardResult = await Card.bulkCreate(cardBatch);
           cardsCreated += cardResult.cardsCreated;
           cardsUpdated += cardResult.cardsUpdated;
+          
+          // Process card_faces for multi-faced cards
+          for (const c of cardBatch) {
+            if (c.card_faces && Array.isArray(c.card_faces) && c.card_faces.length > 0) {
+              // Delete existing faces for this card (if any) before inserting new ones
+              await CardFace.deleteByCardId(c.id);
+              
+              // Insert each face
+              for (let faceIndex = 0; faceIndex < c.card_faces.length; faceIndex++) {
+                const face = c.card_faces[faceIndex];
+                await CardFace.build({
+                  card_id: c.id,
+                  face_order: faceIndex,
+                  name: face.name,
+                  mana_cost: face.mana_cost,
+                  type_line: face.type_line,
+                  oracle_text: face.oracle_text,
+                  power: face.power,
+                  toughness: face.toughness,
+                  colors: face.colors,
+                  color_indicator: face.color_indicator,
+                  flavor_text: face.flavor_text,
+                  artist: face.artist,
+                  illustration_id: face.illustration_id,
+                  image_uri_small: face.image_uris?.small?.substring(0, 500),
+                  image_uri_normal: face.image_uris?.normal?.substring(0, 500),
+                  image_uri_large: face.image_uris?.large?.substring(0, 500),
+                  image_uri_png: face.image_uris?.png?.substring(0, 500),
+                  image_uri_art_crop: face.image_uris?.art_crop?.substring(0, 500),
+                  image_uri_border_crop: face.image_uris?.border_crop?.substring(0, 500)
+                });
+              }
+            }
+          }
           
           // Extract prices from final card batch
           for (const c of cardBatch) {

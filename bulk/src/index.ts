@@ -8,6 +8,7 @@ import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
 import { Set } from './models/set';
 import { TrendingCard } from './models/trending-card';
+import { CardFace } from './models/cardface';
 
 import { logger } from './logger';
 
@@ -64,6 +65,7 @@ const start = async () => {
   CardPrice.setPool(pool);
   Set.setPool(pool);
   TrendingCard.setPool(pool);
+  CardFace.setPool(pool);
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {

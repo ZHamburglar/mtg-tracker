@@ -4,6 +4,7 @@ import { createMysqlPoolWithRetry } from './config/mysql';
 import { createRedisClient, closeRedisClient } from './config/redis';
 import { Card } from './models/card';
 import { CardPrice } from './models/cardprice';
+import { CardFace } from './models/cardface';
 import { TrendingCard } from './models/trending-card';
 import { Set } from './models/set';
 
@@ -61,10 +62,11 @@ const start = async () => {
   logger.info('Initializing models...');
   Card.setPool(pool);
   CardPrice.setPool(pool);
+  CardFace.setPool(pool);
   TrendingCard.setPool(pool);
   Set.setPool(pool);
 
-  logger.info('Models initialized: Card, CardPrice, TrendingCard');
+  logger.info('Models initialized: Card, CardPrice, CardFace, TrendingCard');
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
     logger.info('Server started successfully', {

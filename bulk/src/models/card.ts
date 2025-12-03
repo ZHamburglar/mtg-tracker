@@ -130,6 +130,13 @@ export class Card {
     if (scryfallCard.foil !== undefined) transformed.foil = scryfallCard.foil;
     if (scryfallCard.nonfoil !== undefined) transformed.nonfoil = scryfallCard.nonfoil;
     if (scryfallCard.digital !== undefined) transformed.digital = scryfallCard.digital;
+    
+    // Check if card has multiple faces
+    if (scryfallCard.card_faces && Array.isArray(scryfallCard.card_faces) && scryfallCard.card_faces.length > 0) {
+      transformed.has_multiple_faces = true;
+    } else {
+      transformed.has_multiple_faces = false;
+    }
 
     return transformed;
   }
@@ -199,9 +206,10 @@ export class Card {
         card.game_changer,
         card.foil,
         card.nonfoil,
-        card.digital
+        card.digital,
+        card.has_multiple_faces
       );
-      return '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      return '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     }).join(',');
 
     const query = `
@@ -211,7 +219,7 @@ export class Card {
         set_code, set_name, collector_number, artist, artist_ids, illustration_id, flavor_text,
         full_art, textless, promo, reprint, frame, edhrec_rank, border_color, image_uri_png,
         image_uri_small, gatherer_uri, edhrec_uri, tcgplayer_uri, cardmarket_uri, cardhoarder_uri, legalities,
-        games, finishes, reserved, oversized, game_changer, foil, nonfoil, digital
+        games, finishes, reserved, oversized, game_changer, foil, nonfoil, digital, has_multiple_faces
       ) VALUES ${placeholders}
       ON DUPLICATE KEY UPDATE
         oracle_id = VALUES(oracle_id),
@@ -260,7 +268,8 @@ export class Card {
         game_changer = VALUES(game_changer),
         foil = VALUES(foil),
         nonfoil = VALUES(nonfoil),
-        digital = VALUES(digital)
+        digital = VALUES(digital),
+        has_multiple_faces = VALUES(has_multiple_faces)
     `;
 
       try {

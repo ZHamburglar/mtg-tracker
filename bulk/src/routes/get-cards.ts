@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
+import { CardFace } from '../models/cardface';
 import { Set } from '../models/set';
 
 import { logger } from '../logger';
@@ -50,6 +51,22 @@ router.get('/api/bulk/cards/setcount', async (req: Request, res: Response) => {
     logger.error('Error fetching total sets:', error);
     res.status(500).json({
       error: 'Failed to fetch total sets',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/bulk/cards/facescount', async (req: Request, res: Response) => {
+  try {
+    const total = await CardFace.getTotal();
+    res.status(200).json({
+      total,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error fetching total card faces:', error);
+    res.status(500).json({
+      error: 'Failed to fetch total card faces',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
