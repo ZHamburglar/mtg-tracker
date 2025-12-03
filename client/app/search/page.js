@@ -110,9 +110,9 @@ function SearchPageContent() {
       params[key] = value;
     });
 
-    // Update search query if 'q' or 'name' exists
-    if (params.q || params.name) {
-      setSearchQuery(params.q || params.name);
+    // Update search query if 'name' exists
+    if (params.name) {
+      setSearchQuery(params.name);
     }
 
     // Update advanced filters from URL
@@ -191,7 +191,7 @@ function SearchPageContent() {
     console.log('Handling search for query:', searchQuery);
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/search?name=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -212,7 +212,7 @@ function SearchPageContent() {
       <header className="border-border">
         <div className="container mx-auto px-4 py-4">
           
-          <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+          <form onSubmit={handleSearch} className={`flex gap-2 ${accordionValue === 'advanced' ? '' : 'mb-4'}`}>
             <Input
               type="text"
               placeholder="Search for cards..."
@@ -220,7 +220,10 @@ function SearchPageContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit">Search</Button>
+            {
+              accordionValue === '' ? <Button type="submit">Search</Button> : null
+            }
+            
             
             <Button 
               type="button"
@@ -290,20 +293,24 @@ function SearchPageContent() {
                     />
                   </div>
                   {/* Colors */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Colors</label>
-                    <Input 
-                      placeholder="W, U, B, R, G" 
-                      value={advancedFilters.colors}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, colors: e.target.value})}
-                    />
-                  </div>
+                  <DropdownMultiselect
+                    label="Color Identity"
+                    placeholder="Select color identities..."
+                    searchPlaceholder="Search color identities..."
+                    emptyMessage="No color identity found."
+                    options={['W', 'U', 'B', 'R', 'G']}
+                    value={advancedFilters.color_identity}
+                    onChange={(value) => setAdvancedFilters({...advancedFilters, color_identity: value})}
+                    renderBadge={(r) => <span className="capitalize">{r}</span>}
+                  />
+
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={() => {
+                      setSearchQuery('');
                       setAdvancedFilters({
                         artist: [],
                         set_name: [],
@@ -332,6 +339,11 @@ function SearchPageContent() {
                           }
                           return { ...acc, [key]: value };
                         }, {});
+                      
+                      // Include search query if it exists
+                      if (searchQuery.trim()) {
+                        filters.name = searchQuery.trim();
+                      }
                       
                       const queryString = Object.entries(filters)
                         .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
