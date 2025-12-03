@@ -2,7 +2,7 @@
 -- This allows proper storage and querying of cards with multiple faces (e.g., transform, modal DFC, split cards)
 
 CREATE TABLE IF NOT EXISTS card_faces (
-  id VARCHAR(255) PRIMARY KEY,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   card_id VARCHAR(255) NOT NULL,
   face_order INT NOT NULL,
   name VARCHAR(255),
@@ -30,6 +30,4 @@ CREATE TABLE IF NOT EXISTS card_faces (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Add flag to cards table to indicate multi-faced cards
-ALTER TABLE cards 
-  ADD COLUMN IF NOT EXISTS has_multiple_faces BOOLEAN DEFAULT FALSE AFTER layout,
-  ADD INDEX idx_has_multiple_faces (has_multiple_faces);
+ALTER TABLE cards ADD COLUMN has_multiple_faces BOOLEAN DEFAULT FALSE AFTER layout;
