@@ -10,6 +10,10 @@ const router = express.Router();
 let artistsCache: { data: string[]; timestamp: number } | null = null;
 const ARTISTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
+// Cache for keywords endpoint
+let keywordsCache: { data: string[]; timestamp: number } | null = null;
+const KEYWORDS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
 router.get('/api/search/sets', async (req: Request, res: Response) => {
   const startTime = Date.now();
   
@@ -90,6 +94,83 @@ router.get('/api/search/artists', async (req: Request, res: Response) => {
     });
     res.status(500).json({
       error: 'Failed to fetch artists',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/search/keywords', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  logger.log('GET /api/search/keywords - Request started', {
+    timestamp: new Date().toISOString(),
+    cacheHit: keywordsCache !== null && (Date.now() - keywordsCache.timestamp) < KEYWORDS_CACHE_TTL
+  });
+
+  try {
+    let keywords: string[];
+
+    // Check if cache exists and is still valid
+    if (keywordsCache && (Date.now() - keywordsCache.timestamp) < KEYWORDS_CACHE_TTL) {
+      keywords = keywordsCache.data;
+      logger.log('GET /api/search/keywords - Cache hit', {
+        totalKeywords: keywords.length,
+        cacheAge: Date.now() - keywordsCache.timestamp,
+        duration: Date.now() - startTime
+      });
+    } else {
+      // Fetch from Scryfall API if cache is invalid or doesn't exist
+      const [abilitiesResponse, actionsResponse] = await Promise.all([
+        fetch('https://api.scryfall.com/catalog/keyword-abilities'),
+        fetch('https://api.scryfall.com/catalog/keyword-actions')
+      ]);
+
+      if (!abilitiesResponse.ok || !actionsResponse.ok) {
+        throw new Error('Failed to fetch keywords from Scryfall API');
+      }
+
+      const abilitiesData = await abilitiesResponse.json();
+      const actionsData = await actionsResponse.json();
+
+      // Merge keywords from both endpoints
+      const mergedKeywords: string[] = [...abilitiesData.data, ...actionsData.data];
+      
+      // Deduplicate and sort alphabetically
+      const seen = new Map<string, boolean>();
+      const uniqueKeywords: string[] = [];
+      for (const keyword of mergedKeywords) {
+        if (!seen.has(keyword)) {
+          seen.set(keyword, true);
+          uniqueKeywords.push(keyword);
+        }
+      }
+      keywords = uniqueKeywords.sort((a, b) => a.localeCompare(b));
+      
+      // Update cache
+      keywordsCache = {
+        data: keywords,
+        timestamp: Date.now()
+      };
+
+      logger.log('GET /api/search/keywords - Cache miss, fetched from Scryfall', {
+        totalKeywords: keywords.length,
+        duration: Date.now() - startTime
+      });
+    }
+
+    res.status(200).json({
+      keywords,
+      timestamp: new Date().toISOString(),
+      cached: keywordsCache !== null && (Date.now() - keywordsCache.timestamp) < KEYWORDS_CACHE_TTL
+    });
+  } catch (error) {
+    logger.error('GET /api/search/keywords - Error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
+    res.status(500).json({
+      error: 'Failed to fetch keywords',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
