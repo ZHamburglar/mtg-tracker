@@ -502,6 +502,63 @@ function SearchPageContent() {
                 );
               })}
             </div>
+            
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('page', '1');
+                    router.push(`/search?${params.toString()}`);
+                  }}
+                  disabled={pagination.page === 1}
+                >
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('page', String(pagination.page - 1));
+                    router.push(`/search?${params.toString()}`);
+                  }}
+                  disabled={pagination.page === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground px-4">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('page', String(pagination.page + 1));
+                    router.push(`/search?${params.toString()}`);
+                  }}
+                  disabled={pagination.page === pagination.totalPages}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('page', String(pagination.totalPages));
+                    router.push(`/search?${params.toString()}`);
+                  }}
+                  disabled={pagination.page === pagination.totalPages}
+                >
+                  Last
+                </Button>
+              </div>
+            )}
           </>
         ) : searchQuery ? (
           <div className="text-center py-20">
