@@ -95,7 +95,7 @@ export class Card {
     const row = rows[0];
     
     // Parse JSON fields safely
-    return {
+    const card = {
       ...row,
       colors: Card.safeJsonParse(row.colors),
       color_identity: Card.safeJsonParse(row.color_identity),
@@ -106,6 +106,21 @@ export class Card {
       games: Card.safeJsonParse(row.games),
       finishes: Card.safeJsonParse(row.finishes),
     } as CardDoc;
+
+    // Fetch card faces if card has multiple faces
+    if (card.has_multiple_faces) {
+      const [faceRows] = await Card.pool.query<mysql.RowDataPacket[]>(
+        'SELECT * FROM card_faces WHERE card_id = ? ORDER BY face_order',
+        [id]
+      );
+      card.card_faces = faceRows.map(face => ({
+        ...face,
+        colors: Card.safeJsonParse(face.colors),
+        color_indicator: Card.safeJsonParse(face.color_indicator),
+      }));
+    }
+
+    return card;
   }
 
   static async findByOracleId(oracleId: string): Promise<CardDoc[]> {
