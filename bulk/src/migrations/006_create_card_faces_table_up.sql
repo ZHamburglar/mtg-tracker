@@ -29,4 +29,4 @@ CREATE TABLE card_faces (
   FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE,
   INDEX idx_card_id (card_id),
   INDEX idx_face_order (card_id, face_order)
-)
+);
