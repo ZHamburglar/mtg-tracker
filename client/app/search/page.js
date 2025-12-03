@@ -94,16 +94,19 @@ function SearchPageContent() {
     legality_format: [],
   });
   const [sets, setSets] = useState([]);
+  const [groupedSets, setGroupedSets] = useState({});
   const [artists, setArtists] = useState([]);
   const [keywords, setKeywords] = useState([]);
+  const [types, setTypes] = useState({});
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Fetch available sets, artists, and keywords
+    // Fetch available sets, artists, keywords, and types
     fetchSets();
     fetchArtists();
     fetchKeywords();
+    fetchTypes();
   }, []);
 
   useEffect(() => {
@@ -161,6 +164,18 @@ function SearchPageContent() {
     }
   };
 
+  const fetchTypes = async () => {
+    try {
+      const client = buildClient();
+      const { data } = await client.get('/api/search/types');
+      if (data && data.types) {
+        setTypes(data.types);
+      }
+    } catch (error) {
+      console.error('Error fetching types:', error);
+    }
+  };
+
   const fetchSets = async () => {
     try {
       const client = buildClient();
@@ -173,6 +188,18 @@ function SearchPageContent() {
           return new Date(b.released_at) - new Date(a.released_at);
         });
         setSets(sortedSets);
+        
+        // Group sets by set_type
+        const grouped = sortedSets.reduce((acc, set) => {
+          const setType = set.set_type || 'other';
+          const formattedType = setType.charAt(0).toUpperCase() + setType.slice(1);
+          if (!acc[formattedType]) {
+            acc[formattedType] = [];
+          }
+          acc[formattedType].push(set);
+          return acc;
+        }, {});
+        setGroupedSets(grouped);
       }
     } catch (error) {
       console.error('Error fetching sets:', error);
@@ -272,12 +299,15 @@ function SearchPageContent() {
                     placeholder="Select sets..."
                     searchPlaceholder="Search sets..."
                     emptyMessage="No set found."
-                    options={sets}
+                    options={groupedSets}
                     value={advancedFilters.set_name}
                     onChange={(value) => setAdvancedFilters({...advancedFilters, set_name: value})}
                     getOptionValue={(set) => set.name}
                     getOptionLabel={(set) => set.name}
                     renderOption={(set) => <span>{set.name} ({set.code})</span>}
+                    grouped={true}
+                    collapsible={true}
+                    groupOrder={['Expansion', 'Core', 'Masters', 'Commander', 'Draft_innovation', 'Funny', 'Starter', 'Duel_deck', 'Premium_deck', 'From_the_vault', 'Spellbook', 'Archenemy', 'Planechase', 'Box', 'Promo', 'Alchemy', 'Masterpiece', 'Arsenal', 'Vanguard', 'Minigame', 'Token', 'Memorabilia', 'Other']}
                   />
                   {/* Type Filter */}
                   <DropdownMultiselect
@@ -285,9 +315,12 @@ function SearchPageContent() {
                     placeholder="Select types..."
                     searchPlaceholder="Search types..."
                     emptyMessage="No type found."
-                    options={['Creature', 'Instant', 'Sorcery', 'Enchantment', 'Artifact', 'Planeswalker', 'Land', 'Battle']}
+                    options={types}
                     value={advancedFilters.type_line}
                     onChange={(value) => setAdvancedFilters({...advancedFilters, type_line: value})}
+                    grouped={true}
+                    collapsible={true}
+                    groupOrder={['Supertypes', 'Card Types', 'Artifact Types', 'Battle Types', 'Creature Types', 'Enchantment Types', 'Land Types', 'Planeswalker Types', 'Spell Types']}
                   />
                   {/* Rarity */}
                   <DropdownMultiselect

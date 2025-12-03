@@ -14,6 +14,10 @@ const ARTISTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 let keywordsCache: { data: string[]; timestamp: number } | null = null;
 const KEYWORDS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
+// Cache for types endpoint (grouped by type category)
+let typesCache: { data: Record<string, string[]>; timestamp: number } | null = null;
+const TYPES_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
 router.get('/api/search/sets', async (req: Request, res: Response) => {
   const startTime = Date.now();
   
@@ -171,6 +175,89 @@ router.get('/api/search/keywords', async (req: Request, res: Response) => {
     });
     res.status(500).json({
       error: 'Failed to fetch keywords',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+router.get('/api/search/types', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  logger.log('GET /api/search/types - Request started', {
+    timestamp: new Date().toISOString(),
+    cacheHit: typesCache !== null && (Date.now() - typesCache.timestamp) < TYPES_CACHE_TTL
+  });
+
+  try {
+    let types: Record<string, string[]>;
+
+    // Check if cache exists and is still valid
+    if (typesCache && (Date.now() - typesCache.timestamp) < TYPES_CACHE_TTL) {
+      types = typesCache.data;
+      logger.log('GET /api/search/types - Cache hit', {
+        totalGroups: Object.keys(types).length,
+        cacheAge: Date.now() - typesCache.timestamp,
+        duration: Date.now() - startTime
+      });
+    } else {
+      // Fetch from Scryfall API if cache is invalid or doesn't exist
+      const typeEndpoints = [
+        { name: 'Supertypes', url: 'https://api.scryfall.com/catalog/supertypes' },
+        { name: 'Card Types', url: 'https://api.scryfall.com/catalog/card-types' },
+        { name: 'Artifact Types', url: 'https://api.scryfall.com/catalog/artifact-types' },
+        { name: 'Battle Types', url: 'https://api.scryfall.com/catalog/battle-types' },
+        { name: 'Creature Types', url: 'https://api.scryfall.com/catalog/creature-types' },
+        { name: 'Enchantment Types', url: 'https://api.scryfall.com/catalog/enchantment-types' },
+        { name: 'Land Types', url: 'https://api.scryfall.com/catalog/land-types' },
+        { name: 'Planeswalker Types', url: 'https://api.scryfall.com/catalog/planeswalker-types' },
+        { name: 'Spell Types', url: 'https://api.scryfall.com/catalog/spell-types' }
+      ];
+
+      const responses = await Promise.all(
+        typeEndpoints.map(endpoint => fetch(endpoint.url))
+      );
+
+      // Check if all responses are ok
+      const failedResponse = responses.find(r => !r.ok);
+      if (failedResponse) {
+        throw new Error('Failed to fetch types from Scryfall API');
+      }
+
+      const dataPromises = responses.map(r => r.json());
+      const allData = await Promise.all(dataPromises);
+
+      // Build grouped types object
+      types = {};
+      typeEndpoints.forEach((endpoint, index) => {
+        const sortedTypes = allData[index].data.sort((a: string, b: string) => a.localeCompare(b));
+        types[endpoint.name] = sortedTypes;
+      });
+      
+      // Update cache
+      typesCache = {
+        data: types,
+        timestamp: Date.now()
+      };
+
+      logger.log('GET /api/search/types - Cache miss, fetched from Scryfall', {
+        totalGroups: Object.keys(types).length,
+        duration: Date.now() - startTime
+      });
+    }
+
+    res.status(200).json({
+      types,
+      timestamp: new Date().toISOString(),
+      cached: typesCache !== null && (Date.now() - typesCache.timestamp) < TYPES_CACHE_TTL
+    });
+  } catch (error) {
+    logger.error('GET /api/search/types - Error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration: Date.now() - startTime
+    });
+    res.status(500).json({
+      error: 'Failed to fetch types',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
