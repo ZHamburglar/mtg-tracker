@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS card_faces (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  card_id VARCHAR(255) NOT NULL,
+  card_id CHAR(36) NOT NULL,
   face_order INT NOT NULL,
   name VARCHAR(255),
   mana_cost VARCHAR(100),
