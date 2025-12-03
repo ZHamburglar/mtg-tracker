@@ -51,6 +51,7 @@ export interface CardDoc {
   nonfoil?: boolean;
   digital?: boolean;
   has_multiple_faces?: boolean;
+  card_faces?: any[];
 }
 
 export class Card {
@@ -440,6 +441,36 @@ export class Card {
       games: Card.safeJsonParse(row.games),
       finishes: Card.safeJsonParse(row.finishes),
     })) as CardDoc[];
+
+    // Fetch card faces for multi-faced cards
+    const cardIds = cards.filter(card => card.has_multiple_faces).map(card => card.id);
+    if (cardIds.length > 0) {
+      const placeholders = cardIds.map(() => '?').join(', ');
+      const [faceRows] = await Card.pool.query<mysql.RowDataPacket[]>(
+        `SELECT * FROM card_faces WHERE card_id IN (${placeholders}) ORDER BY card_id, face_order`,
+        cardIds
+      );
+
+      // Group faces by card_id
+      const facesByCardId: { [key: string]: any[] } = {};
+      faceRows.forEach(face => {
+        if (!facesByCardId[face.card_id]) {
+          facesByCardId[face.card_id] = [];
+        }
+        facesByCardId[face.card_id]!.push({
+          ...face,
+          colors: Card.safeJsonParse(face.colors),
+          color_indicator: Card.safeJsonParse(face.color_indicator),
+        });
+      });
+
+      // Add faces to cards
+      cards.forEach(card => {
+        if (card.has_multiple_faces && facesByCardId[card.id]) {
+          card.card_faces = facesByCardId[card.id]!;
+        }
+      });
+    }
 
     return { cards, total };
   }

@@ -56,7 +56,7 @@ router.get(
         cards.map(async (collectionItem) => {
           // Get card details
           const [cardRows] = await pool.query<any[]>(
-            'SELECT id, name, set_name, set_code, rarity, image_uri_png, image_uri_small FROM cards WHERE id = ?',
+            'SELECT id, name, set_name, set_code, rarity, image_uri_png, image_uri_small, has_multiple_faces FROM cards WHERE id = ?',
             [collectionItem.card_id]
           );
           
@@ -65,6 +65,16 @@ router.get(
             'SELECT price_usd, price_usd_foil FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
             [collectionItem.card_id]
           );
+
+          // Get card faces if card has multiple faces
+          let cardFaces = null;
+          if (cardRows[0]?.has_multiple_faces) {
+            const [faceRows] = await pool.query<any[]>(
+              'SELECT * FROM card_faces WHERE card_id = ? ORDER BY face_order',
+              [collectionItem.card_id]
+            );
+            cardFaces = faceRows;
+          }
 
           return {
             ...collectionItem,
@@ -76,6 +86,8 @@ router.get(
               rarity: cardRows[0]?.rarity || null,
               image_uri_png: cardRows[0]?.image_uri_png || null,
               image_uri_small: cardRows[0]?.image_uri_small || null,
+              has_multiple_faces: cardRows[0]?.has_multiple_faces || false,
+              card_faces: cardFaces,
               prices: {
                 usd: priceRows[0]?.price_usd || null,
                 usd_foil: priceRows[0]?.price_usd_foil || null
