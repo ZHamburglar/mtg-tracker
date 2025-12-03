@@ -27,7 +27,4 @@ CREATE TABLE IF NOT EXISTS card_faces (
   FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE,
   INDEX idx_card_id (card_id),
   INDEX idx_face_order (card_id, face_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Add flag to cards table to indicate multi-faced cards
-ALTER TABLE cards ADD COLUMN has_multiple_faces BOOLEAN DEFAULT FALSE AFTER layout;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
