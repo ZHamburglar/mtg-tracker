@@ -475,17 +475,26 @@ function SearchPageContent() {
                     className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
                     onClick={() => router.push(`/card/${card.id}`)}
                   >
-                    {image ? (
-                      <CardImage
-                        card={card}
-                        isHighResLoaded={loadedImages[card.id]}
-                        onHighResLoad={() => setLoadedImages(prev => ({ ...prev, [card.id]: true }))}
-                      />
-                    ) : (
-                      <div className="w-full h-64 bg-muted flex items-center justify-center">
-                        <span className="text-muted-foreground">No Image</span>
-                      </div>
-                    )}
+                    <div className="relative">
+                      {image ? (
+                        <CardImage
+                          card={card}
+                          isHighResLoaded={loadedImages[card.id]}
+                          onHighResLoad={() => setLoadedImages(prev => ({ ...prev, [card.id]: true }))}
+                        />
+                      ) : (
+                        <div className="w-full h-64 bg-muted flex items-center justify-center">
+                          <span className="text-muted-foreground">No Image</span>
+                        </div>
+                      )}
+                      {card.has_multiple_faces && (
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-primary/90 text-primary-foreground shadow-lg text-xs">
+                            Multi-Face
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                     <CardContent className="p-3">
                       <h3 className="font-semibold text-sm mb-1 truncate">{card.name}</h3>
                       <p className="text-xs text-muted-foreground">{card.set_name}</p>

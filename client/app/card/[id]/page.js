@@ -22,6 +22,7 @@ import {
   SelectScrollDownButton,
 } from '@/components/ui/select';
 import PriceChart from '@/components/PriceChart';
+import CardFaceToggle from '@/components/CardFaceToggle';
 import buildClient from '../../api/build-client';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
@@ -262,7 +263,9 @@ export default function CardDetailPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Card Image */}
           <div>
-            {getCardImage(card) ? (
+            {card.has_multiple_faces ? (
+              <CardFaceToggle cardId={cardId} cardData={card} />
+            ) : getCardImage(card) ? (
               <CardImage
                 card={card}
                 isHighResLoaded={isHighResLoaded}
