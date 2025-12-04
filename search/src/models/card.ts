@@ -36,6 +36,7 @@ export interface CardDoc {
   edhrec_rank?: number;
   border_color?: string;
   image_uri_png?: string;
+  image_uri_small?: string;
   gatherer_uri?: string;
   edhrec_uri?: string;
   tcgplayer_uri?: string;
@@ -136,7 +137,7 @@ export class Card {
     const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(query, [oracleId]);
     
     // Parse JSON fields for all rows
-    return rows.map(row => ({
+    const cards = rows.map(row => ({
       ...row,
       colors: Card.safeJsonParse(row.colors),
       color_identity: Card.safeJsonParse(row.color_identity),
@@ -147,6 +148,33 @@ export class Card {
       games: Card.safeJsonParse(row.games),
       finishes: Card.safeJsonParse(row.finishes),
     } as CardDoc));
+
+    // For multi-faced cards without top-level images, fetch first face's images
+    const multiFacedCards = cards.filter(card => card.has_multiple_faces && !card.image_uri_png);
+    if (multiFacedCards.length > 0) {
+      const cardIds = multiFacedCards.map(card => card.id);
+      const placeholders = cardIds.map(() => '?').join(', ');
+      const [faceRows] = await Card.pool.query<mysql.RowDataPacket[]>(
+        `SELECT card_id, image_uri_png, image_uri_small FROM card_faces WHERE card_id IN (${placeholders}) AND face_order = 0`,
+        cardIds
+      );
+
+      // Map faces to cards
+      const facesByCardId: { [key: string]: any } = {};
+      faceRows.forEach(face => {
+        facesByCardId[face.card_id] = face;
+      });
+
+      // Add first face images to cards
+      cards.forEach(card => {
+        if (card.has_multiple_faces && !card.image_uri_png && facesByCardId[card.id]) {
+          card.image_uri_png = facesByCardId[card.id].image_uri_png;
+          card.image_uri_small = facesByCardId[card.id].image_uri_small;
+        }
+      });
+    }
+
+    return cards;
   }
 
   static async getAllArtists(): Promise<string[]> {
