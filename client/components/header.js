@@ -19,6 +19,23 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+} from "@/components/ui/dropdown-menu";
+import {
   Label
 } from "@/components/ui/label";
 import {
@@ -28,6 +45,8 @@ import { Button } from "@/components/ui/button";
 import buildClient from "../app/api/build-client";
 import Image from "next/image";
 import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Dropdown } from 'react-day-picker';
 
 
 const Header = () => {
@@ -117,24 +136,24 @@ const Header = () => {
             <NavigationMenuItem>
 
               {currentUser ? (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>Sign Out</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Confirm Sign Out</DialogTitle>
-                      <DialogDescription>
-                        Are you sure you want to sign out?
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => console.log('Cancel sign out')}>Cancel</Button>
-                      <Button onClick={() => signOut()}>Sign Out</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <div className="flex items-center gap-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Avatar className="cursor-pointer">
+                        <AvatarFallback>
+                          {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{currentUser.email}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => signOut()}>
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
                 <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
                   <DialogTrigger asChild>
