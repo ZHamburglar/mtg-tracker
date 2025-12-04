@@ -129,6 +129,8 @@ function SearchPageContent() {
         setPagination({
           page: data.pagination?.currentPage || 1,
           totalPages: data.pagination?.totalPages || 1,
+          totalRecords: data.pagination?.totalRecords || 0,
+          pageSize: data.pagination?.pageSize || 100,
         });
       }
     } catch (error) {
@@ -167,7 +169,7 @@ function SearchPageContent() {
           </div>
         ) : cards.length > 0 ? (
           <>
-            <h2 className="text-2xl font-bold mb-6">Search Results ({cards.length})</h2>
+            <h2 className="text-2xl font-bold mb-6">Search Results ({pagination.totalRecords})</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {cards.map((card) => {
                 const image = getCardImage(card);

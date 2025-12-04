@@ -44,6 +44,27 @@ export function CardSearch({ initialQuery = '', initialFilters = {} }) {
     fetchTypes();
   }, []);
 
+  // Update search query when initialQuery changes
+  useEffect(() => {
+    setSearchQuery(initialQuery);
+  }, [initialQuery]);
+
+  // Update advanced filters when initialFilters changes
+  useEffect(() => {
+    const filtersString = JSON.stringify(initialFilters);
+    setAdvancedFilters({
+      artist: [],
+      set_name: [],
+      type_line: [],
+      rarity: [],
+      cmc: '',
+      color_identity: [],
+      keywords: [],
+      legality_format: [],
+      ...initialFilters,
+    });
+  }, [JSON.stringify(initialFilters)]);
+
   const fetchArtists = async () => {
     try {
       const client = buildClient();
