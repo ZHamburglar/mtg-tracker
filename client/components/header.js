@@ -50,6 +50,8 @@ import {
   Input
 } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import buildClient from "../app/api/build-client";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,8 +62,11 @@ import { Menu } from 'lucide-react';
 const Header = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
+  const [hasNotifications, setHasNotifications] = useState(true); // TODO: Fetch from API
 
   useEffect(() => {
     console.log('Current user in Header:', currentUser);
@@ -77,6 +82,11 @@ const Header = () => {
       setCurrentUser(response.data.currentUser);
     } catch (error) {
       console.error('Error fetching current user:', error);
+      if (error.response?.data?.errors) {
+        error.response.data.errors.forEach(err => toast.error(err.message));
+      } else {
+        toast.error('Failed to fetch user information');
+      }
     }
   };
 
@@ -89,14 +99,47 @@ const Header = () => {
         console.log('Sign in successful:', response.data);
         setCurrentUser(response.data);
         setIsSignInOpen(false);
+        toast.success('Signed in successfully!');
         // Cookie is automatically set by the browser from Set-Cookie header
         // Reload the page to update the currentUser state
         // window.location.href = '/';
       })
       .catch(error => {
         console.error('Error signing in:', error);
-        // TODO: Show error message to user
+        if (error.response?.data?.errors) {
+          error.response.data.errors.forEach(err => toast.error(err.message));
+        } else {
+          toast.error('Failed to sign in. Please check your credentials.');
+        }
       });
+  };
+
+  const createAccount = () => {
+    const client = buildClient();
+    client.post('/api/users/newuser', { email, username, password })
+      .then(response => {
+        console.log('Account created:', response.data);
+        setCurrentUser(response.data);
+        setIsCreateAccountOpen(false);
+        toast.success('Account created successfully!');
+        // Clear form
+        setEmail('');
+        setUsername('');
+        setPassword('');
+      })
+      .catch(error => {
+        console.error('Error creating account:', error);
+        if (error.response?.data?.errors) {
+          error.response.data.errors.forEach(err => toast.error(err.message));
+        } else {
+          toast.error('Failed to create account. Please try again.');
+        }
+      });
+  };
+
+  const openCreateAccount = () => {
+    setIsSignInOpen(false);
+    setIsCreateAccountOpen(true);
   };
 
   const signOut = () => {
@@ -104,11 +147,19 @@ const Header = () => {
     client.post('/api/users/signout')
       .then(response => {
         console.log('Sign out successful:', response);
+        toast.success('Signed out successfully!');
         // Reload the page to clear the currentUser state
-        window.location.href = '/';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 500);
       })
       .catch(error => {
         console.error('Error signing out:', error);
+        if (error.response?.data?.errors) {
+          error.response.data.errors.forEach(err => toast.error(err.message));
+        } else {
+          toast.error('Failed to sign out. Please try again.');
+        }
       });
   };
 
@@ -165,14 +216,29 @@ const Header = () => {
                 <div className="flex items-center gap-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Avatar className="cursor-pointer">
-                        <AvatarFallback>
-                          {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'U'}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative cursor-pointer">
+                        <Avatar>
+                          <AvatarFallback>
+                            {currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        {hasNotifications && (
+                          <Badge 
+                            variant="destructive" 
+                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                          >
+                            !
+                          </Badge>
+                        )}
+                      </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{currentUser.username}</DropdownMenuLabel>
                       <DropdownMenuLabel>{currentUser.email}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => console.log('Go to settings')}>
+                        Settings
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => signOut()}>
                         Sign Out
@@ -181,33 +247,74 @@ const Header = () => {
                   </DropdownMenu>
                 </div>
               ) : (
-                <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
-                  <DialogTrigger asChild>
-                    <Button>Sign In</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Confirm Sign In</DialogTitle>
+                <>
+                  <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
+                    <DialogTrigger asChild>
+                      <Button>Sign In</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Sign In</DialogTitle>
+                        <DialogDescription>
+                          Enter your credentials to sign in
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="flex items-center gap-4">
+                        <Label htmlFor="email" className="min-w-20">Email</Label>
+                        <Input type="email" id="email" className="flex-1" value={email}
+                          onChange={e => setEmail(e.target.value)} />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Label htmlFor="password" className="min-w-20">Password</Label>
+                        <Input type="password" id="password" className="flex-1" value={password}
+                          onChange={e => setPassword(e.target.value)} />
+                      </div>
                       <DialogDescription>
-                        Are you sure you want to sign in?
+                        Don't have an account?{' '}
+                        <span 
+                          onClick={openCreateAccount}
+                          className="text-primary underline cursor-pointer hover:text-primary/80"
+                        >
+                          Create one
+                        </span>
                       </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex items-center gap-4">
-                      <Label htmlFor="email" className="min-w-20">Email</Label>
-                      <Input type="email" id="email" className="flex-1" value={email}
-                        onChange={e => setEmail(e.target.value)} />
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Label htmlFor="password" className="min-w-20">Password</Label>
-                      <Input type="password" id="password" className="flex-1" value={password}
-                        onChange={e => setPassword(e.target.value)} />
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => console.log('Cancel sign out')}>Cancel</Button>
-                      <Button onClick={() => signIn()}>Sign In</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsSignInOpen(false)}>Cancel</Button>
+                        <Button onClick={() => signIn()}>Sign In</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={isCreateAccountOpen} onOpenChange={setIsCreateAccountOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create Account</DialogTitle>
+                        <DialogDescription>
+                          Fill in your details to create a new account
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="flex items-center gap-4">
+                        <Label htmlFor="new-username" className="min-w-20">Username</Label>
+                        <Input type="text" id="new-username" className="flex-1" value={username}
+                          onChange={e => setUsername(e.target.value)} />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Label htmlFor="new-email" className="min-w-20">Email</Label>
+                        <Input type="email" id="new-email" className="flex-1" value={email}
+                          onChange={e => setEmail(e.target.value)} />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Label htmlFor="new-password" className="min-w-20">Password</Label>
+                        <Input type="password" id="new-password" className="flex-1" value={password}
+                          onChange={e => setPassword(e.target.value)} />
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCreateAccountOpen(false)}>Cancel</Button>
+                        <Button onClick={() => createAccount()}>Create Account</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
 
             </NavigationMenuItem> 

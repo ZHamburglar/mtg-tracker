@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from "next/link";
 import { Loader2, ArrowLeft, Plus, Check, Minus, Car } from 'lucide-react';
+import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -168,8 +169,10 @@ export default function CardDetailPage() {
       await client.post(`/api/collection/${cardId}/increment`, {
         finish_type: finishType
       });
+      toast.success('Card added to collection.');
       await checkCollection();
     } catch (error) {
+      toast.error('Failed to add card to collection. Please try again.');
       console.error('Increment card error:', error);
     } finally {
       setAddingToCollection(false);
@@ -183,8 +186,10 @@ export default function CardDetailPage() {
       await client.post(`/api/collection/${cardId}/decrement`, {
         finish_type: finishType
       });
+      toast.success('Card removed from collection.');
       await checkCollection();
     } catch (error) {
+      toast.error('Failed to remove card from collection. Please try again.');
       console.error('Decrement card error:', error);
     } finally {
       setAddingToCollection(false);
