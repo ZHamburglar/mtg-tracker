@@ -227,6 +227,12 @@ export default function CardDetailPage() {
   }
 
   const getCardImage = (card) => {
+    // For multi-faced cards with layout 'adventure', images are at card level
+    if (card.has_multiple_faces) {
+      if (card.image_uri_png) return card.image_uri_png;
+      if (card.image_uri_small) return card.image_uri_small;
+    }
+    // For single-faced cards or non-adventure multi-faced cards without card-level images
     if (card.image_uri_png) {return card.image_uri_png;}
     if (card.image_uri_small) {return card.image_uri_small;}
     return null;
@@ -263,7 +269,7 @@ export default function CardDetailPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Card Image */}
           <div>
-            {card.has_multiple_faces ? (
+            {card.has_multiple_faces && card.card_faces && card.card_faces.length > 0 ? (
               <CardFaceToggle cardId={cardId} cardData={card} />
             ) : getCardImage(card) ? (
               <CardImage
