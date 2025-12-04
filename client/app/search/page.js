@@ -53,25 +53,23 @@ function CardImage({ card, isHighResLoaded, onHighResLoad }) {
   }, []);
 
   // Use first face image if card has multiple faces
-  const smallImage = card.has_multiple_faces && card.card_faces?.[0]?.image_uri_small 
-    ? card.card_faces[0].image_uri_small 
-    : card.image_uri_small;
+  const smallImage = card.image_uri_small || (card.has_multiple_faces && card.card_faces?.[0]?.image_uri_small) || null;
   
-  const largeImage = card.has_multiple_faces && card.card_faces?.[0]?.image_uri_png 
-    ? card.card_faces[0].image_uri_png 
-    : card.image_uri_png;
+  const largeImage = card.image_uri_png || (card.has_multiple_faces && card.card_faces?.[0]?.image_uri_png) || null;
 
   return (
     <div ref={imgRef} className="relative w-full">
-      <img
-        src={smallImage}
-        alt={card.name}
-        loading="lazy"
-        className={`w-full h-auto object-contain transition-opacity duration-300 ${
-          isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
-        }`}
-      />
-      {isVisible && (
+      {smallImage && (
+        <img
+          src={smallImage}
+          alt={card.name}
+          loading="lazy"
+          className={`w-full h-auto object-contain transition-opacity duration-300 ${
+            isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
+          }`}
+        />
+      )}
+      {isVisible && largeImage && (
         <img
           src={largeImage}
           alt={card.name}
@@ -500,13 +498,13 @@ function SearchPageContent() {
                           <span className="text-muted-foreground">No Image</span>
                         </div>
                       )}
-                      {card.has_multiple_faces && (
+                      {card.has_multiple_faces ? (
                         <div className="absolute top-2 right-2">
                           <Badge className="bg-primary/90 text-primary-foreground shadow-lg text-xs">
                             Multi-Face
                           </Badge>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     <CardContent className="p-3">
                       <h3 className="font-semibold text-sm mb-1 truncate">{card.name}</h3>
