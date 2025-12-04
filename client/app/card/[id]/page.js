@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from "next/link";
-import { Loader2, ArrowLeft, Plus, Check, Minus } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, Check, Minus, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import PriceChart from '@/components/PriceChart';
 import CardFaceToggle from '@/components/CardFaceToggle';
+import CardDetails from '@/components/cardDetails';
 import buildClient from '../../api/build-client';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
@@ -272,11 +273,14 @@ export default function CardDetailPage() {
             {card.has_multiple_faces && card.card_faces && card.card_faces.length > 0 ? (
               <CardFaceToggle cardId={cardId} cardData={card} />
             ) : getCardImage(card) ? (
-              <CardImage
-                card={card}
-                isHighResLoaded={isHighResLoaded}
-                onHighResLoad={() => setIsHighResLoaded(true)}
-              />
+              <>
+                <CardImage
+                  card={card}
+                  isHighResLoaded={isHighResLoaded}
+                  onHighResLoad={() => setIsHighResLoaded(true)}
+                />
+                <CardDetails card={card} />
+              </>
             ) : (
               <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center">
                 <span className="text-muted-foreground">No Image Available</span>
