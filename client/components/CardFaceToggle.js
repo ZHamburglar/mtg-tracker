@@ -5,6 +5,7 @@ import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import CardDetails from '@/components/cardDetails';
 import buildClient from '@/app/api/build-client';
 
 export default function CardFaceToggle({ cardId, cardData }) {
@@ -174,31 +175,7 @@ export default function CardFaceToggle({ cardId, cardData }) {
 
       {/* Current Face Details */}
       {currentFace && (currentFace.mana_cost || currentFace.type_line || currentFace.oracle_text) && (
-        <Card>
-          <CardContent className="pt-6 space-y-2">
-            {currentFace.name && faces.length > 1 && (
-              <h3 className="text-xl font-bold">{currentFace.name}</h3>
-            )}
-            {currentFace.mana_cost && (
-              <p><strong>Mana Cost:</strong> {currentFace.mana_cost}</p>
-            )}
-            {currentFace.type_line && (
-              <p><strong>Type:</strong> {currentFace.type_line}</p>
-            )}
-            {currentFace.oracle_text && (
-              <div>
-                <strong>Text:</strong>
-                <p className="whitespace-pre-line mt-1">{currentFace.oracle_text}</p>
-              </div>
-            )}
-            {currentFace.power && currentFace.toughness && (
-              <p><strong>P/T:</strong> {currentFace.power}/{currentFace.toughness}</p>
-            )}
-            {currentFace.flavor_text && (
-              <p className="text-sm italic text-muted-foreground mt-2">{currentFace.flavor_text}</p>
-            )}
-          </CardContent>
-        </Card>
+        <CardDetails card={currentFace} />
       )}
     </div>
   );
