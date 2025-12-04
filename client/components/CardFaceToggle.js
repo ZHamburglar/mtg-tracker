@@ -14,16 +14,15 @@ export default function CardFaceToggle({ cardId, cardData }) {
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
 
   useEffect(() => {
-    fetchCardFaces();
-  }, [cardId]);
+    setCardFaces();
+  }, [cardData]);
 
-  const fetchCardFaces = async () => {
+  const setCardFaces = async () => {
     setLoading(true);
     try {
-      const client = buildClient();
-      const { data } = await client.get(`/api/search/${cardId}/faces`);
-      if (data && data.faces) {
-        setFaces(data.faces);
+      if (cardData && cardData.card_faces) {
+        console.log('Setting card faces from props:', cardData);
+        setFaces(cardData.card_faces);
       }
     } catch (error) {
       console.error('Fetch card faces error:', error);
@@ -33,16 +32,28 @@ export default function CardFaceToggle({ cardId, cardData }) {
   };
 
   const goToNextFace = () => {
-    setIsHighResLoaded(false);
+    if (faces[0]?.image_uri_png) {
+      setIsHighResLoaded(false);
+    }
     setCurrentFaceIndex((prev) => (prev + 1) % faces.length);
   };
 
   const goToPreviousFace = () => {
-    setIsHighResLoaded(false);
+    if (faces[0]?.image_uri_png) {
+      setIsHighResLoaded(false);
+    }
     setCurrentFaceIndex((prev) => (prev - 1 + faces.length) % faces.length);
   };
 
   const getImageUrl = (face) => {
+    // For adventure layout, images are at the card level, not in card_faces
+    if (cardData.image_uri_png || cardData.image_uri_small) {
+      if (cardData.image_uri_png) return cardData.image_uri_png;
+      if (cardData.image_uri_large) return cardData.image_uri_large;
+      if (cardData.image_uri_normal) return cardData.image_uri_normal;
+      if (cardData.image_uri_small) return cardData.image_uri_small;
+    }
+    // For other layouts, use face-specific images
     if (face.image_uri_png) return face.image_uri_png;
     if (face.image_uri_large) return face.image_uri_large;
     if (face.image_uri_normal) return face.image_uri_normal;
@@ -86,9 +97,9 @@ export default function CardFaceToggle({ cardId, cardData }) {
         {imageUrl ? (
           <>
             {/* Show low-res placeholder while high-res loads */}
-            {!isHighResLoaded && currentFace.image_uri_small && (
+            {!isHighResLoaded && (cardData.layout === 'adventure' ? cardData.image_uri_small : currentFace.image_uri_small) && (
               <img
-                src={currentFace.image_uri_small}
+                src={cardData.layout === 'adventure' ? cardData.image_uri_small : currentFace.image_uri_small}
                 alt={currentFace.name || cardData.name}
                 className="w-full h-auto rounded-lg shadow-lg blur-sm"
               />
@@ -109,7 +120,7 @@ export default function CardFaceToggle({ cardId, cardData }) {
         )}
 
         {/* Face Navigation Buttons */}
-        {faces.length > 1 && (
+        {faces && faces.length > 1 && faces[0].image_uri_png && (
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 flex justify-between px-2">
             <Button
               variant="secondary"
@@ -149,7 +160,9 @@ export default function CardFaceToggle({ cardId, cardData }) {
               variant={currentFaceIndex === index ? 'default' : 'outline'}
               size="sm"
               onClick={() => {
-                setIsHighResLoaded(false);
+                if (faces[0]?.image_uri_png) {
+                  setIsHighResLoaded(false);
+                }
                 setCurrentFaceIndex(index);
               }}
             >
