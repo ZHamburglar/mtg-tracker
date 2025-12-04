@@ -19,6 +19,31 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   Label
 } from "@/components/ui/label";
 import {
@@ -28,6 +53,8 @@ import { Button } from "@/components/ui/button";
 import buildClient from "../app/api/build-client";
 import Image from "next/image";
 import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Menu } from 'lucide-react';
 
 
 const Header = () => {
@@ -56,7 +83,6 @@ const Header = () => {
 
 
   const signIn = () => {
-    console.log('Signing in with', email, password);
     const client = buildClient();
     client.post('/api/users/signin', { email, password })
       .then(response => {
@@ -89,15 +115,34 @@ const Header = () => {
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>
-                <NavigationMenuLink href="/search">Search</NavigationMenuLink>
-              </NavigationMenuTrigger>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+        <div className="flex items-center gap-4">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Navigation</SheetTitle>
+                <SheetDescription>
+                  Quick links to navigate the app
+                </SheetDescription>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-6">
+                <Link href="/" className="text-lg hover:text-primary transition-colors">
+                  Home
+                </Link>
+                <Link href="/search" className="text-lg hover:text-primary transition-colors">
+                  Search
+                </Link>
+                <Link href="/collection" className="text-lg hover:text-primary transition-colors">
+                  My Collection
+                </Link>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
 
         <Link href="/">
@@ -117,24 +162,24 @@ const Header = () => {
             <NavigationMenuItem>
 
               {currentUser ? (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>Sign Out</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Confirm Sign Out</DialogTitle>
-                      <DialogDescription>
-                        Are you sure you want to sign out?
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => console.log('Cancel sign out')}>Cancel</Button>
-                      <Button onClick={() => signOut()}>Sign Out</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <div className="flex items-center gap-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Avatar className="cursor-pointer">
+                        <AvatarFallback>
+                          {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{currentUser.email}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => signOut()}>
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
                 <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
                   <DialogTrigger asChild>

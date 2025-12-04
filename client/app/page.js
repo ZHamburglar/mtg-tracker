@@ -152,7 +152,7 @@ export default function Home() {
               MTG Collection Tracker
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Track your Magic: The Gathering card collection, view price histories, and manage your valuable cards.
+              Track your Magic: The Gathering card collection, build decks, and manage your valuable cards.
             </p>
             
             <div className="grid md:grid-cols-3 gap-6 mb-12">
