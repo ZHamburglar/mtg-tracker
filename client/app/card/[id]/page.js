@@ -25,6 +25,7 @@ import {
 import PriceChart from '@/components/PriceChart';
 import CardFaceToggle from '@/components/CardFaceToggle';
 import CardDetails from '@/components/cardDetails';
+import { CardSearch } from '@/components/CardSearch';
 import buildClient from '../../api/build-client';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
@@ -263,12 +264,13 @@ export default function CardDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
+        <CardSearch />
+        {/* <div className="container mx-auto px-4 py-4">
           <Button variant="ghost" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-        </div>
+        </div> */}
       </header>
 
       <main className="container mx-auto px-4 py-8">
