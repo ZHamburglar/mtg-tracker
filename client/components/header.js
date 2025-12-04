@@ -83,7 +83,6 @@ const Header = () => {
 
 
   const signIn = () => {
-    console.log('Signing in with', email, password);
     const client = buildClient();
     client.post('/api/users/signin', { email, password })
       .then(response => {
