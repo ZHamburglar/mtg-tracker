@@ -339,10 +339,19 @@ export default function CardDetailPage() {
                               {new Date(print.released_at).getFullYear()}
                             </p>
                           )}
-                          {price && (
-                            <p className="text-xs font-semibold text-green-600 mt-1">
-                              ${parseFloat(price).toFixed(2)}
-                            </p>
+                          {(print.prices?.usd || print.prices?.usd_foil) && (
+                            <div className="flex items-center justify-between mt-1">
+                              {print.prices?.usd && (
+                                <p className="text-xs font-semibold text-green-600">
+                                  ${parseFloat(print.prices.usd).toFixed(2)}
+                                </p>
+                              )}
+                              {print.prices?.usd_foil && (
+                                <p className="text-xs font-semibold text-blue-600">
+                                  ${parseFloat(print.prices.usd_foil).toFixed(2)} ✨
+                                </p>
+                              )}
+                            </div>
                           )}
                         </CardContent>
                       </Card>
