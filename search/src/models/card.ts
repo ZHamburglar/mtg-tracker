@@ -174,6 +174,47 @@ export class Card {
       });
     }
 
+    // Fetch latest prices for all cards
+    if (cards.length > 0) {
+      const cardIds = cards.map(card => card.id);
+      const placeholders = cardIds.map(() => '?').join(', ');
+      
+      // Get the latest price for each card using a subquery
+      const priceQuery = `
+        SELECT cp.card_id, cp.price_usd, cp.price_usd_foil, cp.price_usd_etched, 
+               cp.price_eur, cp.price_eur_foil, cp.price_tix
+        FROM card_prices cp
+        INNER JOIN (
+          SELECT card_id, MAX(created_at) as max_date
+          FROM card_prices
+          WHERE card_id IN (${placeholders})
+          GROUP BY card_id
+        ) latest ON cp.card_id = latest.card_id AND cp.created_at = latest.max_date
+      `;
+      
+      const [priceRows] = await Card.pool.query<mysql.RowDataPacket[]>(priceQuery, cardIds);
+      
+      // Map prices to cards
+      const pricesByCardId: { [key: string]: any } = {};
+      priceRows.forEach(price => {
+        pricesByCardId[price.card_id] = {
+          usd: price.price_usd,
+          usd_foil: price.price_usd_foil,
+          usd_etched: price.price_usd_etched,
+          eur: price.price_eur,
+          eur_foil: price.price_eur_foil,
+          tix: price.price_tix,
+        };
+      });
+      
+      // Add prices to cards
+      cards.forEach(card => {
+        if (pricesByCardId[card.id]) {
+          (card as any).prices = pricesByCardId[card.id];
+        }
+      });
+    }
+
     return cards;
   }
 
