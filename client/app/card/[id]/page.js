@@ -301,45 +301,53 @@ export default function CardDetailPage() {
                   All Printings ({allPrints.length})
                 </h2>
                 <div className="grid grid-cols-4 gap-4">
-                  {allPrints.map((print) => (
-                    <Card
-                      key={print.id}
-                      className={`cursor-pointer hover:shadow-lg transition-shadow ${
-                        print.id === cardId ? 'ring-2 ring-primary' : ''
-                      }`}
-                      onClick={() => router.push(`/card/${print.id}`)}
-                    >
-                      <div className="relative">
-                        {print.image_uri_small ? (
-                          <img
-                            src={print.image_uri_small}
-                            alt={`${print.name} - ${print.set_name}`}
-                            className="w-full h-auto object-contain"
-                          />
-                        ) : (
-                          <div className="w-full h-48 bg-muted flex items-center justify-center">
-                            <span className="text-muted-foreground text-xs">No Image</span>
-                          </div>
-                        )}
-                        {print.id === cardId && (
-                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                            Current
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-3">
-                        <p className="text-xs font-semibold truncate">{print.set_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {print.set_code?.toUpperCase()} #{print.collector_number}
-                        </p>
-                        {print.released_at && (
+                  {allPrints.map((print) => {
+                    const price = print.prices?.usd || print.prices?.usd_foil;
+                    return (
+                      <Card
+                        key={print.id}
+                        className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                          print.id === cardId ? 'ring-2 ring-primary' : ''
+                        }`}
+                        onClick={() => router.push(`/card/${print.id}`)}
+                      >
+                        <div className="relative">
+                          {print.image_uri_small ? (
+                            <img
+                              src={print.image_uri_small}
+                              alt={`${print.name} - ${print.set_name}`}
+                              className="w-full h-auto object-contain"
+                            />
+                          ) : (
+                            <div className="w-full h-48 bg-muted flex items-center justify-center">
+                              <span className="text-muted-foreground text-xs">No Image</span>
+                            </div>
+                          )}
+                          {print.id === cardId && (
+                            <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                              Current
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-3">
+                          <p className="text-xs font-semibold truncate">{print.set_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(print.released_at).getFullYear()}
+                            {print.set_code?.toUpperCase()} #{print.collector_number}
                           </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                          {print.released_at && (
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(print.released_at).getFullYear()}
+                            </p>
+                          )}
+                          {price && (
+                            <p className="text-xs font-semibold text-green-600 mt-1">
+                              ${parseFloat(price).toFixed(2)}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -389,7 +397,7 @@ export default function CardDetailPage() {
             {/* Collection Status */}
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Collection</CardTitle>
+                <CardTitle>Add to Collection</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
