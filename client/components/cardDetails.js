@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import Link from "next/link";
 
 export default function CardDetails({ card }) {
   return (
@@ -24,6 +25,27 @@ export default function CardDetails({ card }) {
         )}
         {card.flavor_text && (
           <p className="text-sm italic text-muted-foreground mt-2">{card.flavor_text}</p>
+        )}
+        {card.artist && (
+          <p>
+            <strong>Artist:</strong>{' '}
+            <Link 
+              href={`/search?artist=${encodeURIComponent(card.artist)}`}
+              className="text-primary hover:underline"
+            >
+              {card.artist}
+            </Link>
+          </p>
+        )}
+        {card.scryfall_uri && (
+          <p>
+            <Link 
+              href={card.scryfall_uri}
+              className="text-primary hover:underline inline-block mt-2"
+            >
+              View on Scryfall →
+            </Link>
+          </p>
         )}
       </CardContent>
     </Card>
