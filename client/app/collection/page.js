@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { getCardImage } from '@/hooks/get-card-image';
 import buildClient from './../api/build-client';
 import { format, set } from 'date-fns';
 
-export default function CollectionPage() {
+function CollectionPageContent() {
   const [collection, setCollection] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 100 });
   const [collectionValue, setCollectionValue] = useState(null);
@@ -156,5 +156,17 @@ export default function CollectionPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function CollectionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <CollectionPageContent />
+    </Suspense>
   );
 }

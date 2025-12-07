@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from "next/link";
 import { Loader2, ArrowLeft, Plus, Check, Minus, Car } from 'lucide-react';
@@ -30,7 +30,7 @@ import { getCardImage } from '@/hooks/get-card-image';
 import CardImage from '@/components/CardImage';
 import buildClient from '../../api/build-client';
 
-export default function CardDetailPage() {
+function CardDetailPageContent() {
   const [card, setCard] = useState(null);
   const [allPrints, setAllPrints] = useState([]);
   const [open, setOpen] = useState(false);
@@ -574,5 +574,17 @@ export default function CardDetailPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CardDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <CardDetailPageContent />
+    </Suspense>
   );
 }
