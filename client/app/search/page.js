@@ -8,60 +8,9 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import buildClient from '../api/build-client';
 import { CardSearch } from '@/components/CardSearch';
+import CardImage from '@/components/CardImage';
+import { getCardImage } from '@/hooks/get-card-image';
 import { toast } from 'sonner';
-
-function CardImage({ card, isHighResLoaded, onHighResLoad }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '100px' } // Start loading 100px before entering viewport
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Use first face image if card has multiple faces
-  const smallImage = card.image_uri_small || (card.has_multiple_faces && card.card_faces?.[0]?.image_uri_small) || null;
-  
-  const largeImage = card.image_uri_png || (card.has_multiple_faces && card.card_faces?.[0]?.image_uri_png) || null;
-
-  return (
-    <div ref={imgRef} className="relative w-full">
-      {smallImage && (
-        <img
-          src={smallImage}
-          alt={card.name}
-          loading="lazy"
-          className={`w-full h-auto object-contain transition-opacity duration-300 ${
-            isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
-          }`}
-        />
-      )}
-      {isVisible && largeImage && (
-        <img
-          src={largeImage}
-          alt={card.name}
-          className={`w-full h-auto object-contain transition-opacity duration-300 ${
-            isHighResLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={onHighResLoad}
-        />
-      )}
-    </div>
-  );
-}
 
 function SearchPageContent() {
   const [cards, setCards] = useState([]);
@@ -139,16 +88,6 @@ function SearchPageContent() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getCardImage = (card) => {
-    // For multi-faced cards, use the first face image
-    if (card.image_uri_png) {return card.image_uri_png;}
-    if (card.image_uri_small) {return card.image_uri_small;}
-    if (card.has_multiple_faces && card.card_faces?.[0]) {
-      return card.card_faces[0].image_uri_png || card.card_faces[0].image_uri_small;
-    }
-    return null;
   };
 
   const getCardPrice = (card) => {
