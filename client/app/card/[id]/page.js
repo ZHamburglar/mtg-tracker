@@ -234,7 +234,6 @@ export default function CardDetailPage() {
   }
 
   const getCardImage = (card) => {
-    // For multi-faced cards with layout 'adventure', images are at card level
     if (card.has_multiple_faces) {
       if (card.image_uri_png) return card.image_uri_png;
       if (card.image_uri_small) return card.image_uri_small;
