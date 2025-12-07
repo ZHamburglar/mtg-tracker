@@ -1,20 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { NotAuthorizedError } from '../errors/not-authorized-error';
-
-interface UserPayload {
-  id: number;
-  email: string;
-  username: string;
-  role: 'user' | 'admin';
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      currentUser?: UserPayload;
-    }
-  }
-}
+import '@mtg-tracker/common';  // Import to ensure UserPayload type is available
 
 export const requireAdmin = (
   req: Request,
