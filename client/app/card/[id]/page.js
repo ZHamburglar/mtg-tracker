@@ -621,7 +621,7 @@ export default function CardDetailPage() {
                     </Link>
                   </p>
                 )}
-                <a
+                `<a
                   href={card.scryfall_uri}
                   target="_blank"
                   rel="noopener noreferrer"

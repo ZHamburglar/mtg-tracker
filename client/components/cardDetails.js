@@ -37,6 +37,14 @@ export default function CardDetails({ card }) {
             </Link>
           </p>
         )}
+        {card.edhrec_rank && card.edhrec_uri && (
+          <p>
+            <strong>EDHREC Rank: {' '}</strong>
+            <Link href={card.edhrec_uri} className="text-primary hover:underline inline-block mt-2">
+              {'#'}{card.edhrec_rank.toLocaleString()}
+            </Link>
+          </p>
+        )}
         {card.scryfall_uri && (
           <p>
             <Link 
