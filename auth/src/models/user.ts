@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
+import { logger } from '../logger';
 
 export interface UserAttrs {
   email: string;
@@ -46,6 +47,7 @@ export class User {
 
     const user = await User.findById(result.insertId);
     if (!user) {
+      logger.error('Failed to retrieve user after creation:', { insertId: result.insertId });
       throw new Error('Failed to create user');
     }
 

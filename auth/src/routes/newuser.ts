@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/user';
 import { BadRequestError } from '../errors/bad-request-error';
 import { validateRequest } from '../middlewares/validate-request';
+import { logger } from '../logger';
 
 export const router = express.Router();
 
@@ -59,6 +60,8 @@ router.post('/api/users/newuser',
     req.session = {
       jwt: userJwt
     };
+
+    logger.log('New user created:', { id: user.id, username: user.username, role: user.role });
 
     res.status(201).send({
       id: user.id,

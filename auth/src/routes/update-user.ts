@@ -6,6 +6,7 @@ import { NotFoundError } from '../errors/not-found-error';
 import { validateRequest } from '../middlewares/validate-request';
 import { currentUser } from '../middlewares/current-user';
 import { requireAdmin } from '../middlewares/require-admin';
+import { logger } from '../logger';
 
 export const router = express.Router();
 
@@ -68,6 +69,8 @@ router.patch('/api/users/:id',
     if (!updatedUser) {
       throw new NotFoundError();
     }
+
+    logger.log('User updated:', { id: updatedUser.id, role: updatedUser.role });
 
     // Return updated user (without password)
     res.status(200).json({
