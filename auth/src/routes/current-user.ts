@@ -1,5 +1,5 @@
 import express from 'express';
-import { currentUser } from '../middlewares/current-user';
+import { currentUser } from '@mtg-tracker/common';
 import { logger } from '../logger';
 
 const router = express.Router();
