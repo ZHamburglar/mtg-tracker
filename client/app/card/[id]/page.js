@@ -26,6 +26,7 @@ import PriceChart from '@/components/PriceChart';
 import CardFaceToggle from '@/components/CardFaceToggle';
 import CardDetails from '@/components/cardDetails';
 import { CardSearch } from '@/components/CardSearch';
+import { getCardImage } from '@/hooks/get-card-image';
 import buildClient from '../../api/build-client';
 
 function CardImage({ card, isHighResLoaded, onHighResLoad }) {
@@ -233,16 +234,16 @@ export default function CardDetailPage() {
     }
   }
 
-  const getCardImage = (card) => {
-    if (card.has_multiple_faces) {
-      if (card.image_uri_png) return card.image_uri_png;
-      if (card.image_uri_small) return card.image_uri_small;
-    }
-    // For single-faced cards or non-adventure multi-faced cards without card-level images
-    if (card.image_uri_png) {return card.image_uri_png;}
-    if (card.image_uri_small) {return card.image_uri_small;}
-    return null;
-  };
+  // const getCardImage = (card) => {
+  //   if (card.has_multiple_faces) {
+  //     if (card.image_uri_png) return card.image_uri_png;
+  //     if (card.image_uri_small) return card.image_uri_small;
+  //   }
+  //   // For single-faced cards or non-adventure multi-faced cards without card-level images
+  //   if (card.image_uri_png) {return card.image_uri_png;}
+  //   if (card.image_uri_small) {return card.image_uri_small;}
+  //   return null;
+  // };
 
   if (loading) {
     return (
