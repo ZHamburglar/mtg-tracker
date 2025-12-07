@@ -5,6 +5,7 @@ import { validateRequest } from '../middlewares/validate-request';
 import { BadRequestError } from '../errors/bad-request-error';
 
 import { User } from '../models/user';
+import { logger } from '../logger';
 
 const router = express.Router();
 
@@ -52,6 +53,8 @@ router.post(
       jwt: userJwt
     };
 
+    logger.log('User signed in:', { id: existingUser.id, username: existingUser.username });
+    
     res.status(200).send({
       id: existingUser.id,
       email: existingUser.email,
