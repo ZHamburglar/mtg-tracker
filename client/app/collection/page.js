@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
 import buildClient from './../api/build-client';
 import { format, set } from 'date-fns';
@@ -14,6 +15,7 @@ export default function CollectionPage() {
   const [collection, setCollection] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 100 });
   const [collectionValue, setCollectionValue] = useState(null);
+  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -62,16 +64,6 @@ export default function CollectionPage() {
     }
   };
 
-  // const getCardImage = (card) => {
-  //   // For multi-faced cards, use the first face image
-  //   if (card.image_uri_png) {return card.image_uri_png;}
-  //   if (card.image_uri_small) {return card.image_uri_small;}
-  //   if (card.has_multiple_faces && card.card_faces?.[0]) {
-  //     return card.card_faces[0].image_uri_png || card.card_faces[0].image_uri_small;
-  //   }
-  //   return null;
-  // };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -115,10 +107,10 @@ export default function CollectionPage() {
                 >
                   <div className="relative">
                     {image ? (
-                      <img
-                        src={image}
-                        alt={card.name}
-                        className="w-full h-auto object-contain"
+                      <CardImage
+                        card={card}
+                        isHighResLoaded={isHighResLoaded}
+                        onHighResLoad={() => setIsHighResLoaded(true)}
                       />
                     ) : (
                       <div className="w-full h-64 bg-muted flex items-center justify-center">

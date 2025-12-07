@@ -27,52 +27,8 @@ import CardFaceToggle from '@/components/CardFaceToggle';
 import CardDetails from '@/components/cardDetails';
 import { CardSearch } from '@/components/CardSearch';
 import { getCardImage } from '@/hooks/get-card-image';
+import CardImage from '@/components/CardImage';
 import buildClient from '../../api/build-client';
-
-function CardImage({ card, isHighResLoaded, onHighResLoad }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '100px' } // Start loading 100px before entering viewport
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={imgRef} className="relative w-full">
-      <img
-        src={card.image_uri_small}
-        alt={card.name}
-        loading="lazy"
-        className={`w-full h-auto object-contain transition-opacity duration-300 ${isHighResLoaded ? 'opacity-0 absolute' : 'opacity-100'
-          }`}
-      />
-      {isVisible && (
-        <img
-          src={card.image_uri_png}
-          alt={card.name}
-          className={`w-full h-auto object-contain transition-opacity duration-300 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-          onLoad={onHighResLoad}
-        />
-      )}
-    </div>
-  );
-}
-
 
 export default function CardDetailPage() {
   const [card, setCard] = useState(null);
@@ -234,17 +190,6 @@ export default function CardDetailPage() {
     }
   }
 
-  // const getCardImage = (card) => {
-  //   if (card.has_multiple_faces) {
-  //     if (card.image_uri_png) return card.image_uri_png;
-  //     if (card.image_uri_small) return card.image_uri_small;
-  //   }
-  //   // For single-faced cards or non-adventure multi-faced cards without card-level images
-  //   if (card.image_uri_png) {return card.image_uri_png;}
-  //   if (card.image_uri_small) {return card.image_uri_small;}
-  //   return null;
-  // };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -265,12 +210,6 @@ export default function CardDetailPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <CardSearch />
-        {/* <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </div> */}
       </header>
 
       <main className="container mx-auto px-4 py-8">
