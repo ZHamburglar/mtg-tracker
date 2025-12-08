@@ -30,7 +30,13 @@ import CardImage from '@/components/CardImage';
 import buildClient from '../../api/build-client';
 
 function CardDetailPageContent() {
-  const { loading, startLoading, stopLoading } = useLoading();
+  const { loading, startLoading, stopLoading, isLoading } = useLoading({
+    fetchingCard: false,
+    fetchingPrints: false,
+    fetchingPrices: false,
+    checkingCollection: false,
+    addingToCollection: false
+  });
   const [card, setCard] = useState(null);
   const [allPrints, setAllPrints] = useState([]);
   const [open, setOpen] = useState(false);
@@ -39,7 +45,6 @@ function CardDetailPageContent() {
   const [inCollection, setInCollection] = useState(false);
   const [collectionData, setCollectionData] = useState(null);
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
-  const [addingToCollection, setAddingToCollection] = useState(false);
 
   const router = useRouter();
   const params = useParams();
@@ -56,7 +61,7 @@ function CardDetailPageContent() {
   }, [cardId]);
 
   const loadCard = async () => {
-    startLoading();
+    startLoading('fetchingCard');
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}`);
@@ -67,12 +72,12 @@ function CardDetailPageContent() {
     } catch (error) {
       console.error('Load card error:', error);
     } finally {
-      stopLoading();
+      stopLoading('fetchingCard');
     }
   };
 
   const fetchAllPrints = async () => {
-    startLoading();
+    startLoading('fetchingPrints');
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prints`);
@@ -83,12 +88,12 @@ function CardDetailPageContent() {
     } catch (error) {
       console.error('Fetch all prints error:', error);
     } finally {
-      stopLoading();
+      stopLoading('fetchingPrints');
     }
   };
 
   const fetchCardPrices = async () => {
-    startLoading();
+    startLoading('fetchingPrices');
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prices/latest`);
@@ -98,7 +103,7 @@ function CardDetailPageContent() {
     } catch (error) {
       console.error('Fetch card prices error:', error);
     } finally {
-      stopLoading();
+      stopLoading('fetchingPrices');
     }
   };
 
@@ -115,7 +120,7 @@ function CardDetailPageContent() {
   };
 
   const checkCollection = async () => {
-    startLoading();
+    startLoading('checkingCollection');
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/collection/check/${cardId}`);
@@ -124,12 +129,12 @@ function CardDetailPageContent() {
     } catch (error) {
       console.error('Check collection error:', error);
     } finally {
-      stopLoading();
+      stopLoading('checkingCollection');
     }
   };
 
   const incrementCard = async (finishType) => {
-    setAddingToCollection(true);
+    startLoading('addingToCollection');
     try {
       const client = buildClient();
       await client.post(`/api/collection/${cardId}/increment`, {
@@ -141,12 +146,12 @@ function CardDetailPageContent() {
       toast.error('Failed to add card to collection. Please try again.');
       console.error('Increment card error:', error);
     } finally {
-      setAddingToCollection(false);
+      stopLoading('addingToCollection');
     }
   };
 
   const decrementCard = async (finishType) => {
-    setAddingToCollection(true);
+    startLoading('addingToCollection');
     try {
       const client = buildClient();
       await client.post(`/api/collection/${cardId}/decrement`, {
@@ -158,7 +163,7 @@ function CardDetailPageContent() {
       toast.error('Failed to remove card from collection. Please try again.');
       console.error('Decrement card error:', error);
     } finally {
-      setAddingToCollection(false);
+      stopLoading('addingToCollection');
     }
   };
 
@@ -177,13 +182,13 @@ function CardDetailPageContent() {
     }
   }
 
-  if (loading) {
+  if (isLoading('fetchingCard')) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
+  };
 
   if (!card) {
     return (
@@ -335,95 +340,102 @@ function CardDetailPageContent() {
                 <CardTitle>Add to Collection</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Non-Foil */}
-                  {card && card.finishes.length > 0 && card.finishes.includes('nonfoil') && (
-                    <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div>
-                        <p className="font-semibold">Non-Foil</p>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {collectionData?.summary?.normalQuantity || 0}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => decrementCard('normal')}
-                          disabled={addingToCollection || (collectionData?.summary?.normalQuantity || 0) === 0}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => incrementCard('normal')}
-                          disabled={addingToCollection}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                <div className="relative min-h-[200px]">
+                  {isLoading('addingToCollection') && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 rounded">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                   )}
-
-                  {/* Foil */}
-                  {card && card.finishes.length > 0 && card.finishes.includes('foil') && (
-                    <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div>
-                        <p className="font-semibold">Foil</p>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {collectionData?.summary?.foilQuantity || 0}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => decrementCard('foil')}
-                          disabled={addingToCollection || (collectionData?.summary?.foilQuantity || 0) === 0}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => incrementCard('foil')}
-                          disabled={addingToCollection}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                  }
-                  {/* Other Prints in Collection */}
-                  {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
-                    <div className="p-4 bg-muted rounded-lg mb-4">
-                      <p className="font-semibold mb-2">Other Printings in Collection:</p>
-                      <div className="space-y-2">
-                        {collectionData.otherPrints.map((print) => (
-                          <div
-                            key={`${print.card_id}-${print.finish_type}`}
-                            className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
-                            onClick={() => router.push(`/card/${print.card_id}`)}
-                          >
-                            <div>
-                              <p className="font-medium">
-                                {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="ml-2">
-                              {print.quantity}
-                            </Badge>
+                  <div className="space-y-4">
+                      {/* Non-Foil */}
+                      {card && card.finishes.length > 0 && card.finishes.includes('nonfoil') && (
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                          <div>
+                            <p className="font-semibold">Non-Foil</p>
+                            <p className="text-sm text-muted-foreground">
+                              Quantity: {collectionData?.summary?.normalQuantity || 0}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => decrementCard('normal')}
+                              disabled={isLoading('addingToCollection') || (collectionData?.summary?.normalQuantity || 0) === 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => incrementCard('normal')}
+                              disabled={isLoading('addingToCollection')}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
 
+                      {/* Foil */}
+                      {card && card.finishes.length > 0 && card.finishes.includes('foil') && (
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                          <div>
+                            <p className="font-semibold">Foil</p>
+                            <p className="text-sm text-muted-foreground">
+                              Quantity: {collectionData?.summary?.foilQuantity || 0}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => decrementCard('foil')}
+                              disabled={isLoading('addingToCollection') || (collectionData?.summary?.foilQuantity || 0) === 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => incrementCard('foil')}
+                              disabled={isLoading('addingToCollection')}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                      }
+                      {/* Other Prints in Collection */}
+                      {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
+                        <div className="p-4 bg-muted rounded-lg mb-4">
+                          <p className="font-semibold mb-2">Other Printings in Collection:</p>
+                          <div className="space-y-2">
+                            {collectionData.otherPrints.map((print) => (
+                              <div
+                                key={`${print.card_id}-${print.finish_type}`}
+                                className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
+                                onClick={() => router.push(`/card/${print.card_id}`)}
+                              >
+                                <div>
+                                  <p className="font-medium">
+                                    {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className="ml-2">
+                                  {print.quantity}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                  </div>
                 </div>
               </CardContent>
             </Card>
