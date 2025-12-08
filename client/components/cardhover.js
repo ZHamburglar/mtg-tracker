@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import buildClient from '@/app/api/build-client';
+import { ManaSymbols, TextWithSymbols } from '@/components/ManaSymbols';
 import { get } from 'react-hook-form';
 
 const CardHover = ({ card }) => {
@@ -143,7 +144,7 @@ const CardHover = ({ card }) => {
                   {cardDetails.mana_cost && (
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">Mana:</span>
-                      <span className="font-mono text-xs">{cardDetails.mana_cost}</span>
+                      <span className="font-mono text-xs"><ManaSymbols manaString={cardDetails.mana_cost} size = 'w-4 h-4' /></span>
                     </div>
                   )}
                   {cardDetails.cmc !== undefined && (
