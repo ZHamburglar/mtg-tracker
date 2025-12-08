@@ -3,13 +3,11 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from "next/link";
-import { Loader2, ArrowLeft, Plus, Check, Minus, Car } from 'lucide-react';
+import { Loader2, Plus, Minus } from 'lucide-react';
 import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import {
   Select,
   SelectGroup,
@@ -27,16 +25,17 @@ import CardFaceToggle from '@/components/CardFaceToggle';
 import CardDetails from '@/components/cardDetails';
 import { CardSearch } from '@/components/CardSearch';
 import { getCardImage } from '@/hooks/get-card-image';
+import { useLoading } from '@/hooks/use-loading';
 import CardImage from '@/components/CardImage';
 import buildClient from '../../api/build-client';
 
 function CardDetailPageContent() {
+  const { loading, startLoading, stopLoading } = useLoading();
   const [card, setCard] = useState(null);
   const [allPrints, setAllPrints] = useState([]);
   const [open, setOpen] = useState(false);
   const [priceHistory, setPriceHistory] = useState([]);
   const [currentPrice, setCurrentPrice] = useState({});
-  const [loading, setLoading] = useState(true);
   const [inCollection, setInCollection] = useState(false);
   const [collectionData, setCollectionData] = useState(null);
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
@@ -57,7 +56,7 @@ function CardDetailPageContent() {
   }, [cardId]);
 
   const loadCard = async () => {
-    setLoading(true);
+    startLoading();
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}`);
@@ -68,11 +67,12 @@ function CardDetailPageContent() {
     } catch (error) {
       console.error('Load card error:', error);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const fetchAllPrints = async () => {
+    startLoading();
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prints`);
@@ -82,10 +82,13 @@ function CardDetailPageContent() {
       }
     } catch (error) {
       console.error('Fetch all prints error:', error);
+    } finally {
+      stopLoading();
     }
   };
 
   const fetchCardPrices = async () => {
+    startLoading();
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prices/latest`);
@@ -94,6 +97,8 @@ function CardDetailPageContent() {
       }
     } catch (error) {
       console.error('Fetch card prices error:', error);
+    } finally {
+      stopLoading();
     }
   };
 
@@ -110,6 +115,7 @@ function CardDetailPageContent() {
   };
 
   const checkCollection = async () => {
+    startLoading();
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/collection/check/${cardId}`);
@@ -117,6 +123,8 @@ function CardDetailPageContent() {
       setCollectionData(data);
     } catch (error) {
       console.error('Check collection error:', error);
+    } finally {
+      stopLoading();
     }
   };
 
@@ -149,27 +157,6 @@ function CardDetailPageContent() {
     } catch (error) {
       toast.error('Failed to remove card from collection. Please try again.');
       console.error('Decrement card error:', error);
-    } finally {
-      setAddingToCollection(false);
-    }
-  };
-
-  const toggleCollection = async () => {
-    setAddingToCollection(true);
-    try {
-      if (inCollection) {
-        await fetch(`/api/collection/${cardId}`, { method: 'DELETE' });
-        setInCollection(false);
-      } else {
-        await fetch('/api/collection', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cardId, cardData: card })
-        });
-        setInCollection(true);
-      }
-    } catch (error) {
-      console.error('Toggle collection error:', error);
     } finally {
       setAddingToCollection(false);
     }

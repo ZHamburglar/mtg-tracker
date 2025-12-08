@@ -10,11 +10,12 @@ import buildClient from '../api/build-client';
 import { CardSearch } from '@/components/CardSearch';
 import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
+import { useLoading } from '@/hooks/use-loading';
 import { toast } from 'sonner';
 
 function SearchPageContent() {
+  const { loading, startLoading, stopLoading } = useLoading();
   const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [loadedImages, setLoadedImages] = useState({});
@@ -63,7 +64,7 @@ function SearchPageContent() {
   }, [searchParams]);
 
   const searchCards = async (params) => {
-    setLoading(true);
+    startLoading();
     try {
       const client = buildClient();
       // Build query string from params object
@@ -86,7 +87,7 @@ function SearchPageContent() {
       console.error('Search error:', error);
       toast.error('Failed to search cards. Please try again.');
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
