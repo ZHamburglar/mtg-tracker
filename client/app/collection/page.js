@@ -8,15 +8,16 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
+import { useLoading } from '@/hooks/use-loading';
 import buildClient from './../api/build-client';
 import { format, set } from 'date-fns';
 
 function CollectionPageContent() {
+  const { loading, startLoading, stopLoading } = useLoading();
   const [collection, setCollection] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 100 });
   const [collectionValue, setCollectionValue] = useState(null);
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -46,7 +47,7 @@ function CollectionPageContent() {
   };
 
   const loadCollection = async () => {
-    setLoading(true);
+    startLoading();
     try {
       const client = buildClient();
       const { data } = await client.get('/api/collection');
@@ -60,7 +61,7 @@ function CollectionPageContent() {
     } catch (error) {
       console.error('Load collection error:', error);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
