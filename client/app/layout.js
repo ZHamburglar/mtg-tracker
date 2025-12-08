@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import Header from "@/components/header";
 import buildClient from './api/build-client';
 import { Toaster } from "@/components/ui/sonner";
+import { SymbologyProvider } from "@/contexts/SymbologyContext";
 
 import "./globals.css";
 
@@ -34,9 +35,11 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
-        <Header />
-        <Toaster richColors position="top-right" />
-        {children}
+        <SymbologyProvider>
+          <Header />
+          <Toaster richColors position="top-right" />
+          {children}
+        </SymbologyProvider>
       </body>
     </html>
   );
