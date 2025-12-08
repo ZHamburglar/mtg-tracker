@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
+import { ManaSymbols, TextWithSymbols } from '@/components/ManaSymbols';
+import Link from "next/link";
 
 export default function CardDetails({ card }) {
   return (
@@ -9,7 +10,7 @@ export default function CardDetails({ card }) {
           <h3 className="text-xl font-bold">{card.name}</h3>
         )}
         {card.mana_cost && (
-          <p><strong>Mana Cost:</strong> {card.mana_cost}</p>
+          <p className="flex items-center gap-2"><strong>Mana Cost:</strong><ManaSymbols manaString={card.mana_cost} /></p>
         )}
         {card.type_line && (
           <p><strong>Type:</strong> {card.type_line}</p>
@@ -17,7 +18,9 @@ export default function CardDetails({ card }) {
         {card.oracle_text && (
           <div>
             <strong>Text:</strong>
-            <p className="whitespace-pre-line mt-1">{card.oracle_text}</p>
+            <p className="whitespace-pre-line mt-1">
+              <TextWithSymbols text={card.oracle_text} />
+            </p>
           </div>
         )}
         {card.power && card.toughness && (

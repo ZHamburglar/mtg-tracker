@@ -27,6 +27,7 @@ import { CardSearch } from '@/components/CardSearch';
 import { getCardImage } from '@/hooks/get-card-image';
 import { useLoading } from '@/hooks/use-loading';
 import CardImage from '@/components/CardImage';
+import { ManaSymbols, TextWithSymbols } from '@/components/ManaSymbols';
 import buildClient from '../../api/build-client';
 
 function CardDetailPageContent() {
@@ -532,7 +533,9 @@ function CardDetailPageContent() {
                   <CardTitle>Card Text</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-line">{card.oracle_text}</p>
+                  <p className="whitespace-pre-line">
+                    <TextWithSymbols text={card.oracle_text} />
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -543,7 +546,12 @@ function CardDetailPageContent() {
                 <CardTitle>Additional Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {card.mana_cost && <p><strong>Mana Cost:</strong> {card.mana_cost}</p>}
+                {card.mana_cost && (
+                  <div className="flex items-center gap-2">
+                    <strong>Mana Cost:</strong>
+                    <ManaSymbols manaString={card.mana_cost} />
+                  </div>
+                )}
                 {card.cmc && <p><strong>CMC:</strong> {card.cmc}</p>}
                 {card.power && card.toughness && (
                   <p><strong>P/T:</strong> {card.power}/{card.toughness}</p>
