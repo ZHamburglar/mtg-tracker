@@ -403,7 +403,7 @@ router.get(
 
       // Most valuable cards (top 20)
       const mostValuableCards = enrichedCards
-        .sort((a, b) => b.total_value - a.total_value)
+        .sort((a, b) => b.current_price - a.current_price)
         .slice(0, 10)
         .map(card => ({
           card_id: card.card_id,

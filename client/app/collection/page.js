@@ -149,7 +149,7 @@ function CollectionPageContent() {
                                 className="rounded-lg w-full"
                               />
                               <Badge className="absolute bottom-2 left-2 bg-green-600">
-                                ${card.total_value.toFixed(2)}
+                                ${card.current_price.toFixed(2)}
                               </Badge>
                             </div>
                             <p className="text-xs mt-1 truncate font-medium">{card.name}</p>
