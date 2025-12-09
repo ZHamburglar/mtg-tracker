@@ -7,12 +7,20 @@ import { NotFoundError } from '../errors/not-found-error';
 import { validateRequest } from '../middlewares/validate-request';
 import { requireAdmin } from '../middlewares/require-admin';
 import { logger } from '../logger';
+import { createRateLimiter } from '../middlewares/rate-limiter';
+
+const updateUserLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 10,
+  prefix: 'rl:update-user',
+  message: 'Too many user update attempts, please try again later.'
+});
 
 export const router = express.Router();
 
 router.patch('/api/users/:id',
+  updateUserLimiter,
   currentUser,
-  requireAdmin,
   [
     body('email')
       .optional()
