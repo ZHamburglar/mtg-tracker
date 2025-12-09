@@ -43,7 +43,7 @@ const start = async () => {
     });
   }
 
-  pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
+  pool = await createMysqlPoolWithRetry({ retries: 30, delay: 5000 });
   // You can export the pool or set it in a global variable if needed
   logger.log('pool created:', pool !== undefined);
 

@@ -37,9 +37,9 @@ export const createRateLimiter = (options: RateLimiterOptions) => {
         skipSuccessfulRequests: false,
         skipFailedRequests: false,
         store: new RedisStore({
-          sendCommand: (...args: any[]) => {
+          sendCommand: (...args: string[]) => {
             const client = getRedisClient();
-            return (client as any).call(...args);
+            return client.sendCommand(args);
           },
           prefix,
         }),
