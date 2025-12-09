@@ -653,4 +653,272 @@ router.delete(
   }
 );
 
+/**
+ * GET /api/collection/analytics
+ * Get comprehensive analytics for the authenticated user's collection
+ */
+router.get(
+  '/api/collection/analytics',
+  currentUser,
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.currentUser!.id);
+      const pool = UserCardCollection.getPool();
+
+      // Get all collection items with card data
+      const [collectionRows] = await pool.query<any[]>(`
+        SELECT 
+          ucc.*,
+          c.name,
+          c.rarity,
+          c.type_line,
+          c.edhrec_rank,
+          c.reserved,
+          c.image_uri_small,
+          cp.price_usd,
+          cp.price_usd_foil,
+          cp.price_usd_etched,
+          cp.created_at as price_date
+        FROM user_card_collection ucc
+        INNER JOIN cards c ON ucc.card_id = c.id
+        LEFT JOIN card_prices cp ON c.id = cp.card_id
+        WHERE ucc.user_id = ?
+        AND cp.id = (
+          SELECT id FROM card_prices 
+          WHERE card_id = c.id 
+          ORDER BY created_at DESC 
+          LIMIT 1
+        )
+      `, [userId]);
+
+      if (collectionRows.length === 0) {
+        return res.status(200).json({
+          analytics: {
+            mostValuableCards: [],
+            priceGainers: [],
+            priceLosers: [],
+            recentlyAdded: [],
+            reservedListCards: [],
+            staples: [],
+            valueByRarity: [],
+            cardsByRarity: [],
+            cardsByType: []
+          }
+        });
+      }
+
+      // Calculate card values
+      const enrichedCards = collectionRows.map((card: any) => {
+        let price = 0;
+        if (card.finish_type === 'foil') {
+          price = parseFloat(card.price_usd_foil || 0);
+        } else if (card.finish_type === 'etched') {
+          price = parseFloat(card.price_usd_etched || 0);
+        } else {
+          price = parseFloat(card.price_usd || 0);
+        }
+        
+        return {
+          ...card,
+          current_price: price,
+          total_value: price * card.quantity
+        };
+      });
+
+      // Most valuable cards (top 20)
+      const mostValuableCards = enrichedCards
+        .sort((a, b) => b.total_value - a.total_value)
+        .slice(0, 20)
+        .map(card => ({
+          card_id: card.card_id,
+          name: card.name,
+          quantity: card.quantity,
+          finish_type: card.finish_type,
+          current_price: card.current_price,
+          total_value: card.total_value,
+          image_uri: card.image_uri_small,
+          rarity: card.rarity
+        }));
+
+      // Get price history for trend analysis
+      const [priceHistoryRows] = await pool.query<any[]>(`
+        SELECT 
+          ucc.card_id,
+          ucc.quantity,
+          ucc.finish_type,
+          c.name,
+          c.image_uri_small,
+          c.rarity,
+          cp_old.price_usd as old_price_usd,
+          cp_old.price_usd_foil as old_price_usd_foil,
+          cp_old.price_usd_etched as old_price_usd_etched,
+          cp_new.price_usd as new_price_usd,
+          cp_new.price_usd_foil as new_price_usd_foil,
+          cp_new.price_usd_etched as new_price_usd_etched
+        FROM user_card_collection ucc
+        INNER JOIN cards c ON ucc.card_id = c.id
+        LEFT JOIN card_prices cp_old ON c.id = cp_old.card_id
+        LEFT JOIN card_prices cp_new ON c.id = cp_new.card_id
+        WHERE ucc.user_id = ?
+        AND cp_old.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        AND cp_old.id = (
+          SELECT id FROM card_prices 
+          WHERE card_id = c.id 
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+          ORDER BY created_at ASC 
+          LIMIT 1
+        )
+        AND cp_new.id = (
+          SELECT id FROM card_prices 
+          WHERE card_id = c.id 
+          ORDER BY created_at DESC 
+          LIMIT 1
+        )
+      `, [userId]);
+
+      // Calculate price changes
+      const priceChanges = priceHistoryRows.map((card: any) => {
+        const oldPrice = card.finish_type === 'foil' ? parseFloat(card.old_price_usd_foil || 0) :
+                        card.finish_type === 'etched' ? parseFloat(card.old_price_usd_etched || 0) :
+                        parseFloat(card.old_price_usd || 0);
+        const newPrice = card.finish_type === 'foil' ? parseFloat(card.new_price_usd_foil || 0) :
+                        card.finish_type === 'etched' ? parseFloat(card.new_price_usd_etched || 0) :
+                        parseFloat(card.new_price_usd || 0);
+        
+        const priceChange = newPrice - oldPrice;
+        const percentChange = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
+        
+        return {
+          card_id: card.card_id,
+          name: card.name,
+          quantity: card.quantity,
+          finish_type: card.finish_type,
+          old_price: oldPrice,
+          new_price: newPrice,
+          price_change: priceChange,
+          percent_change: percentChange,
+          image_uri: card.image_uri_small,
+          rarity: card.rarity
+        };
+      }).filter(card => card.new_price > 0 && card.old_price > 0);
+
+      // Fastest growing cards (top 10)
+      const priceGainers = priceChanges
+        .filter(card => card.percent_change > 0)
+        .sort((a, b) => b.percent_change - a.percent_change)
+        .slice(0, 10);
+
+      // Biggest losers (top 10)
+      const priceLosers = priceChanges
+        .filter(card => card.percent_change < 0)
+        .sort((a, b) => a.percent_change - b.percent_change)
+        .slice(0, 10);
+
+      // Recently added cards (last 20)
+      const recentlyAdded = enrichedCards
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 20)
+        .map(card => ({
+          card_id: card.card_id,
+          name: card.name,
+          quantity: card.quantity,
+          finish_type: card.finish_type,
+          current_price: card.current_price,
+          added_at: card.created_at,
+          image_uri: card.image_uri_small,
+          rarity: card.rarity
+        }));
+
+      // Reserved list cards
+      const reservedListCards = enrichedCards
+        .filter(card => card.reserved === true || card.reserved === 1)
+        .map(card => ({
+          card_id: card.card_id,
+          name: card.name,
+          quantity: card.quantity,
+          finish_type: card.finish_type,
+          current_price: card.current_price,
+          total_value: card.total_value,
+          image_uri: card.image_uri_small,
+          rarity: card.rarity
+        }));
+
+      // Staples (EDHRec rank < 1000)
+      const staples = enrichedCards
+        .filter(card => card.edhrec_rank && card.edhrec_rank < 1000)
+        .sort((a, b) => (a.edhrec_rank || Infinity) - (b.edhrec_rank || Infinity))
+        .map(card => ({
+          card_id: card.card_id,
+          name: card.name,
+          quantity: card.quantity,
+          finish_type: card.finish_type,
+          edhrec_rank: card.edhrec_rank,
+          current_price: card.current_price,
+          image_uri: card.image_uri_small,
+          rarity: card.rarity
+        }));
+
+      // Value distribution by rarity
+      const valueByRarity = enrichedCards.reduce((acc: any, card: any) => {
+        const rarity = card.rarity || 'unknown';
+        if (!acc[rarity]) {
+          acc[rarity] = { rarity, total_value: 0, count: 0, quantity: 0 };
+        }
+        acc[rarity].total_value += card.total_value;
+        acc[rarity].count += 1;
+        acc[rarity].quantity += card.quantity;
+        return acc;
+      }, {});
+
+      // Cards by rarity breakdown
+      const cardsByRarity = Object.values(valueByRarity);
+
+      // Cards by type
+      const typeStats = enrichedCards.reduce((acc: any, card: any) => {
+        if (!card.type_line) return acc;
+        
+        // Extract primary type (before —)
+        const primaryType = card.type_line.split('—')[0].trim();
+        const types = primaryType.split(' ').filter((t: string) => 
+          ['Creature', 'Instant', 'Sorcery', 'Enchantment', 'Artifact', 'Planeswalker', 'Land', 'Battle'].includes(t)
+        );
+        
+        types.forEach((type: string) => {
+          if (!acc[type]) {
+            acc[type] = { type, count: 0, quantity: 0 };
+          }
+          acc[type].count += 1;
+          acc[type].quantity += card.quantity;
+        });
+        
+        return acc;
+      }, {});
+
+      const cardsByType = Object.values(typeStats);
+
+      res.status(200).json({
+        analytics: {
+          mostValuableCards,
+          priceGainers,
+          priceLosers,
+          recentlyAdded,
+          reservedListCards,
+          staples,
+          valueByRarity: cardsByRarity,
+          cardsByRarity,
+          cardsByType
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error fetching collection analytics:', error);
+      res.status(500).json({
+        error: 'Failed to fetch collection analytics',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
 export { router as collectionRouter };
