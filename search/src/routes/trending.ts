@@ -111,7 +111,7 @@ router.get(
       if (cacheKey) {
         try {
           const redis = getRedisClient();
-          await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(responseData));
+          await redis.setEx(cacheKey, CACHE_TTL, JSON.stringify(responseData));
           logger.log('GET /api/search/trending - Cached result', {
             cacheKey,
             ttl: CACHE_TTL
