@@ -4,6 +4,44 @@ import { User } from '../models/user';
 let mockUsers: any[] = [];
 let mockUserId = 1;
 
+// Mock Redis client for testing
+jest.mock('../config/redis', () => {
+  const mockRedisClient = {
+    // Mock sendCommand to return proper responses for rate-limit-redis
+    sendCommand: jest.fn().mockImplementation((args: string[]) => {
+      const command = args[0]?.toUpperCase();
+      
+      // SCRIPT LOAD returns SHA hash as string
+      if (command === 'SCRIPT' && args[1]?.toUpperCase() === 'LOAD') {
+        return Promise.resolve('mockedsha1234567890'); // SHA hash string
+      }
+      
+      // EVALSHA commands for rate limiting return [current_count, ttl]
+      if (command === 'EVALSHA') {
+        return Promise.resolve([1, 100]); // [count, ttl in seconds]
+      }
+      
+      // EVAL commands (fallback) return [current_count, ttl]
+      if (command === 'EVAL') {
+        return Promise.resolve([1, 100]);
+      }
+      
+      // Default response
+      return Promise.resolve('OK');
+    }),
+    isReady: true,
+    connect: jest.fn().mockResolvedValue(undefined),
+    quit: jest.fn().mockResolvedValue(undefined),
+  };
+
+  return {
+    createRedisClient: jest.fn().mockResolvedValue(mockRedisClient),
+    getRedisClient: jest.fn().mockReturnValue(mockRedisClient),
+    closeRedisClient: jest.fn().mockResolvedValue(undefined),
+    isRedisConnected: jest.fn().mockReturnValue(true),
+  };
+});
+
 // Mock mysql2/promise module
 jest.mock('mysql2/promise', () => {
   return {

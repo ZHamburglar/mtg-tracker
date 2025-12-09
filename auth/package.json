@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node-dev src/index.ts",
-    "dev:local": "ts-node-dev -r dotenv/config src/index.ts dotenv_config_path=.env.local",
+    "start": "node --max-old-space-size=512 node_modules/.bin/ts-node-dev src/index.ts",
+    "dev:local": "node --max-old-space-size=512 node_modules/.bin/ts-node-dev -r dotenv/config src/index.ts dotenv_config_path=.env.local",
     "test": "jest --watchAll --no-cache",
     "test:ci": "jest"
   },

@@ -36,6 +36,11 @@ export const createRateLimiter = (options: RateLimiterOptions) => {
         message,
         skipSuccessfulRequests: false,
         skipFailedRequests: false,
+        // Validate trust proxy - only trust specific proxy headers
+        validate: {
+          trustProxy: false, // We'll handle IP extraction manually
+          creationStack: false, // Allow lazy initialization pattern
+        },
         store: new RedisStore({
           sendCommand: (...args: string[]) => {
             const client = getRedisClient();
