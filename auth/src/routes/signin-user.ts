@@ -1,47 +1,26 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import { rateLimit } from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
 import { validateRequest } from '../middlewares/validate-request';
 import { BadRequestError } from '../errors/bad-request-error';
-import { getRedisClient } from '../config/redis';
+import { createRateLimiter } from '../middlewares/rate-limiter';
 
 import { User } from '../models/user';
 import { logger } from '../logger';
 
 const router = express.Router();
 
-// Lazy initialization: Store is created on first request when Redis is guaranteed to be ready
-let signinRateLimiter: ReturnType<typeof rateLimit>;
-
-const getSigninRateLimiter = () => {
-  if (!signinRateLimiter) {
-    signinRateLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      limit: 5, // 5 requests per window
-      standardHeaders: 'draft-7', // Use RateLimit header
-      legacyHeaders: false, // Disable X-RateLimit-* headers
-      message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
-      skipSuccessfulRequests: false,
-      skipFailedRequests: false,
-      store: new RedisStore({
-        sendCommand: (...args: any[]) => {
-          const client = getRedisClient();
-          return (client as any).call(...args);
-        },
-        prefix: 'rl:signin:',
-      }),
-      // Fallback to memory store if Redis becomes unavailable during runtime
-      passOnStoreError: true,
-    });
-  }
-  return signinRateLimiter;
-};
+// Rate limiter: 5 signin attempts per 15 minutes per IP
+const signinRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  prefix: 'rl:signin:',
+  message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
+});
 
 router.post(
   '/api/users/signin',
-  (req: express.Request, res: express.Response, next: express.NextFunction) => getSigninRateLimiter()(req, res, next),
+  signinRateLimiter,
   [
     body('email')
       .isEmail()

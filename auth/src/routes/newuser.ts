@@ -1,45 +1,24 @@
 import express, { Request, Response} from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import { rateLimit } from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
 import { User } from '../models/user';
 import { BadRequestError } from '../errors/bad-request-error';
 import { validateRequest } from '../middlewares/validate-request';
-import { getRedisClient } from '../config/redis';
+import { createRateLimiter } from '../middlewares/rate-limiter';
 import { logger } from '../logger';
 
 export const router = express.Router();
 
-// Lazy initialization: Store is created on first request when Redis is guaranteed to be ready
-let newUserRateLimiter: ReturnType<typeof rateLimit>;
-
-const getNewUserRateLimiter = () => {
-  if (!newUserRateLimiter) {
-    newUserRateLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      limit: 10, // 10 requests per window
-      standardHeaders: 'draft-7', // Use RateLimit header
-      legacyHeaders: false, // Disable X-RateLimit-* headers
-      message: 'Too many new user attempts from this IP, please try again after 15 minutes.',
-      skipSuccessfulRequests: false,
-      skipFailedRequests: false,
-      store: new RedisStore({
-        sendCommand: (...args: any[]) => {
-          const client = getRedisClient();
-          return (client as any).call(...args);
-        },
-        prefix: 'rl:newuser:',
-      }),
-      // Fallback to memory store if Redis becomes unavailable during runtime
-      passOnStoreError: true,
-    });
-  }
-  return newUserRateLimiter;
-};
+// Rate limiter: 10 new user attempts per 15 minutes per IP
+const newUserRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  prefix: 'rl:newuser:',
+  message: 'Too many new user attempts from this IP, please try again after 15 minutes.',
+});
 
 router.post('/api/users/newuser',
-  (req: express.Request, res: express.Response, next: express.NextFunction) => getNewUserRateLimiter()(req, res, next),
+  newUserRateLimiter,
   [
     body('email')
       .isEmail()
