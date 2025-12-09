@@ -326,6 +326,7 @@ router.get(
           c.edhrec_rank,
           c.reserved,
           c.image_uri_small,
+          c.has_multiple_faces,
           cp.price_usd,
           cp.price_usd_foil,
           cp.price_usd_etched,
@@ -358,6 +359,22 @@ router.get(
         });
       }
 
+      // Get card faces for multi-face cards
+      const cardFacesMap = new Map();
+      const multiFaceCardIds = collectionRows
+        .filter(card => card.has_multiple_faces)
+        .map(card => card.card_id);
+      
+      if (multiFaceCardIds.length > 0) {
+        const [facesRows] = await pool.query<any[]>(
+          `SELECT card_id, image_uri_small FROM card_faces WHERE card_id IN (?) AND face_order = 0`,
+          [multiFaceCardIds]
+        );
+        facesRows.forEach((face: any) => {
+          cardFacesMap.set(face.card_id, face.image_uri_small);
+        });
+      }
+
       // Calculate card values
       const enrichedCards = collectionRows.map((card: any) => {
         let price = 0;
@@ -369,8 +386,14 @@ router.get(
           price = parseFloat(card.price_usd || 0);
         }
         
+        // Use card face image if available, otherwise use card image
+        const imageUri = card.has_multiple_faces && cardFacesMap.has(card.card_id)
+          ? cardFacesMap.get(card.card_id)
+          : card.image_uri_small;
+        
         return {
           ...card,
+          image_uri_small: imageUri,
           current_price: price,
           total_value: price * card.quantity
         };
@@ -399,6 +422,7 @@ router.get(
           ucc.finish_type,
           c.name,
           c.image_uri_small,
+          c.has_multiple_faces,
           c.rarity,
           cp_old.price_usd as old_price_usd,
           cp_old.price_usd_foil as old_price_usd_foil,
@@ -439,6 +463,11 @@ router.get(
         const priceChange = newPrice - oldPrice;
         const percentChange = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
         
+        // Use card face image if available, otherwise use card image
+        const imageUri = card.has_multiple_faces && cardFacesMap.has(card.card_id)
+          ? cardFacesMap.get(card.card_id)
+          : card.image_uri_small;
+        
         return {
           card_id: card.card_id,
           name: card.name,
@@ -448,7 +477,7 @@ router.get(
           new_price: newPrice,
           price_change: priceChange,
           percent_change: percentChange,
-          image_uri: card.image_uri_small,
+          image_uri: imageUri,
           rarity: card.rarity
         };
       }).filter(card => card.new_price > 0 && card.old_price > 0);
