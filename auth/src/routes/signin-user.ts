@@ -10,12 +10,12 @@ import { logger } from '../logger';
 
 const router = express.Router();
 
-// Rate limiter: 5 signin attempts per 15 minutes per IP
+// Rate limiter: 5 signin attempts per 1 minute per IP
 const signinRateLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 1000, // 1 minute
   limit: 5,
   prefix: 'rl:signin:',
-  message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
+  message: 'Too many signin attempts from this IP, please try again after 1 minute.',
 });
 
 router.post(

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { getRedisClient } from '../config/redis';
+import { logger } from '../logger';
 
 interface RateLimiterOptions {
   windowMs: number;
@@ -50,6 +51,18 @@ export const createRateLimiter = (options: RateLimiterOptions) => {
         }),
         // Fallback to memory store if Redis becomes unavailable during runtime
         passOnStoreError: true,
+        // Log rate limit hits for monitoring
+        handler: (req: Request, res: Response) => {
+          logger.log('Rate limit exceeded', {
+            prefix,
+            ip: req.ip,
+            path: req.path,
+            method: req.method,
+            limit,
+            windowMs
+          });
+          res.status(429).json({ error: message });
+        },
       });
       rateLimiterCache.set(prefix, limiter);
     }
