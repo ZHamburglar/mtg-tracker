@@ -1,18 +1,19 @@
-import Redis from 'ioredis';
+import { createClient } from 'redis';
 import { logger } from '../logger';
 
-let redisClient: Redis | null = null;
+type RedisClient = ReturnType<typeof createClient>;
 
-export async function createRedisClient(): Promise<Redis> {
-  const redis = new Redis({
-    host: process.env.REDIS_HOST || 'redis-srv',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    maxRetriesPerRequest: 3,
-    retryStrategy: (times) => {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
-    },
-    lazyConnect: true,
+let redisClient: RedisClient | null = null;
+
+export async function createRedisClient(): Promise<RedisClient> {
+  const redis = createClient({
+    url: `redis://${process.env.REDIS_HOST || 'redis-srv'}:${process.env.REDIS_PORT || '6379'}`,
+    socket: {
+      reconnectStrategy: (retries) => {
+        const delay = Math.min(retries * 50, 2000);
+        return delay;
+      }
+    }
   });
 
   redis.on('connect', () => {
@@ -21,6 +22,10 @@ export async function createRedisClient(): Promise<Redis> {
 
   redis.on('error', (err) => {
     logger.error('Redis client error', { error: err.message });
+  });
+
+  redis.on('ready', () => {
+    logger.info('Redis client ready');
   });
 
   try {
@@ -36,7 +41,7 @@ export async function createRedisClient(): Promise<Redis> {
   }
 }
 
-export function getRedisClient(): Redis {
+export function getRedisClient(): RedisClient {
   if (!redisClient) {
     throw new Error('Redis client not initialized. Call createRedisClient() first.');
   }
@@ -44,7 +49,7 @@ export function getRedisClient(): Redis {
 }
 
 export function isRedisConnected(): boolean {
-  return redisClient !== null && redisClient.status === 'ready';
+  return redisClient !== null && redisClient.isReady;
 }
 
 export async function closeRedisClient(): Promise<void> {
