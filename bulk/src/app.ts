@@ -26,7 +26,8 @@ app.use(
     signed: false,
     secure: false, // Set to false to allow cookies over HTTP in dev
     sameSite: 'lax', // Allow cookies to be sent with cross-origin requests
-    httpOnly: true, // Prevent JavaScript access to cookies for security
+    // Set to true for production
+    httpOnly: false, // Prevent XSS attacks by blocking JavaScript access to cookies
   })
 );
 
