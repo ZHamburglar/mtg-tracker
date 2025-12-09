@@ -31,7 +31,7 @@ router.post(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(String(req.currentUser!.id));
       logger.log(`Creating listing for user ${userId}, card ${req.body.card_id}`);
       
       const input: CreateListingInput = {
@@ -77,7 +77,7 @@ router.get(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(String(req.currentUser!.id));
       const status = req.query.status as any;
       const listingType = req.query.listing_type as any;
 

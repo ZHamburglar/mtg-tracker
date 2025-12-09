@@ -12,7 +12,7 @@ export const SymbologyProvider = ({ children }) => {
     const fetchSymbology = async () => {
       try {
         console.log('Fetching symbology from Scryfall (once)...');
-        const response = await fetch('https://api.scryfall.com/symbology');
+        const response = await fetch('/api/symbology');
         const data = await response.json();
         
         // Create map: '{W}' -> 'https://svgs.scryfall.io/card-symbols/W.svg'
