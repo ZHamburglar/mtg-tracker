@@ -161,8 +161,8 @@ function CollectionPageContent() {
                   </Card>
                 )}
 
-                {/* Price Trends */}
-                <div className="grid md:grid-cols-2 gap-6">
+                {/* Price Trends and Analytics */}
+                <div className="grid md:grid-cols-3 gap-6">
                   {/* Biggest Gainers */}
                   {analytics.priceGainers?.length > 0 && (
                     <Card>
@@ -238,6 +238,68 @@ function CollectionPageContent() {
                       </CardContent>
                     </Card>
                   )}
+                  <div className="flex flex-col gap-6">
+                    {/* Cards by Type */}
+                    {analytics.cardsByType?.length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Cards by Type</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {analytics.cardsByType
+                              .sort((a, b) => b.quantity - a.quantity)
+                              .map((item) => (
+                                <div key={item.type} className="flex justify-between items-center">
+                                  <span className="text-sm">{item.type}</span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {item.quantity} cards
+                                  </Badge>
+                                </div>
+                              ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Reserved List & Staples */}
+                    <Card className="flex-1">
+                      <CardHeader>
+                        <CardTitle className="text-base">Special Cards</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {analytics.reservedListCards?.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="h-4 w-4 text-yellow-600" />
+                              <span className="text-sm font-medium">Reserved List</span>
+                            </div>
+                            <p className="text-2xl font-bold text-yellow-600">
+                              {analytics.reservedListCards.length}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              ${analytics.reservedListCards.reduce((sum, c) => sum + c.total_value, 0).toFixed(2)} total
+                            </p>
+                          </div>
+                        )}
+                        {analytics.staples?.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Sparkles className="h-4 w-4 text-purple-600" />
+                              <span className="text-sm font-medium">EDH Staples</span>
+                            </div>
+                            <p className="text-2xl font-bold text-purple-600">
+                              {analytics.staples.length}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Rank &lt; 1000
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                  </div>
                 </div>
 
                 {/* Stats Grid */}
@@ -270,65 +332,7 @@ function CollectionPageContent() {
                     </Card>
                   )}
 
-                  {/* Cards by Type */}
-                  {analytics.cardsByType?.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Cards by Type</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {analytics.cardsByType
-                            .sort((a, b) => b.quantity - a.quantity)
-                            .map((item) => (
-                              <div key={item.type} className="flex justify-between items-center">
-                                <span className="text-sm">{item.type}</span>
-                                <Badge variant="secondary" className="text-xs">
-                                  {item.quantity} cards
-                                </Badge>
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Reserved List & Staples */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Special Cards</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {analytics.reservedListCards?.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Shield className="h-4 w-4 text-yellow-600" />
-                            <span className="text-sm font-medium">Reserved List</span>
-                          </div>
-                          <p className="text-2xl font-bold text-yellow-600">
-                            {analytics.reservedListCards.length}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            ${analytics.reservedListCards.reduce((sum, c) => sum + c.total_value, 0).toFixed(2)} total
-                          </p>
-                        </div>
-                      )}
-                      {analytics.staples?.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="h-4 w-4 text-purple-600" />
-                            <span className="text-sm font-medium">EDH Staples</span>
-                          </div>
-                          <p className="text-2xl font-bold text-purple-600">
-                            {analytics.staples.length}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Rank &lt; 1000
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  
                 </div>
 
                 {/* Recently Added */}
