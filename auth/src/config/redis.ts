@@ -43,6 +43,10 @@ export function getRedisClient(): Redis {
   return redisClient;
 }
 
+export function isRedisConnected(): boolean {
+  return redisClient !== null && redisClient.status === 'ready';
+}
+
 export async function closeRedisClient(): Promise<void> {
   if (redisClient) {
     await redisClient.quit();

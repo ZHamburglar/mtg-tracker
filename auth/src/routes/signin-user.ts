@@ -12,28 +12,36 @@ import { logger } from '../logger';
 
 const router = express.Router();
 
-// Rate limiter: 5 signin attempts per 15 minutes per IP
-// Uses Redis for distributed rate limiting across all auth pods
-const signinRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 5, // 5 requests per window
-  standardHeaders: 'draft-7', // Use RateLimit header
-  legacyHeaders: false, // Disable X-RateLimit-* headers
-  message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
-  skipSuccessfulRequests: false,
-  skipFailedRequests: false,
-  store: new RedisStore({
-    // @ts-expect-error - Rate limit redis expects a different type
-    sendCommand: (...args: string[]) => getRedisClient().call(...args),
-    prefix: 'rl:signin:',
-  }),
-  // Fallback to memory store if Redis is unavailable
-  passOnStoreError: true,
-});
+// Lazy initialization: Store is created on first request when Redis is guaranteed to be ready
+let signinRateLimiter: ReturnType<typeof rateLimit>;
+
+const getSigninRateLimiter = () => {
+  if (!signinRateLimiter) {
+    signinRateLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      limit: 5, // 5 requests per window
+      standardHeaders: 'draft-7', // Use RateLimit header
+      legacyHeaders: false, // Disable X-RateLimit-* headers
+      message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
+      skipSuccessfulRequests: false,
+      skipFailedRequests: false,
+      store: new RedisStore({
+        sendCommand: (...args: any[]) => {
+          const client = getRedisClient();
+          return (client as any).call(...args);
+        },
+        prefix: 'rl:signin:',
+      }),
+      // Fallback to memory store if Redis becomes unavailable during runtime
+      passOnStoreError: true,
+    });
+  }
+  return signinRateLimiter;
+};
 
 router.post(
   '/api/users/signin',
-  signinRateLimiter,
+  (req: express.Request, res: express.Response, next: express.NextFunction) => getSigninRateLimiter()(req, res, next),
   [
     body('email')
       .isEmail()

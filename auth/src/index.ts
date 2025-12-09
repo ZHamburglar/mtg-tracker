@@ -33,6 +33,15 @@ const start = async () => {
     logger.info(`Database: ${process.env.MYSQL_DATABASE}`);
   }
 
+  // Initialize Redis client for rate limiting
+  try {
+    await createRedisClient();
+    logger.info('Redis initialized for rate limiting');
+  } catch (error) {
+    logger.warn('Redis connection failed - rate limiting will use memory store', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
   // You can export the pool or set it in a global variable if needed
@@ -47,16 +56,6 @@ const start = async () => {
 
   // Initialize User model with database pool
   User.setPool(pool);
-
-  // Initialize Redis client for rate limiting
-  try {
-    await createRedisClient();
-    logger.info('Redis initialized for rate limiting');
-  } catch (error) {
-    logger.warn('Redis connection failed - rate limiting will use memory store', {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
