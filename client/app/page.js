@@ -301,10 +301,6 @@ export default function Home() {
                 </CardContent>
               </Card>
             </div>
-            
-            <Button size="lg" onClick={() => console.log('boom', trending24h)} className="text-lg px-8 py-6">
-              Sign in with Google
-            </Button>
           </div>
         </div>
       </div>
