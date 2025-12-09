@@ -1,18 +1,19 @@
-import Redis from 'ioredis';
+import { createClient } from '@redis/client';
+import type { RedisClientType } from '@redis/client';
 import { logger } from '../logger';
 
-let redisClient: Redis | null = null;
+let redisClient: RedisClientType | null = null;
 
-export async function createRedisClient(): Promise<Redis> {
-  const redis = new Redis({
-    host: process.env.REDIS_HOST || 'redis-srv',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    maxRetriesPerRequest: 3,
-    retryStrategy: (times) => {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
+export async function createRedisClient(): Promise<RedisClientType> {
+  const redis = createClient({
+    socket: {
+      host: process.env.REDIS_HOST || 'redis-srv',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      reconnectStrategy: (retries) => {
+        const delay = Math.min(retries * 50, 2000);
+        return delay;
+      },
     },
-    lazyConnect: true,
   });
 
   redis.on('connect', () => {
@@ -36,7 +37,7 @@ export async function createRedisClient(): Promise<Redis> {
   }
 }
 
-export function getRedisClient(): Redis {
+export function getRedisClient(): RedisClientType {
   if (!redisClient) {
     throw new Error('Redis client not initialized. Call createRedisClient() first.');
   }
@@ -45,8 +46,12 @@ export function getRedisClient(): Redis {
 
 export async function closeRedisClient(): Promise<void> {
   if (redisClient) {
-    await redisClient.quit();
+    await redisClient.disconnect();
     redisClient = null;
     logger.info('Redis connection closed');
   }
+}
+
+export function isRedisConnected(): boolean {
+  return redisClient?.isOpen ?? false;
 }
