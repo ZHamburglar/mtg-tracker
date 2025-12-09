@@ -9,12 +9,12 @@ import { logger } from '../logger';
 
 export const router = express.Router();
 
-// Rate limiter: 10 new user attempts per 15 minutes per IP
+// Rate limiter: 10 new user attempts per 1 minute per IP
 const newUserRateLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 1000, // 1 minute
   limit: 10,
   prefix: 'rl:newuser:',
-  message: 'Too many new user attempts from this IP, please try again after 15 minutes.',
+  message: 'Too many new user attempts from this IP, please try again after 1 minute.',
 });
 
 router.post('/api/users/newuser',
