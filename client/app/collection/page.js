@@ -135,7 +135,7 @@ function CollectionPageContent() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-4">
                         {analytics.mostValuableCards.slice(0, 10).map((card) => (
                           <div 
                             key={`${card.card_id}-${card.finish_type}`}

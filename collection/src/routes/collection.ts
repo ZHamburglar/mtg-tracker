@@ -359,10 +359,10 @@ router.get(
         });
       }
 
-      // Get card faces for multi-face cards
+      // Get card faces for multi-face cards that don't have image_uri_small
       const cardFacesMap = new Map();
       const multiFaceCardIds = collectionRows
-        .filter(card => card.has_multiple_faces)
+        .filter(card => card.has_multiple_faces && !card.image_uri_small)
         .map(card => card.card_id);
       
       if (multiFaceCardIds.length > 0) {
@@ -386,10 +386,12 @@ router.get(
           price = parseFloat(card.price_usd || 0);
         }
         
-        // Use card face image if available, otherwise use card image
-        const imageUri = card.has_multiple_faces && cardFacesMap.has(card.card_id)
-          ? cardFacesMap.get(card.card_id)
-          : card.image_uri_small;
+        // Use card image if available, otherwise check card faces
+        const imageUri = card.image_uri_small
+          ? card.image_uri_small
+          : (card.has_multiple_faces && cardFacesMap.has(card.card_id)
+            ? cardFacesMap.get(card.card_id)
+            : card.image_uri_small);
         
         return {
           ...card,
@@ -402,7 +404,7 @@ router.get(
       // Most valuable cards (top 20)
       const mostValuableCards = enrichedCards
         .sort((a, b) => b.total_value - a.total_value)
-        .slice(0, 20)
+        .slice(0, 10)
         .map(card => ({
           card_id: card.card_id,
           name: card.name,
@@ -463,10 +465,12 @@ router.get(
         const priceChange = newPrice - oldPrice;
         const percentChange = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
         
-        // Use card face image if available, otherwise use card image
-        const imageUri = card.has_multiple_faces && cardFacesMap.has(card.card_id)
-          ? cardFacesMap.get(card.card_id)
-          : card.image_uri_small;
+        // Use card image if available, otherwise check card faces
+        const imageUri = card.image_uri_small
+          ? card.image_uri_small
+          : (card.has_multiple_faces && cardFacesMap.has(card.card_id)
+            ? cardFacesMap.get(card.card_id)
+            : card.image_uri_small);
         
         return {
           card_id: card.card_id,
