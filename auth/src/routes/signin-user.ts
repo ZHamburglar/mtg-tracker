@@ -1,9 +1,11 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
+import { rateLimit } from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
 import { validateRequest } from '../middlewares/validate-request';
 import { BadRequestError } from '../errors/bad-request-error';
-import { rateLimit } from '../middlewares/rate-limit';
+import { getRedisClient } from '../config/redis';
 
 import { User } from '../models/user';
 import { logger } from '../logger';
@@ -11,12 +13,22 @@ import { logger } from '../logger';
 const router = express.Router();
 
 // Rate limiter: 5 signin attempts per 15 minutes per IP
+// Uses Redis for distributed rate limiting across all auth pods
 const signinRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  limit: 5, // 5 requests per window
+  standardHeaders: 'draft-7', // Use RateLimit header
+  legacyHeaders: false, // Disable X-RateLimit-* headers
   message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
-  skipSuccessfulRequests: false, // Count all attempts (successful or not)
-  skipFailedRequests: false
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+  store: new RedisStore({
+    // @ts-expect-error - Rate limit redis expects a different type
+    sendCommand: (...args: string[]) => getRedisClient().call(...args),
+    prefix: 'rl:signin:',
+  }),
+  // Fallback to memory store if Redis is unavailable
+  passOnStoreError: true,
 });
 
 router.post(

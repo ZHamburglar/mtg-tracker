@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
+import { createRedisClient, closeRedisClient } from './config/redis';
 import { runMigrations } from './runMigrations';
 import { User } from './models/user';
 
@@ -47,6 +48,16 @@ const start = async () => {
   // Initialize User model with database pool
   User.setPool(pool);
 
+  // Initialize Redis client for rate limiting
+  try {
+    await createRedisClient();
+    logger.info('Redis initialized for rate limiting');
+  } catch (error) {
+    logger.warn('Redis connection failed - rate limiting will use memory store', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
     logger.log(`Listening on port ${port}!`);
@@ -56,17 +67,19 @@ const start = async () => {
 start();
 
 process.on("SIGINT", async () => {
-  logger.log("SIGINT received, closing database connection...");
+  logger.log("SIGINT received, closing connections...");
   if (pool) {
     await pool.end();
   }
+  await closeRedisClient();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  logger.log("SIGTERM received, closing database connection...");
+  logger.log("SIGTERM received, closing connections...");
   if (pool) {
     await pool.end();
   }
+  await closeRedisClient();
   process.exit(0);
 });
