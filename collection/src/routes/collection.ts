@@ -32,7 +32,7 @@ router.get(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       
       // Parse query parameters
       const limit = parseInt(req.query.limit as string) || 100;
@@ -140,7 +140,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const stats = await UserCardCollection.getStats(userId);
 
       res.status(200).json({
@@ -168,7 +168,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { cardId } = req.params;
 
       if (!cardId) {
@@ -313,7 +313,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { cardId } = req.params;
 
       if (!cardId) {
@@ -375,7 +375,7 @@ router.post(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { card_id, quantity, finish_type } = req.body;
 
       // Add card to collection (or increment if exists)
@@ -419,7 +419,7 @@ router.post(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { cardId } = req.params;
       const { finish_type } = req.body;
 
@@ -470,7 +470,7 @@ router.post(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { cardId } = req.params;
       const { finish_type } = req.body;
 
@@ -549,7 +549,7 @@ router.put(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { cardId } = req.params;
       const { quantity, finish_type } = req.body;
 
@@ -611,7 +611,7 @@ router.delete(
   validateRequest,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const { cardId } = req.params;
       const finish_type = req.query.finish_type as FinishType;
       const quantity = req.query.quantity ? parseInt(req.query.quantity as string) : undefined;
@@ -663,7 +663,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.currentUser!.id);
+      const userId = parseInt(req.currentUser!.id as string);
       const pool = UserCardCollection.getPool();
 
       // Get all collection items with card data
