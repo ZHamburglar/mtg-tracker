@@ -22,7 +22,7 @@ Testing Action
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        Client["Next.js Client<br/>React UI with TypeScript<br/>Port: 3000"]
+        Client["Next.js Client<br/>React UI with TypeScript<br/>Port: 3000<br/>━━━━━━━━━━<br/>Features:<br/>• Card Search & Browse<br/>• Collection Management<br/>• Price History Charts<br/>• Mana Symbol Rendering<br/>• Progressive Image Loading<br/>• Toast Notifications<br/>• Dark Mode UI"]
     end
 
     subgraph "Ingress Layer"
@@ -30,13 +30,13 @@ graph TB
     end
 
     subgraph "Microservices Layer"
-        Auth["Auth Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Authentication<br/>New User Creation<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>100m-500m CPU"]
+        Auth["Auth Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Authentication<br/>New User Creation<br/>JWT Tokens<br/>User Roles<br/><br/>Health Checks:<br/>• /api/users/health<br/>• /api/users/ready<br/><br/>HPA: 1-3 replicas<br/>128Mi-512Mi RAM<br/>100m-500m CPU"]
         
         Bulk["Bulk Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Data Import<br/>Price Management<br/>Set Information<br/>Trending Calculation<br/><br/>Cron Jobs:<br/>• 00:01 - Sets Import<br/>• 00:10 - Cards Import<br/>• 00:30 - Trending Calc<br/><br/>HPA: 1-2 replicas<br/>2-3Gi RAM<br/>500m-1 CPU"]
         
-        Search["Search Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Search by ID/Name<br/>Price History<br/>Set Queries<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
+        Search["Search Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Search by ID/Name<br/>Advanced Filters<br/>Price History<br/>Set Queries<br/>Multi-Face Cards<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
         
-        Collection["Collection Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Card Collections<br/>Collection Management<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
+        Collection["Collection Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Card Collections<br/>Collection Management<br/>Foil/Normal Tracking<br/>Oracle ID Grouping<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
         
         Listing["Listing Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Listings<br/>Marketplace<br/><br/>HPA: 1-3 replicas<br/>512Mi-1Gi RAM<br/>250m-1 CPU"]
     end
@@ -50,7 +50,7 @@ graph TB
     end
 
     subgraph "External Services"
-        Scryfall["Scryfall API<br/>━━━━━━━━━━<br/>Card Data Import<br/>Price Data Import<br/>Set Information"]
+        Scryfall["Scryfall API<br/>━━━━━━━━━━<br/>Card Data Import<br/>Price Data Import<br/>Set Information<br/>Symbology API<br/>Card Images"]
     end
 
     subgraph "Observability Stack"
@@ -60,29 +60,33 @@ graph TB
     end
 
     Client -->|HTTP/HTTPS| Ingress
-    Ingress -->|Route| Auth
-    Ingress -->|Route| Bulk
-    Ingress -->|Route| Search
-    Ingress -->|Route| Collection
-    Ingress -->|Route| Listing
+    Client -.->|Symbology API| Scryfall
+    Client -.->|Card Images| Scryfall
+    
+    Ingress -->|Route /api/users/*| Auth
+    Ingress -->|Route /api/bulk/*| Bulk
+    Ingress -->|Route /api/search/*| Search
+    Ingress -->|Route /api/collection/*| Collection
+    Ingress -->|Route /api/listing/*| Listing
 
-    Auth -->|Query| MySQL
-    Bulk -->|Write/Read| MySQL
-    Search -->|Query| MySQL
+    Auth -->|Query Users| MySQL
+    Bulk -->|Write Cards/Prices| MySQL
+    Search -->|Query Cards| MySQL
     Search -->|Cache Read/Write| Redis
-    Collection -->|Write/Read| MySQL
-    Listing -->|Write/Read| MySQL
+    Collection -->|Write/Read Collections| MySQL
+    Listing -->|Write/Read Listings| MySQL
 
     Collection -->|Events| NATS
     Listing -->|Events| NATS
 
-    Bulk -.->|Import| Scryfall
+    Bulk -.->|Bulk Import| Scryfall
 
     Auth -.->|Pino Logs| Promtail
     Bulk -.->|Pino Logs| Promtail
     Search -.->|Pino Logs| Promtail
     Collection -.->|Pino Logs| Promtail
     Listing -.->|Pino Logs| Promtail
+    Client -.->|Browser Logs| Promtail
     
     Promtail -->|Push Logs| Loki
     Grafana -->|Query Logs| Loki
@@ -94,7 +98,7 @@ graph TB
     classDef infra fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff
 
     class Auth,Bulk,Search,Collection,Listing service
-    class MySQL,NATS data
+    class MySQL,NATS,Redis data
     class Scryfall external
     class Grafana,Loki,Promtail observability
     class Client,Ingress infra
