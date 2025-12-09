@@ -8,6 +8,7 @@ Testing Action
 - [x] Pino Log for Loki Grafana - 11/26/25
 - [x] Redis Caching on Trending 24h/7d USD calls - 11/27/25
 - [ ] Rate Limiting
+- [ ] Circuit Breaker
 - [ ] Auth Enforcement
 - [ ] Monitoring and Alerting
 - [ ] Connection Pool Management and Logging

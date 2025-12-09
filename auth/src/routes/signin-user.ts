@@ -3,14 +3,25 @@ import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { validateRequest } from '../middlewares/validate-request';
 import { BadRequestError } from '../errors/bad-request-error';
+import { rateLimit } from '../middlewares/rate-limit';
 
 import { User } from '../models/user';
 import { logger } from '../logger';
 
 const router = express.Router();
 
+// Rate limiter: 5 signin attempts per 15 minutes per IP
+const signinRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window
+  message: 'Too many signin attempts from this IP, please try again after 15 minutes.',
+  skipSuccessfulRequests: false, // Count all attempts (successful or not)
+  skipFailedRequests: false
+});
+
 router.post(
   '/api/users/signin',
+  signinRateLimiter,
   [
     body('email')
       .isEmail()
