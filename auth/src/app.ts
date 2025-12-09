@@ -31,6 +31,7 @@ app.use(
     signed: false,
     secure: process.env.NODE_ENV !== 'test', // Use HTTPS in production, HTTP in tests
     sameSite: 'none', // Allow cross-origin cookies (localhost:3000 to mtg-tracker.local)
+    // Set to true for production
     httpOnly: false, // Prevent XSS attacks by blocking JavaScript access
     domain: undefined, // Don't set domain - allows cookies to work from any origin when sameSite: 'none'
   })

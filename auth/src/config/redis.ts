@@ -1,11 +1,10 @@
-import { createClient } from 'redis';
+import { createClient } from '@redis/client';
+import type { RedisClientType } from '@redis/client';
 import { logger } from '../logger';
 
-type RedisClient = ReturnType<typeof createClient>;
+let redisClient: RedisClientType | null = null;
 
-let redisClient: RedisClient | null = null;
-
-export async function createRedisClient(): Promise<RedisClient> {
+export async function createRedisClient(): Promise<RedisClientType> {
   const redis = createClient({
     url: `redis://${process.env.REDIS_HOST || 'redis-srv'}:${process.env.REDIS_PORT || '6379'}`,
     socket: {
@@ -41,7 +40,7 @@ export async function createRedisClient(): Promise<RedisClient> {
   }
 }
 
-export function getRedisClient(): RedisClient {
+export function getRedisClient(): RedisClientType {
   if (!redisClient) {
     throw new Error('Redis client not initialized. Call createRedisClient() first.');
   }
