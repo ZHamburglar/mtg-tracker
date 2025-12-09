@@ -29,10 +29,9 @@ app.use((req, res, next) => {
 app.use(
   cookieSession({
     signed: false,
-    secure: true, // Use HTTPS (mtg-tracker.local uses HTTPS with self-signed cert)
+    secure: process.env.NODE_ENV !== 'test', // Use HTTPS in production, HTTP in tests
     sameSite: 'none', // Allow cross-origin cookies (localhost:3000 to mtg-tracker.local)
-    // SET TO TRUE FOR PRODUCTION
-    httpOnly: false, // Allow JavaScript access for local dev debugging
+    httpOnly: false, // Prevent XSS attacks by blocking JavaScript access
     domain: undefined, // Don't set domain - allows cookies to work from any origin when sameSite: 'none'
   })
 );
