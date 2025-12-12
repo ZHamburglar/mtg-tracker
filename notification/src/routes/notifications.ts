@@ -11,7 +11,7 @@ const router = express.Router();
  * Get all notifications for the authenticated user
  */
 router.get(
-  '/api/notifications',
+  '/api/notification',
   currentUser,
   requireAuth,
   [
@@ -72,7 +72,7 @@ router.get(
  * Get a specific notification
  */
 router.get(
-  '/api/notifications/:id',
+  '/api/notification/:id',
   currentUser,
   requireAuth,
   async (req: Request, res: Response) => {
@@ -120,7 +120,7 @@ router.get(
  * Create a new notification
  */
 router.post(
-  '/api/notifications',
+  '/api/notification',
   currentUser,
   requireAuth,
   [
@@ -188,7 +188,7 @@ router.post(
  * Mark a notification as read
  */
 router.patch(
-  '/api/notifications/:id/read',
+  '/api/notification/:id/read',
   currentUser,
   requireAuth,
   async (req: Request, res: Response) => {
@@ -238,7 +238,7 @@ router.patch(
  * Mark all notifications as read for the authenticated user
  */
 router.patch(
-  '/api/notifications/read-all',
+  '/api/notification/read-all',
   currentUser,
   requireAuth,
   async (req: Request, res: Response) => {
@@ -267,7 +267,7 @@ router.patch(
  * Delete a notification
  */
 router.delete(
-  '/api/notifications/:id',
+  '/api/notification/:id',
   currentUser,
   requireAuth,
   async (req: Request, res: Response) => {
@@ -317,7 +317,7 @@ router.delete(
  * Delete all notifications for the authenticated user
  */
 router.delete(
-  '/api/notifications',
+  '/api/notification',
   currentUser,
   requireAuth,
   [
