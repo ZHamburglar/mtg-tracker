@@ -3,8 +3,6 @@ import path from 'path';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { runMigrations } from '@mtg-tracker/common';
-import { UserCardCollection } from './models/user-card-collection';
-import { natsWrapper } from './nats-wrapper';
 
 import { logger } from './logger';
 
@@ -12,17 +10,17 @@ import { logger } from './logger';
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
-  if (!process.env.NATS_URL) {
-    throw new Error("NATS_URL must be defined");
-  }
+  // if (!process.env.NATS_URL) {
+  //   throw new Error("NATS_URL must be defined");
+  // }
 
-  if (!process.env.NATS_CLUSTER_ID) {
-    throw new Error("NATS_CLUSTER_ID must be defined");
-  }
+  // if (!process.env.NATS_CLUSTER_ID) {
+  //   throw new Error("NATS_CLUSTER_ID must be defined");
+  // }
 
-  if (!process.env.NATS_CLIENT_ID) {
-    throw new Error("NATS_CLIENT_ID must be defined");
-  }
+  // if (!process.env.NATS_CLIENT_ID) {
+  //   throw new Error("NATS_CLIENT_ID must be defined");
+  // }
 
   if (!process.env.MYSQL_HOST) {
     throw new Error("MYSQL_HOST must be defined");
@@ -47,18 +45,18 @@ const start = async () => {
     logger.log(`Database: ${process.env.MYSQL_DATABASE}`);
   }
 
-  // Connect to NATS
-  try {
-    await natsWrapper.connect(
-      process.env.NATS_URL,
-      process.env.NATS_CLUSTER_ID,
-      process.env.NATS_CLIENT_ID
-    );
-    logger.log('Connected to NATS JetStream');
-  } catch (err) {
-    logger.error('Failed to connect to NATS:', err);
-    throw err;
-  }
+  // // Connect to NATS
+  // try {
+  //   await natsWrapper.connect(
+  //     process.env.NATS_URL,
+  //     process.env.NATS_CLUSTER_ID,
+  //     process.env.NATS_CLIENT_ID
+  //   );
+  //   logger.log('Connected to NATS JetStream');
+  // } catch (err) {
+  //   logger.error('Failed to connect to NATS:', err);
+  //   throw err;
+  // }
 
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
   // You can export the pool or set it in a global variable if needed
@@ -71,10 +69,10 @@ const start = async () => {
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
   const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-  await runMigrations(pool, migrationsDir, 'collection');
+  await runMigrations(pool, migrationsDir, 'notification');
 
   // Initialize models with database pool
-  UserCardCollection.setPool(pool);
+  // UserCardCollection.setPool(pool);
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
@@ -86,7 +84,7 @@ start();
 
 process.on("SIGINT", async () => {
   logger.log("SIGINT received, closing connections...");
-  await natsWrapper.close();
+  // await natsWrapper.close();
   if (pool) {
     await pool.end();
   }
@@ -95,7 +93,7 @@ process.on("SIGINT", async () => {
 
 process.on("SIGTERM", async () => {
   logger.log("SIGTERM received, closing connections...");
-  await natsWrapper.close();
+  // await natsWrapper.close();
   if (pool) {
     await pool.end();
   }

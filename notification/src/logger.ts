@@ -1,3 +1,3 @@
 import { ServiceLogger } from '@mtg-tracker/common';
 
-export const logger = new ServiceLogger('Collection');
+export const logger = new ServiceLogger('Notification');
