@@ -27,7 +27,7 @@ graph TB
     end
 
     subgraph "Ingress Layer"
-        Ingress["Ingress Nginx<br/>Routes: /api/auth/*, /api/bulk/*,<br/>/api/search/*, /api/collection/*,<br/>/api/listing/*"]
+        Ingress["Traefik Ingress<br/>Routes: /api/users/*, /api/bulk/*,<br/>/api/search/*, /api/collection/*,<br/>/api/listing/*, /api/notification/*"]
     end
 
     subgraph "Microservices Layer"
@@ -40,12 +40,14 @@ graph TB
         Collection["Collection Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Card Collections<br/>Collection Management<br/>Foil/Normal Tracking<br/>Oracle ID Grouping<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
         
         Listing["Listing Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Listings<br/>Marketplace<br/><br/>HPA: 1-3 replicas<br/>512Mi-1Gi RAM<br/>250m-1 CPU"]
+        
+        Notification["Notification Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Notifications<br/>Price Alerts<br/>Collection Updates<br/>System Messages<br/>Read/Unread Tracking<br/><br/>HPA: 1-3 replicas<br/>256Mi-512Mi RAM<br/>100m-500m CPU"]
     end
 
     subgraph "Data Layer"
         NATS["NATS Message Queue<br/>━━━━━━━━━━<br/>URL: nats://nats-srv:4222<br/>Cluster ID: mtg-tracker<br/>JetStream Enabled<br/><br/>Event-driven communication"]
         
-        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• user_card_collection<br/>• user_collection_cache<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
+        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• user_card_collection<br/>• user_collection_cache<br/>• notifications<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
         
         Redis["Redis 7<br/>━━━━━━━━━━<br/>Host: redis-srv:6379<br/><br/>Caching:<br/>• Trending cards (24h/7d USD)<br/>• 24h TTL<br/><br/>HPA: 1-3 replicas<br/>256Mi-512Mi RAM<br/>100m-500m CPU"]
     end
@@ -69,6 +71,7 @@ graph TB
     Ingress -->|Route /api/search/*| Search
     Ingress -->|Route /api/collection/*| Collection
     Ingress -->|Route /api/listing/*| Listing
+    Ingress -->|Route /api/notification/*| Notification
 
     Auth -->|Query Users| MySQL
     Bulk -->|Write Cards/Prices| MySQL
@@ -76,9 +79,11 @@ graph TB
     Search -->|Cache Read/Write| Redis
     Collection -->|Write/Read Collections| MySQL
     Listing -->|Write/Read Listings| MySQL
+    Notification -->|Write/Read Notifications| MySQL
 
     Collection -->|Events| NATS
     Listing -->|Events| NATS
+    Notification -->|Events| NATS
 
     Bulk -.->|Bulk Import| Scryfall
 
@@ -87,6 +92,7 @@ graph TB
     Search -.->|Pino Logs| Promtail
     Collection -.->|Pino Logs| Promtail
     Listing -.->|Pino Logs| Promtail
+    Notification -.->|Pino Logs| Promtail
     Client -.->|Browser Logs| Promtail
     
     Promtail -->|Push Logs| Loki
@@ -98,7 +104,7 @@ graph TB
     classDef observability fill:#ffa500,stroke:#fff,stroke-width:2px,color:#fff
     classDef infra fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff
 
-    class Auth,Bulk,Search,Collection,Listing service
+    class Auth,Bulk,Search,Collection,Listing,Notification service
     class MySQL,NATS,Redis data
     class Scryfall external
     class Grafana,Loki,Promtail observability
@@ -116,12 +122,13 @@ graph TB
   - Conservative scaling policies to prevent flapping
 
 ### Key Features
-- **Microservices Architecture**: Independent services for auth, bulk operations, search, collections, and listings
+- **Microservices Architecture**: Independent services for auth, bulk operations, search, collections, listings, and notifications
 - **Event-Driven**: NATS message queue for inter-service communication
 - **Scheduled Jobs**: Automated daily card/price imports and trending calculations (cron-based)
 - **Optimized Database**: MySQL with 2GB InnoDB buffer pool for high-performance queries
 - **Centralized Logging**: Loki stack for log aggregation across all services
 - **Container Orchestration**: Kubernetes with resource limits and health checks
+- **Real-Time Notifications**: User notification system for price alerts, collection updates, and system messages
 
 ## Running Locally
 
