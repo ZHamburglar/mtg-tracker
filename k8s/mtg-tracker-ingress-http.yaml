@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mtg-tracker-ingress-http
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: mtg-tracker.local
+      http:
+        paths:
+          - path: /api/users/health
+            pathType: Exact
+            backend:
+              service:
+                name: auth-srv
+                port:
+                  number: 3000
+          - path: /api/bulk/health
+            pathType: Exact
+            backend:
+              service:
+                name: bulk-srv
+                port:
+                  number: 3000
+          - path: /api/search/health
+            pathType: Exact
+            backend:
+              service:
+                name: search-srv
+                port:
+                  number: 3000
+          - path: /api/collection/health
+            pathType: Exact
+            backend:
+              service:
+                name: collection-srv
+                port:
+                  number: 3000
+          - path: /api/listing/health
+            pathType: Exact
+            backend:
+              service:
+                name: listing-srv
+                port:
+                  number: 3000
