@@ -184,10 +184,10 @@ router.post(
 );
 
 /**
- * PATCH /api/notifications/:id/read
+ * POST /api/notifications/:id/read
  * Mark a notification as read
  */
-router.patch(
+router.post(
   '/api/notification/:id/read',
   currentUser,
   requireAuth,

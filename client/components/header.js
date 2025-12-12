@@ -72,8 +72,13 @@ const Header = () => {
   useEffect(() => {
     console.log('Current user in Header:', currentUser);
     fetchCurrentUser();
-    fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchNotifications();
+    }
+  }, [currentUser]);
 
   const fetchCurrentUser = async () => {
     console.log('Fetching current user...');
@@ -112,7 +117,7 @@ const Header = () => {
   const markNotificationAsRead = async (notificationId) => {
     const client = buildClient();
     try {
-      await client.patch(`/api/notification/${notificationId}/read`);
+      await client.post(`/api/notification/${notificationId}/read`);
       // Update local state to mark as read
       setNotifications(notifications.map(n => 
         n.id === notificationId ? { ...n, read: true } : n
