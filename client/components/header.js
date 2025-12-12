@@ -64,6 +64,7 @@ const Header = () => {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(true); // TODO: Fetch from API
@@ -71,6 +72,7 @@ const Header = () => {
   useEffect(() => {
     console.log('Current user in Header:', currentUser);
     fetchCurrentUser();
+    fetchNotifications();
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -86,6 +88,23 @@ const Header = () => {
         error.response.data.errors.forEach(err => toast.error(err.message));
       } else {
         toast.error('Failed to fetch user information');
+      }
+    }
+  };
+
+  const fetchNotifications = async () => {
+    console.log('Fetching notifications...');
+    const client = buildClient();
+    try {
+      const response = await client.get('/api/notification');
+      console.log('Fetched notifications:', response.data.notifications);
+      setNotifications(response.data.notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      if (error.response?.data?.errors) {
+        error.response.data.errors.forEach(err => toast.error(err.message));
+      } else {
+        toast.error('Failed to fetch notifications');
       }
     }
   };
@@ -222,20 +241,56 @@ const Header = () => {
                             {currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        {hasNotifications && (
+                        {notifications.length > 0 && (
                           <Badge 
                             variant="destructive" 
                             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
                           >
-                            !
+                            {notifications.length}
                           </Badge>
                         )}
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{currentUser.username}</DropdownMenuLabel>
-                      <DropdownMenuLabel>{currentUser.email}</DropdownMenuLabel>
+                    <DropdownMenuContent align="end" className="w-80">
+                      <DropdownMenuLabel className="text-center">{currentUser.username}</DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-center">{currentUser.email}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      
+                      {notifications.length > 0 && (
+                        <>
+                          <DropdownMenuLabel className="flex items-center justify-between">
+                            <span>Notifications</span>
+                            <Badge variant="secondary">{notifications.length}</Badge>
+                          </DropdownMenuLabel>
+                          <div className="max-h-64 overflow-y-auto">
+                            {notifications.map((notification) => (
+                              <DropdownMenuItem 
+                                key={notification.id}
+                                className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                                onClick={() => {
+                                  // TODO: Mark notification as read
+                                  console.log('Notification clicked:', notification);
+                                }}
+                              >
+                                <div className="flex items-start justify-between w-full gap-2">
+                                  <div className="font-medium text-sm">{notification.title}</div>
+                                  {!notification.read && (
+                                    <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 mt-1" />
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground line-clamp-2">
+                                  {notification.message}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(notification.created_at).toLocaleDateString()}
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                          </div>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      
                       <DropdownMenuItem onClick={() => console.log('Go to settings')}>
                         Settings
                       </DropdownMenuItem>
