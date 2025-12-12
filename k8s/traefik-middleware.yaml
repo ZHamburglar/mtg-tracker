@@ -1,6 +1,16 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
+  name: redirect-https
+  namespace: default
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
   name: cors
   namespace: default
 spec:
@@ -26,13 +36,3 @@ spec:
       - "Content-Type"
       - "Authorization"
     accessControlMaxAge: 100
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: redirect-https
-  namespace: default
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true

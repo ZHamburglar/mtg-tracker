@@ -6,7 +6,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: "local-ca-issuer"
-    traefik.ingress.kubernetes.io/router.middlewares: default-cors@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd,default-cors@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -17,50 +17,50 @@ spec:
     - host: mtg-tracker.local
       http:
         paths:
-          - path: /api/users(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /api/users
+            pathType: Prefix
             backend:
               service:
                 name: auth-srv
                 port:
                   number: 3000
-          - path: /api/bulk(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /api/bulk
+            pathType: Prefix
             backend:
               service:
                 name: bulk-srv
                 port:
                   number: 3000
-          - path: /api/search(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /api/search
+            pathType: Prefix
             backend:
               service:
                 name: search-srv
                 port:
                   number: 3000
-          - path: /api/collection(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /api/collection
+            pathType: Prefix
             backend:
               service:
                 name: collection-srv
                 port:
                   number: 3000
-          - path: /api/listing(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /api/listing
+            pathType: Prefix
             backend:
               service:
                 name: listing-srv
                 port:
                   number: 3000
-          - path: /nats(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /nats
+            pathType: Prefix
             backend:
               service:
                 name: nats-srv
                 port:
                   number: 8222
-          - path: /?(.*)
-            pathType: ImplementationSpecific
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: client-srv
