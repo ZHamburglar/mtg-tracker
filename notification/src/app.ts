@@ -7,7 +7,7 @@ import { errorHandler } from "@mtg-tracker/common"
 
 // Import routes here and use them
 import { healthRouter } from "./routes/health";
-// import { collectionRouter } from "./routes/collection";
+import { notificationsRouter } from "./routes/notifications";
 
 import { logger } from "./logger";
 
@@ -35,7 +35,7 @@ const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.g
 logger.log(`[${timestamp}] Notification service up and running!`);
 // Use the imported routes here
 app.use(healthRouter);
-// app.use(collectionRouter);
+app.use(notificationsRouter);
 
 // Error handler must be added AFTER all routes
 app.use(errorHandler);

@@ -3,6 +3,7 @@ import path from 'path';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
 import { runMigrations } from '@mtg-tracker/common';
+import { Notification } from './models/notification';
 
 import { logger } from './logger';
 
@@ -72,7 +73,7 @@ const start = async () => {
   await runMigrations(pool, migrationsDir, 'notification');
 
   // Initialize models with database pool
-  // UserCardCollection.setPool(pool);
+  Notification.setPool(pool);
 
   const port = parseInt(process.env.PORT || '3000');
   app.listen(port, () => {
