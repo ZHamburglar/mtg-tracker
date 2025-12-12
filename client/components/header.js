@@ -109,6 +109,24 @@ const Header = () => {
     }
   };
 
+  const markNotificationAsRead = async (notificationId) => {
+    const client = buildClient();
+    try {
+      await client.patch(`/api/notification/${notificationId}/read`);
+      // Update local state to mark as read
+      setNotifications(notifications.map(n => 
+        n.id === notificationId ? { ...n, read: true } : n
+      ));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      if (error.response?.data?.errors) {
+        error.response.data.errors.forEach(err => toast.error(err.message));
+      } else {
+        toast.error('Failed to mark notification as read');
+      }
+    }
+  };
+
 
 
   const signIn = () => {
@@ -267,10 +285,7 @@ const Header = () => {
                               <DropdownMenuItem 
                                 key={notification.id}
                                 className="flex flex-col items-start gap-1 py-3 cursor-pointer"
-                                onClick={() => {
-                                  // TODO: Mark notification as read
-                                  console.log('Notification clicked:', notification);
-                                }}
+                                onClick={() => markNotificationAsRead(notification.id)}
                               >
                                 <div className="flex items-start justify-between w-full gap-2">
                                   <div className="font-medium text-sm">{notification.title}</div>
