@@ -7,11 +7,19 @@
 helm repo add traefik https://traefik.github.io/charts
 helm repo update
 
-# Install Traefik
+# Check for existing Traefik installation
+helm list -A | grep traefik
+
+# If Traefik exists in kube-system, uninstall it first:
+helm uninstall traefik -n kube-system
+
+# Also clean up the IngressClass if it exists
+kubectl delete ingressclass traefik
+
+# Now install Traefik in the traefik namespace
 helm install traefik traefik/traefik \
   --namespace traefik \
   --create-namespace \
-  --set ports.web.redirectTo.port=websecure \
   --set ports.websecure.tls.enabled=true \
   --set logs.access.enabled=true
 ```
@@ -57,6 +65,35 @@ Then visit: http://localhost:9000/dashboard/
 - HTTPS redirect is configured via Middleware
 - All routes remain the same
 - cert-manager integration unchanged
+
+## Post-Installation Steps
+
+### Update /etc/hosts
+
+Your Traefik LoadBalancer IP is different from NGINX. Update your hosts file:
+
+```bash
+# Check Traefik's external IP
+kubectl get svc -n traefik traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+# Edit your hosts file (macOS/Linux)
+sudo nano /etc/hosts
+
+# Change the IP for mtg-tracker.local to match Traefik's IP
+# Example: 192.168.1.171 mtg-tracker.local
+```
+
+### Remove Old NGINX Ingress Controller
+
+Once you've verified Traefik is working:
+
+```bash
+# Delete NGINX ingress controller
+kubectl delete namespace ingress-nginx
+
+# Or if installed via Helm:
+helm uninstall ingress-nginx -n ingress-nginx
+```
 
 ## Rollback (if needed)
 
