@@ -117,7 +117,7 @@ router.get(
 
 /**
  * POST /api/notifications
- * Create a new notification
+ * Create a new notification (authenticated endpoint)
  */
 router.post(
   '/api/notification',
@@ -175,6 +175,72 @@ router.post(
       });
     } catch (error) {
       logger.error('Error creating notification:', error);
+      res.status(500).json({
+        error: 'Failed to create notification',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/notification/internal
+ * Create a new notification (internal service-to-service endpoint, no auth required)
+ */
+router.post(
+  '/api/notification/internal',
+  [
+    body('user_id')
+      .notEmpty()
+      .withMessage('User ID is required')
+      .isInt({ min: 1 })
+      .withMessage('User ID must be a positive integer'),
+    body('type')
+      .notEmpty()
+      .withMessage('Type is required')
+      .isString()
+      .withMessage('Type must be a string')
+      .isLength({ max: 50 })
+      .withMessage('Type must be 50 characters or less'),
+    body('title')
+      .notEmpty()
+      .withMessage('Title is required')
+      .isString()
+      .withMessage('Title must be a string')
+      .isLength({ max: 255 })
+      .withMessage('Title must be 255 characters or less'),
+    body('message')
+      .notEmpty()
+      .withMessage('Message is required')
+      .isString()
+      .withMessage('Message must be a string'),
+    body('data')
+      .optional()
+      .isObject()
+      .withMessage('Data must be an object')
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const { user_id, type, title, message, data } = req.body;
+
+      const notification = await Notification.create({
+        user_id,
+        type,
+        title,
+        message,
+        data: data || null
+      });
+
+      logger.log(`Internal notification created: ${notification.id} for user ${user_id}`);
+
+      res.status(201).json({
+        notification,
+        message: 'Notification created successfully',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error creating internal notification:', error);
       res.status(500).json({
         error: 'Failed to create notification',
         message: error instanceof Error ? error.message : 'Unknown error'
