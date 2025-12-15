@@ -254,12 +254,12 @@ const Header = () => {
                             {currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        {unreadCount.length > 0 && (
+                        {unreadCount > 0 && (
                           <Badge 
                             variant="destructive" 
                             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
                           >
-                            {unreadCount.length}
+                            {unreadCount}
                           </Badge>
                         )}
                       </div>
@@ -274,7 +274,11 @@ const Header = () => {
                           <DropdownMenuLabel className="flex items-center justify-between">
                             <span>Notifications</span>
                             <div className="flex gap-2">
-                              <Badge variant="notification">{unreadCount}</Badge>
+                              {
+                                unreadCount > 0 ? (
+                                  <Badge variant="notification">{unreadCount}</Badge>
+                                ) : null
+                              }
                               <Badge variant="secondary">{notifications.length}</Badge>
                             </div>
                            
