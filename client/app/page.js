@@ -187,12 +187,14 @@ export default function Home() {
               
               <Card className="border-border/50">
                 <CardHeader>
-                  <DeckIcon className="h-12 w-12 mb-4 text-primary mx-auto" />
-                  <CardTitle>Build a Deck</CardTitle>
+                  <Link href="/decks">
+                    <DeckIcon className="h-12 w-12 mb-4 text-primary mx-auto" />
+                    <CardTitle>Build a Deck</CardTitle>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    View historical price data and trends for your cards
+                    Build a deck or search for deck ideas from other users
                   </CardDescription>
                 </CardContent>
               </Card>
