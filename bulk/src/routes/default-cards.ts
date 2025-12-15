@@ -352,6 +352,23 @@ router.get('/api/bulk/set', async (req: Request, res: Response) => {
   try {
     logger.log('Manual trigger: Fetching and importing default sets...');
     res.status(202).json({
+      message: 'Set import started',
+      status: 'processing'
+    });
+
+    // Run the import asynchronously
+    fetchSets().catch(err => {
+      logger.error('Error in background set import:', err);
+    });
+  } catch (error) {
+    logger.error('Error starting set import:', error);
+    res.status(500).json({
+      message: 'Failed to start set import',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 router.get('/api/bulk/trending', async (req: Request, res: Response) => {
   try {
     logger.log('Manual trigger: Calculating trending cards...');
@@ -395,23 +412,6 @@ router.get('/api/bulk/price-notifications', async (req: Request, res: Response) 
     logger.error('Error starting price change notifications:', error);
     res.status(500).json({
       message: 'Failed to start price change notifications',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-export { router as defaultCardsRouter };y
-    TrendingCard.calculateAndStoreTrendingCards()
-      .then(result => {
-        logger.log(`Trending calculation completed: ${result.totalRecordsCreated} records in ${result.calculationTime}ms`);
-      })
-      .catch(err => {
-        logger.error('Error in background trending calculation:', err);
-      });
-  } catch (error) {
-    logger.error('Error starting trending calculation:', error);
-    res.status(500).json({
-      message: 'Failed to start trending calculation',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
