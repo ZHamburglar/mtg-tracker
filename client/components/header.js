@@ -1,14 +1,10 @@
 "use client";
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import { NavigationMenu,
   NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuContent,
-  NavigationMenuTrigger,
-  NavigationMenuLink,
-  NavigationMenuIndicator,
-  NavigationMenuViewport } from "@/components/ui/navigation-menu";
+  NavigationMenuItem
+} from "@/components/ui/navigation-menu";
 import {
   Dialog,
   DialogTrigger,
@@ -23,17 +19,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuGroup,
-  DropdownMenuPortal,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import {
   Sheet,
@@ -65,6 +52,7 @@ const Header = () => {
   const [username, setUsername] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(true); // TODO: Fetch from API
@@ -102,8 +90,9 @@ const Header = () => {
     const client = buildClient();
     try {
       const response = await client.get('/api/notification');
-      console.log('Fetched notifications:', response.data.notifications);
+      console.log('Fetched notifications:', response.data);
       setNotifications(response.data.notifications);
+      setUnreadCount(response.data.unreadCount);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       if (error.response?.data?.errors) {
@@ -122,6 +111,7 @@ const Header = () => {
       setNotifications(notifications.map(n => 
         n.id === notificationId ? { ...n, read: true } : n
       ));
+      setUnreadCount(unreadCount - 1);
     } catch (error) {
       console.error('Error marking notification as read:', error);
       if (error.response?.data?.errors) {
@@ -264,12 +254,12 @@ const Header = () => {
                             {currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        {notifications.length > 0 && (
+                        {unreadCount > 0 && (
                           <Badge 
                             variant="destructive" 
                             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
                           >
-                            {notifications.length}
+                            {unreadCount}
                           </Badge>
                         )}
                       </div>
@@ -283,7 +273,15 @@ const Header = () => {
                         <>
                           <DropdownMenuLabel className="flex items-center justify-between">
                             <span>Notifications</span>
-                            <Badge variant="secondary">{notifications.length}</Badge>
+                            <div className="flex gap-2">
+                              {
+                                unreadCount > 0 ? (
+                                  <Badge variant="notification">{unreadCount}</Badge>
+                                ) : null
+                              }
+                              <Badge variant="secondary">{notifications.length}</Badge>
+                            </div>
+                           
                           </DropdownMenuLabel>
                           <div className="max-h-64 overflow-y-auto">
                             {notifications.map((notification) => (
