@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS deck_cards (
   id INT AUTO_INCREMENT PRIMARY KEY,
   deck_id INT NOT NULL,
-  card_id INT NOT NULL,
+  card_id CHAR(36) NOT NULL,
   quantity INT NOT NULL DEFAULT 1,
   category ENUM('mainboard', 'sideboard', 'commander') NOT NULL DEFAULT 'mainboard',
   is_commander BOOLEAN DEFAULT FALSE,

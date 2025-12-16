@@ -2,7 +2,7 @@ import { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 
 export interface DeckCardAttrs {
   deck_id: number;
-  card_id: number;
+  card_id: string;
   quantity: number;
   category: 'mainboard' | 'sideboard' | 'commander';
   is_commander: boolean;
@@ -11,7 +11,7 @@ export interface DeckCardAttrs {
 export interface DeckCardDoc extends RowDataPacket {
   id: number;
   deck_id: number;
-  card_id: number;
+  card_id: string;
   quantity: number;
   category: 'mainboard' | 'sideboard' | 'commander';
   is_commander: boolean;
