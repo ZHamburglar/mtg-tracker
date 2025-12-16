@@ -65,7 +65,8 @@ export class DeckCard {
         c.color_identity as 'card.color_identity',
         c.set_code as 'card.set_code',
         c.rarity as 'card.rarity',
-        c.image_uris as 'card.image_uris'
+        c.image_uri_small as 'card.image_uri_small',
+        c.image_uri_png as 'card.image_uri_png'
       FROM deck_cards dc
       LEFT JOIN cards c ON dc.card_id = c.id
       WHERE dc.deck_id = ?
@@ -93,7 +94,11 @@ export class DeckCard {
         color_identity: row['card.color_identity'],
         set_code: row['card.set_code'],
         rarity: row['card.rarity'],
-        image_uris: row['card.image_uris'] ? JSON.parse(row['card.image_uris']) : null
+        image_uris: {
+          small: row['card.image_uri_small'],
+          normal: row['card.image_uri_png'],
+          png: row['card.image_uri_png']
+        }
       };
 
       return {
