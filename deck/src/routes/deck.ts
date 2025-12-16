@@ -64,13 +64,13 @@ router.get(
  * Get a specific deck
  */
 router.get(
-  '/api/deck/:id',
+  '/api/deck/:id/cards',
   currentUser,
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
+      const deckId = parseInt(String(req.params.id));
 
       const deck = await Deck.findById(deckId);
 
@@ -83,7 +83,7 @@ router.get(
       // Verify ownership
       if (deck.user_id !== userId) {
         return res.status(403).json({
-          error: 'Unauthorized to view this deck'
+          error: 'Unauthorized to delete this deck'
         });
       }
 
@@ -184,7 +184,7 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
+      const deckId = parseInt(String(req.params.id));
 
       const deck = await Deck.findById(deckId);
 
@@ -236,7 +236,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
+      const deckId = parseInt(String(req.params.id));
 
       const deck = await Deck.findById(deckId);
 
@@ -279,7 +279,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
+      const deckId = parseInt(String(req.params.id));
 
       const deck = await Deck.findById(deckId);
 
@@ -339,7 +339,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
+      const deckId = parseInt(String(req.params.id));
       const { card_id, quantity, category, is_commander } = req.body;
 
       const deck = await Deck.findById(deckId);
@@ -421,8 +421,8 @@ router.patch(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
-      const cardId = parseInt(req.params.cardId);
+      const deckId = parseInt(String(req.params.id));
+      const cardId = parseInt(String(req.params.cardId));
       const { quantity, category, is_commander } = req.body;
 
       const deck = await Deck.findById(deckId);
@@ -484,8 +484,8 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const deckId = parseInt(req.params.id);
-      const cardId = parseInt(req.params.cardId);
+      const deckId = parseInt(String(req.params.id));
+      const cardId = parseInt(String(req.params.cardId));
       const category = req.query.category as string;
 
       const deck = await Deck.findById(deckId);
