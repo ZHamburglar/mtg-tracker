@@ -422,7 +422,7 @@ router.patch(
     try {
       const userId = parseInt(String(req.currentUser!.id));
       const deckId = parseInt(String(req.params.id));
-      const cardId = parseInt(String(req.params.cardId));
+      const cardId = String(req.params.cardId);
       const { quantity, category, is_commander } = req.body;
 
       const deck = await Deck.findById(deckId);
@@ -485,7 +485,7 @@ router.delete(
     try {
       const userId = parseInt(String(req.currentUser!.id));
       const deckId = parseInt(String(req.params.id));
-      const cardId = parseInt(String(req.params.cardId));
+      const cardId = String(req.params.cardId);
       const category = req.query.category as string;
 
       const deck = await Deck.findById(deckId);
