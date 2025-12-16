@@ -322,7 +322,7 @@ router.post(
   requireAuth,
   [
     body('card_id')
-      .isInt({ min: 1 })
+      .isUUID()
       .withMessage('Valid card_id is required'),
     body('quantity')
       .isInt({ min: 1, max: 999 })

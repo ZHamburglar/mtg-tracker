@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CardImage from '@/components/CardImage';
+import { getCardImage } from '@/hooks/get-card-image';
 import buildClient from '../../api/build-client';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ export default function DeckDetailPage() {
   const [deck, setDeck] = useState(null);
   const [deckCards, setDeckCards] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadedImages, setLoadedImages] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -84,7 +86,7 @@ export default function DeckDetailPage() {
     setSearching(true);
     try {
       const client = buildClient();
-      const { data } = await client.get(`/api/search/cards?q=${encodeURIComponent(searchQuery)}`);
+      const { data } = await client.get(`api/search?name=${encodeURIComponent(searchQuery)}`);
       setSearchResults(data.cards || []);
     } catch (error) {
       console.error('Error searching cards:', error);
@@ -390,10 +392,15 @@ export default function DeckDetailPage() {
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {searchResults.map((card) => (
+                    {searchResults.map((card) => {
+                      const image = getCardImage(card);
+                      const isHighResLoaded = loadedImages[card.id];
+                      return (
                       <div key={card.id} className="group relative">
                         <CardImage
-                          src={card.image_uris?.normal || card.image_uris?.small}
+                          card={card}
+                          isHighResLoaded={loadedImages[card.id]}
+                          onHighResLoad={() => setLoadedImages(prev => ({ ...prev, [card.id]: true }))}
                           alt={card.name}
                           className="rounded-lg"
                         />
@@ -416,7 +423,9 @@ export default function DeckDetailPage() {
                         </div>
                         <p className="text-xs text-center mt-1 truncate">{card.name}</p>
                       </div>
-                    ))}
+                    )
+                    }         
+                    )}
                   </div>
                 ) : searchQuery.length >= 3 ? (
                   <div className="text-center py-12 text-muted-foreground">
