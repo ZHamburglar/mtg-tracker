@@ -58,6 +58,7 @@ export default function DeckDetailPage() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/deck/${deckId}`);
+      console.log('Loaded deck data:', data);
       setDeck(data.deck);
     } catch (error) {
       console.error('Error loading deck:', error);
@@ -248,7 +249,7 @@ export default function DeckDetailPage() {
       <header className="border-b border-border sticky top-0 bg-background z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={() => router.push('/deck')}>
+            <Button variant="ghost" onClick={() => router.push('/decks')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Decks
             </Button>

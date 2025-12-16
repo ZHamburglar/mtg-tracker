@@ -31,6 +31,7 @@ export default function DecksPage() {
     try {
       const client = buildClient();
       const { data } = await client.get('/api/deck');
+      console.log('Loaded decks data:', data);
       setDecks(data.decks || []);
     } catch (error) {
       console.error('Error loading decks:', error);
@@ -61,7 +62,7 @@ export default function DecksPage() {
       setNewDeckFormat('commander');
       
       // Navigate to the new deck
-      router.push(`/deck/${data.deck.id}`);
+      router.push(`/decks/${data.deck.id}`);
     } catch (error) {
       console.error('Error creating deck:', error);
       toast.error('Failed to create deck');
@@ -188,7 +189,7 @@ export default function DecksPage() {
               <Card
                 key={deck.id}
                 className="cursor-pointer hover:border-primary transition-colors"
-                onClick={() => router.push(`/deck/${deck.id}`)}
+                onClick={() => router.push(`/decks/${deck.id}`)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
