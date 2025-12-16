@@ -64,7 +64,7 @@ router.get(
  * Get a specific deck
  */
 router.get(
-  '/api/deck/:id/cards',
+  '/api/deck/:id',
   currentUser,
   requireAuth,
   async (req: Request, res: Response) => {
@@ -83,7 +83,7 @@ router.get(
       // Verify ownership
       if (deck.user_id !== userId) {
         return res.status(403).json({
-          error: 'Unauthorized to delete this deck'
+          error: 'Unauthorized to view this deck'
         });
       }
 
