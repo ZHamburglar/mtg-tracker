@@ -27,7 +27,7 @@ graph TB
     end
 
     subgraph "Ingress Layer"
-        Ingress["Traefik Ingress<br/>Routes: /api/users/*, /api/bulk/*,<br/>/api/search/*, /api/collection/*,<br/>/api/listing/*, /api/notification/*"]
+        Ingress["Traefik Ingress<br/>Routes: /api/users/*, /api/bulk/*,<br/>/api/search/*, /api/collection/*,<br/>/api/listing/*, /api/notification/*,<br/>/api/deck/*"]
     end
 
     subgraph "Microservices Layer"
@@ -42,12 +42,14 @@ graph TB
         Listing["Listing Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Card Listings<br/>Marketplace<br/><br/>HPA: 1-3 replicas<br/>512Mi-1Gi RAM<br/>250m-1 CPU"]
         
         Notification["Notification Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>User Notifications<br/>Price Alerts<br/>Collection Updates<br/>System Messages<br/>Read/Unread Tracking<br/><br/>HPA: 1-3 replicas<br/>256Mi-512Mi RAM<br/>100m-500m CPU"]
+        
+        Deck["Deck Service<br/>Port: 3000<br/>━━━━━━━━━━<br/>Deck Management<br/>Mainboard/Sideboard/Commander<br/>Card Organization<br/>Deck Statistics<br/><br/>HPA: 1-3 replicas<br/>384Mi-768Mi RAM<br/>250m-500m CPU"]
     end
 
     subgraph "Data Layer"
         NATS["NATS Message Queue<br/>━━━━━━━━━━<br/>URL: nats://nats-srv:4222<br/>Cluster ID: mtg-tracker<br/>JetStream Enabled<br/><br/>Event-driven communication"]
         
-        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• user_card_collection<br/>• user_collection_cache<br/>• notifications<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
+        MySQL["MySQL 8.0<br/>━━━━━━━━━━<br/>Host: mysql:3306<br/>Database: mtgtrackerdb<br/><br/>Tables:<br/>• users<br/>• cards<br/>• card_prices<br/>• sets<br/>• trending_cards<br/>• card_listings<br/>• user_card_collection<br/>• user_collection_cache<br/>• notifications<br/>• decks<br/>• deck_cards<br/><br/>StatefulSet:<br/>• 20Gi Longhorn PVC<br/>• InnoDB buffer: 2GB<br/>• Max connections: 200<br/>• 3-4Gi RAM<br/>• 500m-2 CPU"]
         
         Redis["Redis 7<br/>━━━━━━━━━━<br/>Host: redis-srv:6379<br/><br/>Caching:<br/>• Trending cards (24h/7d USD)<br/>• 24h TTL<br/><br/>HPA: 1-3 replicas<br/>256Mi-512Mi RAM<br/>100m-500m CPU"]
     end
@@ -72,26 +74,30 @@ graph TB
     Ingress -->|Route /api/collection/*| Collection
     Ingress -->|Route /api/listing/*| Listing
     Ingress -->|Route /api/notification/*| Notification
+    Ingress -->|Route /api/deck/*| Deck
 
     Auth -->|Query Users| MySQL
     Bulk -->|Write Cards/Prices| MySQL
     Search -->|Query Cards| MySQL
-    Search -->|Cache Read/Write| Redis
     Collection -->|Write/Read Collections| MySQL
     Listing -->|Write/Read Listings| MySQL
     Notification -->|Write/Read Notifications| MySQL
+    Deck -->|Write/Read Decks| MySQL
 
     Collection -->|Events| NATS
     Listing -->|Events| NATS
+    Notification -->|Events| NATS
+    Deck -->|Events| NATS
     Notification -->|Events| NATS
 
     Bulk -.->|Bulk Import| Scryfall
 
     Auth -.->|Pino Logs| Promtail
-    Bulk -.->|Pino Logs| Promtail
-    Search -.->|Pino Logs| Promtail
     Collection -.->|Pino Logs| Promtail
     Listing -.->|Pino Logs| Promtail
+    Notification -.->|Pino Logs| Promtail
+    Deck -.->|Pino Logs| Promtail
+    Client -.->|Browser Logs| Promtail
     Notification -.->|Pino Logs| Promtail
     Client -.->|Browser Logs| Promtail
     
@@ -101,7 +107,7 @@ graph TB
     classDef service fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff
     classDef data fill:#13aa52,stroke:#fff,stroke-width:2px,color:#fff
     classDef external fill:#ff6b6b,stroke:#fff,stroke-width:2px,color:#fff
-    classDef observability fill:#ffa500,stroke:#fff,stroke-width:2px,color:#fff
+    class Auth,Bulk,Search,Collection,Listing,Notification,Deck servicepx,color:#fff
     classDef infra fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff
 
     class Auth,Bulk,Search,Collection,Listing,Notification service
