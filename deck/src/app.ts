@@ -35,6 +35,7 @@ const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.g
 logger.log(`[${timestamp}] Notification service up and running!`);
 // Use the imported routes here
 app.use(healthRouter);
+
 // app.use(notificationsRouter);
 
 // Error handler must be added AFTER all routes
