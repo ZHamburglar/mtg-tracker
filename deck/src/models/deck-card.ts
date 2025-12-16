@@ -44,6 +44,10 @@ export class DeckCard {
       [result.insertId]
     );
 
+    if (!rows[0]) {
+      throw new Error('Failed to create deck card');
+    }
+
     return rows[0];
   }
 
@@ -196,6 +200,6 @@ export class DeckCard {
 
     const [rows] = await this.pool.execute<RowDataPacket[]>(query, params);
 
-    return rows[0].count;
+    return rows[0]?.count || 0;
   }
 }
