@@ -68,7 +68,7 @@ export class DeckCard {
         c.image_uri_small as 'card.image_uri_small',
         c.image_uri_png as 'card.image_uri_png'
       FROM deck_cards dc
-      LEFT JOIN cards c ON dc.card_id = c.id
+      LEFT JOIN cards c ON dc.card_id COLLATE utf8mb4_0900_ai_ci = c.id
       WHERE dc.deck_id = ?
       ORDER BY 
         CASE dc.category
@@ -116,7 +116,7 @@ export class DeckCard {
 
   static async findByDeckAndCard(
     deckId: number,
-    cardId: number,
+    cardId: string,
     category: string
   ): Promise<DeckCardDoc | null> {
     const [rows] = await this.pool.execute<DeckCardDoc[]>(
@@ -129,7 +129,7 @@ export class DeckCard {
 
   static async updateQuantity(
     deckId: number,
-    cardId: number,
+    cardId: string,
     category: string,
     quantity: number
   ): Promise<DeckCardDoc | null> {
@@ -143,7 +143,7 @@ export class DeckCard {
 
   static async update(
     deckId: number,
-    cardId: number,
+    cardId: string,
     category: string,
     updates: Partial<Pick<DeckCardAttrs, 'quantity' | 'is_commander'>>
   ): Promise<DeckCardDoc | null> {
@@ -174,7 +174,7 @@ export class DeckCard {
 
   static async delete(
     deckId: number,
-    cardId: number,
+    cardId: string,
     category: string
   ): Promise<boolean> {
     const [result] = await this.pool.execute<ResultSetHeader>(
