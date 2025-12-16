@@ -45,6 +45,13 @@ spec:
                 name: collection-srv
                 port:
                   number: 3000
+          - path: /api/deck
+            pathType: Prefix
+            backend:
+              service:
+                name: deck-srv
+                port:
+                  number: 3000
           - path: /api/notification
             pathType: Prefix
             backend:
