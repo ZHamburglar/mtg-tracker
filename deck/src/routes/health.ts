@@ -1,0 +1,33 @@
+import express, { Request, Response } from 'express';
+
+const router = express.Router();
+
+router.get('/api/deck/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'healthy',
+    service: 'deck',
+    timestamp: new Date().toISOString()
+  });
+});
+
+router.get('/api/deck/ready', async (req: Request, res: Response) => {
+  try {
+    // const pool = UserCardCollection.getPool();
+    // const conn = await pool.getConnection();
+    // await conn.query('SELECT 1');
+    // conn.release();
+    
+
+    res.status(200).json({ 
+      status: 'ready',
+      database: 'connected',
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'not ready',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+export { router as healthRouter };
