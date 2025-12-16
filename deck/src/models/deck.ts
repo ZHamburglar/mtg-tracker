@@ -72,8 +72,7 @@ export class Deck {
       params.push(format);
     }
 
-    query += ' ORDER BY updated_at DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+    query += ` ORDER BY updated_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
     const [rows] = await this.pool.execute<DeckDoc[]>(query, params);
 
