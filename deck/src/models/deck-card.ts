@@ -207,4 +207,29 @@ export class DeckCard {
 
     return rows[0]?.count || 0;
   }
+
+  static async getCardCountsByCategory(deckId: number): Promise<{
+    total_cards: number;
+    mainboard_count: number;
+    sideboard_count: number;
+    commander_count: number;
+  }> {
+    const [rows] = await this.pool.execute<RowDataPacket[]>(
+      `SELECT 
+        SUM(quantity) as total_cards,
+        SUM(CASE WHEN category = 'mainboard' THEN quantity ELSE 0 END) as mainboard_count,
+        SUM(CASE WHEN category = 'sideboard' THEN quantity ELSE 0 END) as sideboard_count,
+        SUM(CASE WHEN category = 'commander' THEN quantity ELSE 0 END) as commander_count
+      FROM deck_cards 
+      WHERE deck_id = ?`,
+      [deckId]
+    );
+
+    return {
+      total_cards: rows[0]?.total_cards || 0,
+      mainboard_count: rows[0]?.mainboard_count || 0,
+      sideboard_count: rows[0]?.sideboard_count || 0,
+      commander_count: rows[0]?.commander_count || 0
+    };
+  }
 }
