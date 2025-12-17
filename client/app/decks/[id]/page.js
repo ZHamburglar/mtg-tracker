@@ -256,7 +256,14 @@ export default function DeckDetailPage() {
               Back to Decks
             </Button>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Link copied to clipboard!');
+                }}
+              >
                 <Share2 className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="icon">
@@ -275,6 +282,9 @@ export default function DeckDetailPage() {
               {deck.description && (
                 <p className="text-muted-foreground mt-1">{deck.description}</p>
               )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Updated {new Date(deck.updated_at).toLocaleDateString()}
+              </p>
             </div>
             <Badge variant="outline" className="text-lg px-4 py-2">{deck.format.charAt(0).toUpperCase() + deck.format.slice(1)}</Badge>
           </div>
