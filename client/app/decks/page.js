@@ -205,13 +205,18 @@ export default function DecksPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div>
-                      <span className="font-medium">{deck.total_cards || 0}</span> cards
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <span className="font-medium">{deck.mainboard_count || 0}</span> mainboard
+                      </div>
+                      <div>
+                        <span className="font-medium">{deck.sideboard_count || 0}</span> sideboard
+                      </div>
                     </div>
-                    {deck.commander_name && (
-                      <div className="flex-1 truncate">
-                        Commander: <span className="font-medium">{deck.commander_name}</span>
+                    {deck.commander_count > 0 && (
+                      <div className="text-xs">
+                        <span className="font-medium">{deck.commander_count}</span> commander
                       </div>
                     )}
                   </div>

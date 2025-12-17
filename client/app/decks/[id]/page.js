@@ -276,7 +276,7 @@ export default function DeckDetailPage() {
                 <p className="text-muted-foreground mt-1">{deck.description}</p>
               )}
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2">{deck.format}</Badge>
+            <Badge variant="outline" className="text-lg px-4 py-2">{deck.format.charAt(0).toUpperCase() + deck.format.slice(1)}</Badge>
           </div>
         </div>
 
