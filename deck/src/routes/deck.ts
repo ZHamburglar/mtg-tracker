@@ -43,8 +43,19 @@ router.get(
         ...(format && { format })
       });
 
+      // Add card counts to each deck
+      const decksWithCounts = await Promise.all(
+        decks.map(async (deck) => {
+          const counts = await DeckCard.getCardCountsByCategory(deck.id);
+          return {
+            ...deck,
+            ...counts
+          };
+        })
+      );
+
       res.status(200).json({
-        decks,
+        decks: decksWithCounts,
         limit,
         offset,
         timestamp: new Date().toISOString()
@@ -87,8 +98,14 @@ router.get(
         });
       }
 
+      // Add card counts
+      const counts = await DeckCard.getCardCountsByCategory(deckId);
+
       res.status(200).json({
-        deck,
+        deck: {
+          ...deck,
+          ...counts
+        },
         timestamp: new Date().toISOString()
       });
     } catch (error) {

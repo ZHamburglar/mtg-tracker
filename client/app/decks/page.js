@@ -185,7 +185,9 @@ export default function DecksPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDecks.map((deck) => (
+            {filteredDecks.map((deck) => {
+              console.log('Rendering deck:', deck);
+              return (
               <Card
                 key={deck.id}
                 className="cursor-pointer hover:border-primary transition-colors"
@@ -199,7 +201,7 @@ export default function DecksPage() {
                         <CardDescription className="mt-1">{deck.description}</CardDescription>
                       )}
                     </div>
-                    <Badge variant="outline">{deck.format}</Badge>
+                    <Badge variant="outline">{deck.format.charAt(0).toUpperCase() + deck.format.slice(1)}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -218,7 +220,8 @@ export default function DecksPage() {
                   Updated {new Date(deck.updated_at).toLocaleDateString()}
                 </CardFooter>
               </Card>
-            ))}
+            )
+          })}
           </div>
         )}
       </main>
