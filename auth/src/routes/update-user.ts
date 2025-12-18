@@ -1,9 +1,7 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { currentUser } from '@mtg-tracker/common';
+import { BadRequestError, validateRequest, NotFoundError, currentUser } from '@mtg-tracker/common';
 import { User } from '../models/user';
-import { BadRequestError, validateRequest } from '@mtg-tracker/common';
-import { NotFoundError } from '../errors/not-found-error';
 import { logger } from '../logger';
 import { createRateLimiter } from '../middlewares/rate-limiter';
 

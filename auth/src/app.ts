@@ -2,9 +2,7 @@ import express from "express";
 import "express-async-errors";
 import { json } from "body-parser";
 import cookieSession from "cookie-session";
-
-// import { errorHandler } from "@mtg-tracker/common";
-import { errorHandler} from "./middlewares/error-handler";
+import { errorHandler } from "@mtg-tracker/common";
 
 // Import routes here and use them
 import { newUserRouter } from "./routes/newuser";
