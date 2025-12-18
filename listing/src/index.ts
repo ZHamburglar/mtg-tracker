@@ -69,7 +69,15 @@ const start = async () => {
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
   const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-  await runMigrations(pool, migrationsDir, 'listing');
+  logger.log('Starting migrations from:', migrationsDir);
+  
+  try {
+    await runMigrations(pool, migrationsDir, 'listing');
+    logger.log('Migrations completed successfully');
+  } catch (error) {
+    logger.error('Error running migrations:', error);
+    throw error;
+  }
 
   // Initialize models with database pool
   ListingModel.setPool(pool);
