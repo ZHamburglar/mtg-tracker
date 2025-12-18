@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { NotAuthorizedError } from '../errors/not-authorized-error';
-import '@mtg-tracker/common';  // Import to ensure UserPayload type is available
 
 export const requireAdmin = (
   req: Request,
