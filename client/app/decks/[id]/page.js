@@ -145,7 +145,7 @@ export default function DeckDetailPage() {
     setSearching(true);
     try {
       const client = buildClient();
-      const { data } = await client.get(`api/search?name=${encodeURIComponent(searchQuery)}`);
+      const { data } = await client.get(`api/search/lowest-price?name=${encodeURIComponent(searchQuery)}`);
       setSearchResults(data.cards || []);
     } catch (error) {
       console.error('Error searching cards:', error);
@@ -465,6 +465,7 @@ export default function DeckDetailPage() {
                   <TabsContent value="commander" className="mt-4">
                     {commanders.map((item) => (
                       <div key={item.card.id} className="flex items-center justify-between py-2">
+                    {/* Lowest price printing for this card */}
                         <span className="text-sm font-medium">{item.card.name}</span>
                         {isOwner && (
                           <Button
