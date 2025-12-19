@@ -28,9 +28,11 @@ import { getCardImage } from '@/hooks/get-card-image';
 import { useLoading } from '@/hooks/use-loading';
 import CardImage from '@/components/CardImage';
 import { ManaSymbols, TextWithSymbols } from '@/components/ManaSymbols';
+import { useAuth } from '@/contexts/AuthContext';
 import buildClient from '../../api/build-client';
 
 function CardDetailPageContent() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { loading, startLoading, stopLoading, isLoading } = useLoading({
     fetchingCard: false,
     fetchingPrints: false,
@@ -341,103 +343,109 @@ function CardDetailPageContent() {
                 <CardTitle>Add to Collection</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative min-h-[200px]">
-                  {isLoading('addingToCollection') && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 rounded">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  )}
-                  <div className="space-y-4">
-                      {/* Non-Foil */}
-                      {card && card.finishes.length > 0 && card.finishes.includes('nonfoil') && (
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                          <div>
-                            <p className="font-semibold">Non-Foil</p>
-                            <p className="text-sm text-muted-foreground">
-                              Quantity: {collectionData?.summary?.normalQuantity || 0}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => decrementCard('normal')}
-                              disabled={isLoading('addingToCollection') || (collectionData?.summary?.normalQuantity || 0) === 0}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => incrementCard('normal')}
-                              disabled={isLoading('addingToCollection')}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Foil */}
-                      {card && card.finishes.length > 0 && card.finishes.includes('foil') && (
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                          <div>
-                            <p className="font-semibold">Foil</p>
-                            <p className="text-sm text-muted-foreground">
-                              Quantity: {collectionData?.summary?.foilQuantity || 0}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => decrementCard('foil')}
-                              disabled={isLoading('addingToCollection') || (collectionData?.summary?.foilQuantity || 0) === 0}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => incrementCard('foil')}
-                              disabled={isLoading('addingToCollection')}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                      }
-                      {/* Other Prints in Collection */}
-                      {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
-                        <div className="p-4 bg-muted rounded-lg mb-4">
-                          <p className="font-semibold mb-2">Other Printings in Collection:</p>
-                          <div className="space-y-2">
-                            {collectionData.otherPrints.map((print) => (
-                              <div
-                                key={`${print.card_id}-${print.finish_type}`}
-                                className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
-                                onClick={() => router.push(`/card/${print.card_id}`)}
-                              >
-                                <div>
-                                  <p className="font-medium">
-                                    {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
-                                  </p>
-                                </div>
-                                <Badge variant="outline" className="ml-2">
-                                  {print.quantity}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
+                {!isAuthenticated ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">Please sign in to add cards to your collection</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="relative min-h-[200px]">
+                    {isLoading('addingToCollection') && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 rounded">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    )}
+                    <div className="space-y-4">
+                        {/* Non-Foil */}
+                        {card && card.finishes.length > 0 && card.finishes.includes('nonfoil') && (
+                          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                            <div>
+                              <p className="font-semibold">Non-Foil</p>
+                              <p className="text-sm text-muted-foreground">
+                                Quantity: {collectionData?.summary?.normalQuantity || 0}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => decrementCard('normal')}
+                                disabled={isLoading('addingToCollection') || (collectionData?.summary?.normalQuantity || 0) === 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => incrementCard('normal')}
+                                disabled={isLoading('addingToCollection')}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Foil */}
+                        {card && card.finishes.length > 0 && card.finishes.includes('foil') && (
+                          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                            <div>
+                              <p className="font-semibold">Foil</p>
+                              <p className="text-sm text-muted-foreground">
+                                Quantity: {collectionData?.summary?.foilQuantity || 0}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => decrementCard('foil')}
+                                disabled={isLoading('addingToCollection') || (collectionData?.summary?.foilQuantity || 0) === 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => incrementCard('foil')}
+                                disabled={isLoading('addingToCollection')}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                        }
+                        {/* Other Prints in Collection */}
+                        {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
+                          <div className="p-4 bg-muted rounded-lg mb-4">
+                            <p className="font-semibold mb-2">Other Printings in Collection:</p>
+                            <div className="space-y-2">
+                              {collectionData.otherPrints.map((print) => (
+                                <div
+                                  key={`${print.card_id}-${print.finish_type}`}
+                                  className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
+                                  onClick={() => router.push(`/card/${print.card_id}`)}
+                                >
+                                  <div>
+                                    <p className="font-medium">
+                                      {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline" className="ml-2">
+                                    {print.quantity}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

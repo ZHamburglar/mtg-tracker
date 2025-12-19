@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 import buildClient from '../api/build-client';
 import { toast } from 'sonner';
 
 export default function DecksPage() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [decks, setDecks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -23,10 +25,14 @@ export default function DecksPage() {
   const router = useRouter();
 
   useEffect(() => {
-    loadDecks();
-  }, []);
+    if (!authLoading && isAuthenticated) {
+      loadMyDecks();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading]);
 
-  const loadDecks = async () => {
+  const loadMyDecks = async () => {
     setLoading(true);
     try {
       const client = buildClient();
@@ -94,65 +100,70 @@ export default function DecksPage() {
             </p>
           </div>
           
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                New Deck
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Deck</DialogTitle>
-                <DialogDescription>
-                  Start building your new deck
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="deck-name">Deck Name *</Label>
-                  <Input
-                    id="deck-name"
-                    placeholder="Enter deck name..."
-                    value={newDeckName}
-                    onChange={(e) => setNewDeckName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="deck-description">Description</Label>
-                  <Input
-                    id="deck-description"
-                    placeholder="Enter deck description..."
-                    value={newDeckDescription}
-                    onChange={(e) => setNewDeckDescription(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="deck-format">Format</Label>
-                  <select
-                    id="deck-format"
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md"
-                    value={newDeckFormat}
-                    onChange={(e) => setNewDeckFormat(e.target.value)}
-                  >
-                    <option value="standard">Standard</option>
-                    <option value="modern">Modern</option>
-                    <option value="commander">Commander</option>
-                    <option value="legacy">Legacy</option>
-                    <option value="vintage">Vintage</option>
-                    <option value="pauper">Pauper</option>
-                    <option value="pioneer">Pioneer</option>
-                  </select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={createDeck}>Create Deck</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {
+            isAuthenticated && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Deck
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create New Deck</DialogTitle>
+                    <DialogDescription>
+                      Start building your new deck
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="deck-name">Deck Name *</Label>
+                      <Input
+                        id="deck-name"
+                        placeholder="Enter deck name..."
+                        value={newDeckName}
+                        onChange={(e) => setNewDeckName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="deck-description">Description</Label>
+                      <Input
+                        id="deck-description"
+                        placeholder="Enter deck description..."
+                        value={newDeckDescription}
+                        onChange={(e) => setNewDeckDescription(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="deck-format">Format</Label>
+                      <select
+                        id="deck-format"
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                        value={newDeckFormat}
+                        onChange={(e) => setNewDeckFormat(e.target.value)}
+                      >
+                        <option value="standard">Standard</option>
+                        <option value="modern">Modern</option>
+                        <option value="commander">Commander</option>
+                        <option value="legacy">Legacy</option>
+                        <option value="vintage">Vintage</option>
+                        <option value="pauper">Pauper</option>
+                        <option value="pioneer">Pioneer</option>
+                      </select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={createDeck}>Create Deck</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )
+          }
+          
         </div>
 
         <div className="mb-6">
@@ -174,9 +185,15 @@ export default function DecksPage() {
         ) : filteredDecks.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? 'No decks found matching your search' : 'No decks yet'}
+              {!isAuthenticated 
+                ? 'Please sign in to view your decks' 
+                : searchQuery 
+                ? 'No decks found matching your search' 
+                : 'No decks yet'}
             </p>
-            {!searchQuery && (
+            {!isAuthenticated ? (
+              null
+            ) : !searchQuery && (
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Deck

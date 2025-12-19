@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { NavigationMenu,
   NavigationMenuList,
@@ -47,10 +48,10 @@ import { Menu } from 'lucide-react';
 
 
 const Header = () => {
+  const { currentUser, refreshAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
@@ -59,31 +60,13 @@ const Header = () => {
 
   useEffect(() => {
     console.log('Current user in Header:', currentUser);
-    fetchCurrentUser();
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentUser) {
       fetchNotifications();
     }
   }, [currentUser]);
-
-  const fetchCurrentUser = async () => {
-    console.log('Fetching current user...');
-    const client = buildClient();
-    try {
-      const response = await client.get('/api/users/currentuser');
-      console.log('Fetched current user:', response.data.currentUser);
-      setCurrentUser(response.data.currentUser);
-    } catch (error) {
-      console.error('Error fetching current user:', error);
-      if (error.response?.data?.errors) {
-        error.response.data.errors.forEach(err => toast.error(err.message));
-      } else {
-        toast.error('Failed to fetch user information');
-      }
-    }
-  };
 
   const fetchNotifications = async () => {
     console.log('Fetching notifications...');
@@ -122,19 +105,14 @@ const Header = () => {
     }
   };
 
-
-
   const signIn = () => {
     const client = buildClient();
     client.post('/api/users/signin', { email, password })
       .then(response => {
         console.log('Sign in successful:', response.data);
-        setCurrentUser(response.data);
         setIsSignInOpen(false);
         toast.success('Signed in successfully!');
-        // Cookie is automatically set by the browser from Set-Cookie header
-        // Reload the page to update the currentUser state
-        // window.location.href = '/';
+        refreshAuth();
       })
       .catch(error => {
         console.error('Error signing in:', error);
@@ -151,13 +129,13 @@ const Header = () => {
     client.post('/api/users/newuser', { email, username, password })
       .then(response => {
         console.log('Account created:', response.data);
-        setCurrentUser(response.data);
         setIsCreateAccountOpen(false);
         toast.success('Account created successfully!');
         // Clear form
         setEmail('');
         setUsername('');
         setPassword('');
+        refreshAuth();
       })
       .catch(error => {
         console.error('Error creating account:', error);
@@ -180,7 +158,8 @@ const Header = () => {
       .then(response => {
         console.log('Sign out successful:', response);
         toast.success('Signed out successfully!');
-        // Reload the page to clear the currentUser state
+        refreshAuth();
+        // Redirect to home after a brief delay
         setTimeout(() => {
           window.location.href = '/';
         }, 500);
