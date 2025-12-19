@@ -392,6 +392,7 @@ export class UserCardCollection {
           ucc.quantity * 
           CASE 
             WHEN ucc.finish_type = 'foil' THEN COALESCE(cp.price_usd_foil, 0)
+            WHEN ucc.finish_type = 'etched' THEN COALESCE(cp.price_usd_etched, 0)
             ELSE COALESCE(cp.price_usd, 0)
           END
         ), 0) as total_value_usd,
@@ -399,7 +400,7 @@ export class UserCardCollection {
         SUM(ucc.quantity) as total_quantity
       FROM user_card_collection ucc
       LEFT JOIN (
-        SELECT card_id, price_usd, price_usd_foil
+        SELECT card_id, price_usd, price_usd_foil, price_usd_etched
         FROM card_prices cp1
         WHERE created_at = (
           SELECT MAX(created_at) 
