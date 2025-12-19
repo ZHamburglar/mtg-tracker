@@ -31,7 +31,7 @@ export default function DeckDetailPage() {
   const [searching, setSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('mainboard');
   const [showStats, setShowStats] = useState(true);
-  const [showCollection, setShowCollection] = useState(true);
+  const [showCollection, setShowCollection] = useState(false);
   const [collectionStatus, setCollectionStatus] = useState({});
   const [expandedCategories, setExpandedCategories] = useState({
     creatures: true,
@@ -74,7 +74,6 @@ export default function DeckDetailPage() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/deck/${deckId}`);
-      console.log('Loaded deck data:', data);
       setDeck(data.deck);
     } catch (error) {
       console.error('Error loading deck:', error);
@@ -87,7 +86,6 @@ export default function DeckDetailPage() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/deck/${deckId}/cards`);
-      console.log('Loaded deck cards:', data);
       setDeckCards(data.cards || []);
     } catch (error) {
       console.error('Error loading deck cards:', error);
@@ -99,9 +97,7 @@ export default function DeckDetailPage() {
 
   const loadCollectionStatus = async (cards) => {
     if (!currentUser || cards.length === 0) return;
-    
-    console.log('Loading collection status for', cards.length, 'cards');
-    
+        
     try {
       const client = buildClient();
       const statusMap = {};
@@ -117,9 +113,7 @@ export default function DeckDetailPage() {
           oracleIdToCardIds[oracleId].push(c.card.id);
         }
       });
-      
-      console.log('Checking NOW', Object.keys(oracleIdToCardIds).length, 'unique oracle IDs');
-      
+            
       // Check collection status for each oracle_id (checks all printings)
       await Promise.all(
         Object.entries(oracleIdToCardIds).map(async ([oracleId, cardIds]) => {
@@ -141,7 +135,6 @@ export default function DeckDetailPage() {
         })
       );
       
-      console.log('Collection status loaded:', statusMap);
       setCollectionStatus(statusMap);
     } catch (error) {
       console.error('Error loading collection status:', error);
@@ -419,7 +412,7 @@ export default function DeckDetailPage() {
                   <>
                     <div className="border-t pt-2 mt-2" />
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Show Collection:</span>
+                      <span className="text-muted-foreground">Check my Collection:</span>
                       <Button
                         variant="ghost"
                         size="sm"
