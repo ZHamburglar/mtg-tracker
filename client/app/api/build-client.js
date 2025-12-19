@@ -29,6 +29,9 @@ export default () => {
         // The cookie value already includes the full session data
         // Just needs to be formatted as: session=<value>
         headers['cookie'] = `session=${sessionCookie}`;
+        console.log('Cookie header set:', headers['cookie'].substring(0, 50) + '...');
+      } else {
+        console.warn('WARNING: No NEXT_PUBLIC_SESSION_COOKIE found in environment!');
       }
     }
     
