@@ -415,6 +415,37 @@ function CardDetailPageContent() {
                           </div>
                         )
                         }
+
+                        {/* Etched */}
+                        {card && card.finishes.length > 0 && card.finishes.includes('etched') && (
+                          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                            <div>
+                              <p className="font-semibold">Etched</p>
+                              <p className="text-sm text-muted-foreground">
+                                Quantity: {collectionData?.summary?.etchedQuantity || 0}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => decrementCard('etched')}
+                                disabled={isLoading('addingToCollection') || (collectionData?.summary?.etchedQuantity || 0) === 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => incrementCard('etched')}
+                                disabled={isLoading('addingToCollection')}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                        }
                         {/* Other Prints in Collection */}
                         {collectionData?.otherPrints && collectionData.otherPrints.length > 0 && (
                           <div className="p-4 bg-muted rounded-lg mb-4">
@@ -474,6 +505,14 @@ function CardDetailPageContent() {
                           </p>
                         </div>
                       )}
+                      {currentPrice?.price_usd_etched && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Etched</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            ${parseFloat(currentPrice.price_usd_etched).toFixed(2)}
+                          </p>
+                        </div>
+                      )}
                       {currentPrice?.price_eur && (
                         <div>
                           <p className="text-sm text-muted-foreground">EUR</p>
@@ -482,6 +521,7 @@ function CardDetailPageContent() {
                           </p>
                         </div>
                       )}
+                      
                     </div>
                   </CardContent>
                 </Card>
