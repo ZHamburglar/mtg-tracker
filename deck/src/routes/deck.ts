@@ -116,15 +116,13 @@ router.get(
 
 /**
  * GET /api/deck/:id
- * Get a specific deck
+ * Get a specific deck (public access for viewing)
  */
 router.get(
   '/api/deck/:id',
   currentUser,
-  requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(String(req.currentUser!.id));
       const deckId = parseInt(String(req.params.id));
 
       const deck = await Deck.findById(deckId);
@@ -132,13 +130,6 @@ router.get(
       if (!deck) {
         return res.status(404).json({
           error: 'Deck not found'
-        });
-      }
-
-      // Verify ownership
-      if (deck.user_id !== userId) {
-        return res.status(403).json({
-          error: 'Unauthorized to view this deck'
         });
       }
 
@@ -331,15 +322,13 @@ router.delete(
 
 /**
  * GET /api/deck/:id/cards
- * Get all cards in a deck
+ * Get all cards in a deck (public access for viewing)
  */
 router.get(
   '/api/deck/:id/cards',
   currentUser,
-  requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(String(req.currentUser!.id));
       const deckId = parseInt(String(req.params.id));
 
       const deck = await Deck.findById(deckId);
@@ -347,13 +336,6 @@ router.get(
       if (!deck) {
         return res.status(404).json({
           error: 'Deck not found'
-        });
-      }
-
-      // Verify ownership
-      if (deck.user_id !== userId) {
-        return res.status(403).json({
-          error: 'Unauthorized to view this deck'
         });
       }
 

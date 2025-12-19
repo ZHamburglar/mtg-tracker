@@ -13,11 +13,13 @@ import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
 import buildClient from '../../api/build-client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DeckDetailPage() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.id;
+  const { currentUser } = useAuth();
 
   const [deck, setDeck] = useState(null);
   const [deckCards, setDeckCards] = useState([]);
@@ -204,26 +206,32 @@ export default function DeckDetailPage() {
                   className="flex items-center justify-between py-1 px-2 rounded hover:bg-accent group"
                 >
                   <div className="flex items-center gap-2 flex-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      value={item.quantity}
-                      onChange={(e) => updateCardQuantity(item.card.id, item.category, parseInt(e.target.value))}
-                      className="w-12 h-8 text-center"
-                    />
+                    {isOwner ? (
+                      <Input
+                        type="number"
+                        min="0"
+                        value={item.quantity}
+                        onChange={(e) => updateCardQuantity(item.card.id, item.category, parseInt(e.target.value))}
+                        className="w-12 h-8 text-center"
+                      />
+                    ) : (
+                      <span className="w-12 h-8 flex items-center justify-center text-sm font-medium">{item.quantity}</span>
+                    )}
                     <span className="text-sm">{item.card.name}</span>
                     {item.card.mana_cost && (
                       <span className="text-xs text-muted-foreground">{item.card.mana_cost}</span>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeCardFromDeck(item.card.id, item.category)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isOwner && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeCardFromDeck(item.card.id, item.category)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -245,6 +253,7 @@ export default function DeckDetailPage() {
   const categorizedMainboard = categorizeCards(deckCards, 'mainboard');
   const categorizedSideboard = categorizeCards(deckCards, 'sideboard');
   const commanders = deckCards.filter(c => c.category === 'commander');
+  const isOwner = currentUser && deck && currentUser.id === deck.user_id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -275,6 +284,14 @@ export default function DeckDetailPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {!isOwner && currentUser && (
+          <div className="mb-4 p-3 bg-muted/50 border border-border rounded-lg">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Viewing deck in read-only mode
+            </p>
+          </div>
+        )}
         <div className="mb-6">
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -366,14 +383,16 @@ export default function DeckDetailPage() {
                       {commanders.map((item) => (
                         <div key={item.card.id} className="flex items-center justify-between py-2">
                           <span className="text-sm font-medium">{item.card.name}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => removeCardFromDeck(item.card.id, 'commander')}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isOwner && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => removeCardFromDeck(item.card.id, 'commander')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </TabsContent>
@@ -383,11 +402,12 @@ export default function DeckDetailPage() {
             </Card>
           </div>
 
-          {/* Main Content - Card Search */}
-          <div className="lg:col-span-9">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add Cards</CardTitle>
+          {/* Main Content - Card Search (only for owners) */}
+          {isOwner && (
+            <div className="lg:col-span-9">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add Cards</CardTitle>
                 <Input
                   placeholder="Search for cards..."
                   value={searchQuery}
@@ -449,6 +469,7 @@ export default function DeckDetailPage() {
               </CardContent>
             </Card>
           </div>
+          )}
         </div>
       </main>
     </div>
