@@ -1,3 +1,48 @@
+// Returns the lowest USD price printing (over $0.01) for a card by name or id
+router.get('/api/search/lowest-price', async (req: Request, res: Response) => {
+  const { name, id } = req.query;
+  try {
+    let card = null;
+    if (id) {
+      card = await Card.findById(id as string);
+    } else if (name) {
+      // Use Card.search to find the first card by name
+      const result = await Card.search({ name: name as string, limit: 1 });
+      card = result.cards && result.cards.length > 0 ? result.cards[0] : null;
+    }
+    if (!card) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+    if (!card.oracle_id) {
+      return res.status(404).json({ error: 'Card has no oracle_id' });
+    }
+    // Get all printings for this oracle_id
+    const printings = await Card.findByOracleId(card.oracle_id);
+    let lowest = null;
+    printings.forEach(print => {
+      const priceCandidates = [print.prices?.usd, print.prices?.usd_foil, print.prices?.usd_etched];
+      priceCandidates.forEach(price => {
+        if (price && price > 0.01) {
+          if (!lowest || price < lowest.price) {
+            lowest = { price, print };
+          }
+        }
+      });
+    });
+    if (!lowest) {
+      return res.status(404).json({ error: 'No price found over $0.01 for this card' });
+    }
+    return res.status(200).json({
+      oracle_id: card.oracle_id,
+      card_name: card.name,
+      lowest_price: lowest.price,
+      printing: lowest.print,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get lowest price', message: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
 import express, { Request, Response } from 'express';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
