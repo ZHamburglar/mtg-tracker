@@ -464,6 +464,7 @@ export class Card {
 
     // Get paginated results
     let dataQuery: string;
+    let dataQueryParams: any[];
     if (!uniquePrints) {
       // Build WHERE clause with c1 prefix for subquery
       const prefixedWhereClauses = whereClauses.map(clause => {
@@ -505,6 +506,8 @@ export class Card {
         ORDER BY name ASC
         LIMIT ${limit} OFFSET ${offset}
       `;
+      // For the subquery, we need the same parameters
+      dataQueryParams = queryParams;
     } else {
       dataQuery = `
         SELECT * FROM cards 
@@ -512,9 +515,10 @@ export class Card {
         ORDER BY name ASC, released_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
+      dataQueryParams = queryParams;
     }
     
-    const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(dataQuery, queryParams);
+    const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(dataQuery, dataQueryParams);
 
     const cards = rows.map(row => ({
       ...row,

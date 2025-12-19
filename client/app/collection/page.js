@@ -19,7 +19,12 @@ function CollectionPageContent() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 100 });
+  const [pagination, setPagination] = useState({ 
+    page: 1, 
+    pageSize: 100,
+    totalRecords: 0,
+    totalPages: 1
+  });
   const [collectionValue, setCollectionValue] = useState(null);
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const router = useRouter();
@@ -32,6 +37,12 @@ function CollectionPageContent() {
       stopLoading();
     }
   }, [isAuthenticated, authLoading]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      loadCollection();
+    }
+  }, [pagination.page]);
 
   const formatPrice = useMemo(() => {
     return (item) => {
@@ -59,13 +70,15 @@ function CollectionPageContent() {
     startLoading();
     try {
       const client = buildClient();
-      const { data } = await client.get('/api/collection');
-      console.log('Collection data fetched:', data);
+      const { data } = await client.get(`/api/collection?page=${pagination.page}&limit=${pagination.pageSize}`);
       setCollection(data.cards || []);
-      setPagination({
-        page: data.pagination.currentPage || 1,
-        pageSize: data.pagination.pageSize || 100,
-      });
+      setPagination(prev => ({
+        ...prev,
+        page: data.pagination?.currentPage || 1,
+        pageSize: data.pagination?.pageSize || 100,
+        totalRecords: data.pagination?.totalRecords || 0,
+        totalPages: data.pagination?.totalPages || 1
+      }));
       setCollectionValue(data.collectionValue || null);
     } catch (error) {
       console.error('Load collection error:', error);
@@ -85,6 +98,13 @@ function CollectionPageContent() {
       console.error('Load analytics error:', error);
     } finally {
       setAnalyticsLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -385,60 +405,102 @@ function CollectionPageContent() {
           
           if (collection.length > 0) {
             return (
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {collection.map((item) => {
-                  const card = item.cardData;
-                  const image = getCardImage(card);
-                  console.log('Rendering collection card:', card);
-                  return (
-                    <Card
-                      key={item.id}
-                      className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
-                      onClick={() => router.push(`/card/${item.card_id}`)}
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {collection.map((item) => {
+                    const card = item.cardData;
+                    const image = getCardImage(card);
+                    console.log('Rendering collection card:', card);
+                    return (
+                      <Card
+                        key={item.id}
+                        className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
+                        onClick={() => router.push(`/card/${item.card_id}`)}
+                      >
+                        <div className="relative">
+                          {image ? (
+                            <CardImage
+                              card={card}
+                              isHighResLoaded={isHighResLoaded}
+                              onHighResLoad={() => setIsHighResLoaded(true)}
+                            />
+                          ) : (
+                            <div className="w-full h-64 bg-muted flex items-center justify-center">
+                              <span className="text-muted-foreground">No Image</span>
+                            </div>
+                          )}
+                          {card.has_multiple_faces && (
+                            <div className="absolute top-2 right-2">
+                              <Badge className="bg-primary/90 text-primary-foreground shadow-lg text-xs">
+                                Multi-Face
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-3">
+                          <h3 className="font-semibold text-sm mb-1 truncate">{card.name}</h3>
+                          <p className="text-xs text-muted-foreground">{card.set_name}</p>
+                        </CardContent>
+                        <CardContent className="p-3">
+                          <h3 className="font-semibold text-sm mb-1 truncate">{item.finish_type}</h3>
+                          <p className="text-xs text-muted-foreground">Total: {item.quantity}</p>
+                          <p className="text-xs text-muted-foreground">Available: {item.available}</p>
+                        </CardContent>
+                        <CardFooter className="p-3 pt-0 flex justify-between items-center">
+                          <Badge variant="secondary" className="text-xs">
+                            {card.rarity}
+                          </Badge>
+                          {card.prices?.usd && (
+                            <span className="text-sm font-semibold text-green-600">
+                              {formatPrice(item)}
+                            </span>
+                          )}
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
+                </div>
+                {/* Pagination Controls */}
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(1)}
+                      disabled={pagination.page === 1}
                     >
-                      <div className="relative">
-                        {image ? (
-                          <CardImage
-                            card={card}
-                            isHighResLoaded={isHighResLoaded}
-                            onHighResLoad={() => setIsHighResLoaded(true)}
-                          />
-                        ) : (
-                          <div className="w-full h-64 bg-muted flex items-center justify-center">
-                            <span className="text-muted-foreground">No Image</span>
-                          </div>
-                        )}
-                        {card.has_multiple_faces && (
-                          <div className="absolute top-2 right-2">
-                            <Badge className="bg-primary/90 text-primary-foreground shadow-lg text-xs">
-                              Multi-Face
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-3">
-                        <h3 className="font-semibold text-sm mb-1 truncate">{card.name}</h3>
-                        <p className="text-xs text-muted-foreground">{card.set_name}</p>
-                      </CardContent>
-                      <CardContent className="p-3">
-                        <h3 className="font-semibold text-sm mb-1 truncate">{item.finish_type}</h3>
-                        <p className="text-xs text-muted-foreground">Total: {item.quantity}</p>
-                        <p className="text-xs text-muted-foreground">Available: {item.available}</p>
-                      </CardContent>
-                      <CardFooter className="p-3 pt-0 flex justify-between items-center">
-                        <Badge variant="secondary" className="text-xs">
-                          {card.rarity}
-                        </Badge>
-                        {card.prices?.usd && (
-                          <span className="text-sm font-semibold text-green-600">
-                            {formatPrice(item)}
-                          </span>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-4">
+                      Page {pagination.page} of {pagination.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page === pagination.totalPages}
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.totalPages)}
+                      disabled={pagination.page === pagination.totalPages}
+                    >
+                      Last
+                    </Button>
+                  </div>
+                )}
+              </>
             );
           }
           
@@ -454,7 +516,7 @@ function CollectionPageContent() {
               )}
             </div>
           );
-        }, [loading, collection, isHighResLoaded, router, formatPrice, isAuthenticated])}
+        }, [loading, collection, isHighResLoaded, router, formatPrice, isAuthenticated, pagination.page, pagination.totalPages])}
       </main>
     </div>
   );
