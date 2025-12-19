@@ -79,6 +79,15 @@ export class Deck {
     return rows;
   }
 
+  static async findRecent(limit: number = 6): Promise<DeckDoc[]> {
+    const [rows] = await this.pool.execute<DeckDoc[]>(
+      'SELECT * FROM decks ORDER BY created_at DESC LIMIT ?',
+      [limit]
+    );
+
+    return rows;
+  }
+
   static async update(
     id: number,
     updates: Partial<Pick<DeckAttrs, 'name' | 'description' | 'format'>>

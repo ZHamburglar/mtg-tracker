@@ -19,6 +19,13 @@ async function fetchTrendingPrices(timeframe, direction = 'increase') {
   return response.data.cards;
 }
 
+// Fetch function for recent decks
+async function fetchRecentDecks() {
+  const client = buildClient();
+  const response = await client.get('/api/deck/recent?limit=6');
+  return response.data.decks;
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -51,6 +58,12 @@ export default function Home() {
   const { data: trendingMonthlyDown = [], isLoading: loadingMonthlyDown } = useQuery({
     queryKey: ['trending', '30d', 'decrease'],
     queryFn: () => fetchTrendingPrices('30d', 'decrease'),
+  });
+
+  // Query hook for recent decks
+  const { data: recentDecks = [], isLoading: loadingDecks } = useQuery({
+    queryKey: ['recentDecks'],
+    queryFn: fetchRecentDecks,
   });
 
   return (
@@ -212,6 +225,50 @@ export default function Home() {
                 </CardDescription>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Recent Decks Section */}
+          <div className="mt-12">
+            <h2 className="text-3xl font-bold mb-6 text-center">Recently Created Decks</h2>
+            {loadingDecks ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : recentDecks.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentDecks.map((deck) => (
+                  <Card 
+                    key={deck.id}
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => router.push(`/decks/${deck.id}`)}
+                  >
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="truncate">{deck.name}</span>
+                      </CardTitle>
+                      <CardDescription className="capitalize">{deck.format}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        {deck.description && (
+                          <p className="text-muted-foreground line-clamp-2">{deck.description}</p>
+                        )}
+                        <div className="flex gap-4 text-xs text-muted-foreground">
+                          <span>Mainboard: {deck.mainboard_count || 0}</span>
+                          {deck.sideboard_count > 0 && <span>Sideboard: {deck.sideboard_count}</span>}
+                          {deck.commander_count > 0 && <span>Commander: {deck.commander_count}</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Total: {deck.total_cards || 0} cards
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No recent decks available</p>
+            )}
           </div>
         </div>
       </div>
