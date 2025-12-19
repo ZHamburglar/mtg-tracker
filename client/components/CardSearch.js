@@ -233,7 +233,18 @@ export function CardSearch({ initialQuery = '', initialFilters = {} }) {
                 onChange={(value) => setAdvancedFilters({...advancedFilters, set_name: value})}
                 getOptionValue={(set) => set.name}
                 getOptionLabel={(set) => set.name}
-                renderOption={(set) => <span>{set.name} ({set.code})</span>}
+                renderOption={(set) => (
+                  <div className="flex items-center gap-2">
+                    {set.icon_svg_uri && (
+                      <img 
+                        src={set.icon_svg_uri} 
+                        alt={set.code}
+                        className="w-4 h-4 flex-shrink-0"
+                      />
+                    )}
+                    <span>{set.name} ({set.code})</span>
+                  </div>
+                )}
                 grouped={true}
                 collapsible={true}
                 groupOrder={['Expansion', 'Core', 'Masters', 'Commander', 'Draft_innovation', 'Funny', 'Starter', 'Duel_deck', 'Premium_deck', 'From_the_vault', 'Spellbook', 'Archenemy', 'Planechase', 'Box', 'Promo', 'Alchemy', 'Masterpiece', 'Arsenal', 'Vanguard', 'Minigame', 'Token', 'Memorabilia', 'Other']}

@@ -202,7 +202,7 @@ router.get(
           otherPrints = await Promise.all(
             otherPrintRecords.map(async (print) => {
               const [printCardRows] = await pool.query<any[]>(
-                'SELECT id, name, set_name, set_code, rarity, image_uri_png, image_uri_small FROM cards WHERE id = ?',
+                'SELECT c.id, c.name, c.set_name, c.set_code, c.rarity, c.image_uri_png, c.image_uri_small, s.icon_svg_uri as set_icon_svg_uri FROM cards c LEFT JOIN sets s ON c.set_code = s.code WHERE c.id = ?',
                 [print.card_id]
               );
               
@@ -220,7 +220,8 @@ router.get(
                   set_code: printCardRows[0]?.set_code || null,
                   rarity: printCardRows[0]?.rarity || null,
                   image_uri_png: printCardRows[0]?.image_uri_png || null,
-                  image_uri_small: printCardRows[0]?.image_uri_small || null
+                  image_uri_small: printCardRows[0]?.image_uri_small || null,
+                  set_icon_svg_uri: printCardRows[0]?.set_icon_svg_uri || null
                 },
                 currentPrice: print.finish_type === 'foil' 
                   ? priceRows[0]?.price_usd_foil 
