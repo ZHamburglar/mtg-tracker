@@ -729,9 +729,8 @@ router.get('/api/search', async (req: Request, res: Response) => {
     if (set_id) searchParams.set_id = set_id as string;
     if (set_code) searchParams.set_code = set_code as string;
     if (set_name) {
-      searchParams.set_name = Array.isArray(set_name)
-        ? set_name
-        : (set_name as string).split(',').map(s => s.trim());
+      // Don't split set_name - keep as single string for fuzzy matching
+      searchParams.set_name = set_name as string;
     }
 
     // Parse legality_format - cards must be legal in at least one of the specified formats
