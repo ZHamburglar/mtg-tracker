@@ -319,7 +319,16 @@ function CardDetailPageContent() {
                             key={print.id}
                             value={print.id}
                           >
-                            {print.set_name} ({print.set_code?.toUpperCase()}) #{print.collector_number}
+                            <div className="flex items-center gap-2">
+                              {print.set_icon_svg_uri && (
+                                <img 
+                                  src={print.set_icon_svg_uri} 
+                                  alt={print.set_code}
+                                  className="w-4 h-4"
+                                />
+                              )}
+                              <span>{print.set_name} ({print.set_code?.toUpperCase()}) #{print.collector_number}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectGroup>
