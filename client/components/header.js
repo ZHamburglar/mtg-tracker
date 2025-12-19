@@ -59,7 +59,6 @@ const Header = () => {
   const [hasNotifications, setHasNotifications] = useState(true); // TODO: Fetch from API
 
   useEffect(() => {
-    console.log('Current user in Header:', currentUser);
   }, [currentUser]);
 
   useEffect(() => {
@@ -69,11 +68,9 @@ const Header = () => {
   }, [currentUser]);
 
   const fetchNotifications = async () => {
-    console.log('Fetching notifications...');
     const client = buildClient();
     try {
       const response = await client.get('/api/notification');
-      console.log('Fetched notifications:', response.data);
       setNotifications(response.data.notifications);
       setUnreadCount(response.data.unreadCount);
     } catch (error) {
@@ -109,7 +106,6 @@ const Header = () => {
     const client = buildClient();
     client.post('/api/users/signin', { email, password })
       .then(response => {
-        console.log('Sign in successful:', response.data);
         setIsSignInOpen(false);
         toast.success('Signed in successfully!');
         refreshAuth();
@@ -128,7 +124,6 @@ const Header = () => {
     const client = buildClient();
     client.post('/api/users/newuser', { email, username, password })
       .then(response => {
-        console.log('Account created:', response.data);
         setIsCreateAccountOpen(false);
         toast.success('Account created successfully!');
         // Clear form
@@ -156,7 +151,6 @@ const Header = () => {
     const client = buildClient();
     client.post('/api/users/signout')
       .then(response => {
-        console.log('Sign out successful:', response);
         toast.success('Signed out successfully!');
         refreshAuth();
         // Redirect to home after a brief delay
