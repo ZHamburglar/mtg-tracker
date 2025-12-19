@@ -62,7 +62,7 @@ router.get(
           
           // Get latest price
           const [priceRows] = await pool.query<any[]>(
-            'SELECT price_usd, price_usd_foil FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
+            'SELECT price_usd, price_usd_foil, price_usd_etched FROM card_prices WHERE card_id = ? ORDER BY created_at DESC LIMIT 1',
             [collectionItem.card_id]
           );
 
@@ -90,7 +90,8 @@ router.get(
               card_faces: cardFaces,
               prices: {
                 usd: priceRows[0]?.price_usd || null,
-                usd_foil: priceRows[0]?.price_usd_foil || null
+                usd_foil: priceRows[0]?.price_usd_foil || null,
+                usd_etched: priceRows[0]?.price_usd_etched || null
               }
             }
           };
