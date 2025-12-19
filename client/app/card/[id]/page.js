@@ -306,7 +306,16 @@ function CardDetailPageContent() {
                   <Select value={cardId} onValueChange={(value) => router.push(`/card/${value}`)}>
                     <SelectTrigger className="w-auto">
                       <SelectValue>
-                        {card.set_name} ({card.set_code?.toUpperCase()}) #{card.collector_number}
+                        <div className="flex items-center gap-2">
+                          {card.set_icon_svg_uri && (
+                            <img 
+                              src={card.set_icon_svg_uri} 
+                              alt={card.set_code}
+                              className="w-4 h-4 brightness-0 invert"
+                            />
+                          )}
+                          <span>{card.set_name} ({card.set_code?.toUpperCase()}) #{card.collector_number}</span>
+                        </div>
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -324,7 +333,7 @@ function CardDetailPageContent() {
                                 <img 
                                   src={print.set_icon_svg_uri} 
                                   alt={print.set_code}
-                                  className="w-4 h-4"
+                                  className="w-4 h-4 brightness-0 invert"
                                 />
                               )}
                               <span>{print.set_name} ({print.set_code?.toUpperCase()}) #{print.collector_number}</span>
@@ -466,13 +475,22 @@ function CardDetailPageContent() {
                                   className="flex items-center justify-between text-sm cursor-pointer hover:bg-background p-2 rounded"
                                   onClick={() => router.push(`/card/${print.card_id}`)}
                                 >
-                                  <div>
-                                    <p className="font-medium">
-                                      {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
-                                    </p>
+                                  <div className="flex items-center gap-2 flex-1">
+                                    {print.cardData.set_icon_svg_uri && (
+                                      <img 
+                                        src={print.cardData.set_icon_svg_uri} 
+                                        alt={print.cardData.set_code}
+                                        className="w-4 h-4 flex-shrink-0"
+                                      />
+                                    )}
+                                    <div>
+                                      <p className="font-medium">
+                                        {print.cardData.set_name} ({print.cardData.set_code?.toUpperCase()})
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {print.finish_type.charAt(0).toUpperCase() + print.finish_type.slice(1)} × {print.quantity}
+                                      </p>
+                                    </div>
                                   </div>
                                   <Badge variant="outline" className="ml-2">
                                     {print.quantity}

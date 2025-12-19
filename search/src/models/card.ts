@@ -86,7 +86,7 @@ export class Card {
       throw new Error('Database pool not initialized. Call Card.setPool() first.');
     }
 
-    const query = 'SELECT * FROM cards WHERE id = ? LIMIT 1';
+    const query = 'SELECT c.*, s.icon_svg_uri as set_icon_svg_uri FROM cards c LEFT JOIN sets s ON c.set_code = s.code WHERE c.id = ? LIMIT 1';
     const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(query, [id]);
     
     if (rows.length === 0 || !rows[0]) {
