@@ -3,6 +3,7 @@ import Header from "@/components/header";
 import buildClient from './api/build-client';
 import { Toaster } from "@/components/ui/sonner";
 import { SymbologyProvider } from "@/contexts/SymbologyContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 import "./globals.css";
 
@@ -22,11 +23,13 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
-        <SymbologyProvider>
-          <Header />
-          <Toaster richColors position="top-right" />
-          {children}
-        </SymbologyProvider>
+        <AuthProvider>
+          <SymbologyProvider>
+            <Header />
+            <Toaster richColors position="top-right" />
+            {children}
+          </SymbologyProvider>
+        </AuthProvider>
       </body>
     </html>
   );

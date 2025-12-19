@@ -9,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
 import { useLoading } from '@/hooks/use-loading';
+import { useAuth } from '@/contexts/AuthContext';
 import buildClient from './../api/build-client';
-import { format, set } from 'date-fns';
 
 function CollectionPageContent() {
   const { loading, startLoading, stopLoading } = useLoading();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [collection, setCollection] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -24,9 +25,13 @@ function CollectionPageContent() {
   const router = useRouter();
 
   useEffect(() => {
-    loadCollection();
-    loadAnalytics();
-  }, []);
+    if (!authLoading && isAuthenticated) {
+      loadCollection();
+      loadAnalytics();
+    } else if (!authLoading && !isAuthenticated) {
+      stopLoading();
+    }
+  }, [isAuthenticated, authLoading]);
 
   const formatPrice = useMemo(() => {
     return (item) => {
@@ -439,11 +444,17 @@ function CollectionPageContent() {
           
           return (
             <div className="text-center py-20">
-              <p className="text-muted-foreground mb-4">Your collection is empty</p>
-              <Button onClick={() => router.push('/search')}>Start Adding Cards</Button>
+              <p className="text-muted-foreground mb-4">
+                {!isAuthenticated ? 'Please sign in to view your collection' : 'Your collection is empty'}
+              </p>
+              {isAuthenticated ? (
+                <Button onClick={() => router.push('/search')}>Start Adding Cards</Button>
+              ) : (
+                null
+              )}
             </div>
           );
-        }, [loading, collection, isHighResLoaded, router, formatPrice])}
+        }, [loading, collection, isHighResLoaded, router, formatPrice, isAuthenticated])}
       </main>
     </div>
   );
