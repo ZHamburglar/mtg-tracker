@@ -239,7 +239,7 @@ export function CardSearch({ initialQuery = '', initialFilters = {} }) {
                       <img 
                         src={set.icon_svg_uri} 
                         alt={set.code}
-                        className="w-4 h-4 flex-shrink-0"
+                        className="w-4 h-4 flex-shrink-0 brightness-0 invert"
                       />
                     )}
                     <span>{set.name} ({set.code})</span>

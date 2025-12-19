@@ -8,6 +8,50 @@ import { logger } from '../logger';
 const router = express.Router();
 
 /**
+ * GET /api/deck/recent
+ * Get recently created decks (public, no auth required)
+ */
+router.get(
+  '/api/deck/recent',
+  [
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 20 })
+      .withMessage('Limit must be between 1 and 20')
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 6;
+
+      const decks = await Deck.findRecent(limit);
+
+      // Add card counts to each deck
+      const decksWithCounts = await Promise.all(
+        decks.map(async (deck) => {
+          const counts = await DeckCard.getCardCountsByCategory(deck.id);
+          return {
+            ...deck,
+            ...counts
+          };
+        })
+      );
+
+      res.status(200).json({
+        decks: decksWithCounts,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error fetching recent decks:', error);
+      res.status(500).json({
+        error: 'Failed to fetch recent decks',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/deck
  * Get all decks for the authenticated user
  */
