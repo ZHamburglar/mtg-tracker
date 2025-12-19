@@ -11,7 +11,6 @@ export const SymbologyProvider = ({ children }) => {
   useEffect(() => {
     const fetchSymbology = async () => {
       try {
-        console.log('Fetching symbology from Scryfall (once)...');
         const response = await fetch('/api/symbology');
         const data = await response.json();
         
@@ -22,7 +21,6 @@ export const SymbologyProvider = ({ children }) => {
         });
         
         setSymbols(symbolMap);
-        console.log(`Loaded ${data.data.length} symbols from Scryfall`);
       } catch (error) {
         console.error('Failed to fetch symbology:', error);
       } finally {
