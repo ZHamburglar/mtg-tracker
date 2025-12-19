@@ -87,6 +87,7 @@ export default function DeckDetailPage() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/deck/${deckId}/cards`);
+      console.log('Loaded deck cards:', data);
       setDeckCards(data.cards || []);
     } catch (error) {
       console.error('Error loading deck cards:', error);
@@ -117,7 +118,7 @@ export default function DeckDetailPage() {
         }
       });
       
-      console.log('Checking', Object.keys(oracleIdToCardIds).length, 'unique oracle IDs');
+      console.log('Checking NOW', Object.keys(oracleIdToCardIds).length, 'unique oracle IDs');
       
       // Check collection status for each oracle_id (checks all printings)
       await Promise.all(
@@ -280,8 +281,11 @@ export default function DeckDetailPage() {
                     ) : (
                       <span className="w-12 h-8 flex items-center justify-center text-sm font-medium">{item.quantity}</span>
                     )}
-                    {showCollection && currentUser && collectionStatus[item.card.id] && (
-                      <div className="w-2 h-2 rounded-full bg-green-500" title="In your collection" />
+                    {showCollection && currentUser && (
+                      <div 
+                        className={`w-2 h-2 rounded-full ${collectionStatus[item.card.id] ? 'bg-green-500' : 'bg-red-500'}`}
+                        title={collectionStatus[item.card.id] ? 'In your collection' : 'Not in your collection'}
+                      />
                     )}
                     <span className="text-sm">{item.card.name}</span>
                     {item.card.mana_cost && (
