@@ -466,47 +466,23 @@ export class Card {
     let dataQuery: string;
     let dataQueryParams: any[];
     if (!uniquePrints) {
-      // Build WHERE clause with c1 prefix for subquery
-      const prefixedWhereClauses = whereClauses.map(clause => {
-        // Replace column names with c1. prefix for disambiguation
-        return clause
-          .replace(/^name /i, 'c1.name ')
-          .replace(/^released_at /i, 'c1.released_at ')
-          .replace(/^mana_cost /i, 'c1.mana_cost ')
-          .replace(/^cmc /i, 'c1.cmc ')
-          .replace(/type_line LIKE/g, 'c1.type_line LIKE')
-          .replace(/^type_line /i, 'c1.type_line ')
-          .replace(/^oracle_text /i, 'c1.oracle_text ')
-          .replace(/^power /i, 'c1.power ')
-          .replace(/^toughness /i, 'c1.toughness ')
-          .replace(/^rarity /i, 'c1.rarity ')
-          .replace(/^artist /i, 'c1.artist ')
-          .replace(/^set_id /i, 'c1.set_id ')
-          .replace(/^set_code /i, 'c1.set_code ')
-          .replace(/^set_name /i, 'c1.set_name ')
-          .replace(/JSON_CONTAINS\(colors/g, 'JSON_CONTAINS(c1.colors')
-          .replace(/JSON_CONTAINS\(color_identity/g, 'JSON_CONTAINS(c1.color_identity')
-          .replace(/JSON_CONTAINS\(keywords/g, 'JSON_CONTAINS(c1.keywords')
-          .replace(/JSON_EXTRACT\(legalities/g, 'JSON_EXTRACT(c1.legalities')
-          .replace(/JSON_EXTRACT\(c1\.legalities/g, 'JSON_EXTRACT(c1.legalities');
-      });
-
-      // Get one card per oracle_id
+      // Use a CTE/subquery to select the paginated set of unique oracle_ids (or id if oracle_id is null),
+      // then join back to cards to get the full card data.
+      // This ensures pagination is applied AFTER grouping.
+      // Note: MySQL 8+ required for CTEs; fallback to subquery if needed.
       dataQuery = `
-        SELECT * FROM cards 
-        WHERE id IN (
-          SELECT c1.id FROM cards c1
-          LEFT JOIN cards c2 
-            ON c1.oracle_id = c2.oracle_id 
-            AND c1.oracle_id IS NOT NULL
-            AND (c2.released_at > c1.released_at OR (c2.released_at = c1.released_at AND c2.id > c1.id))
-          WHERE c2.id IS NULL
-          ${prefixedWhereClauses.length > 0 ? `AND (${prefixedWhereClauses.join(' AND ')})` : ''}
+        WITH unique_cards AS (
+          SELECT MAX(id) as id
+          FROM cards
+          ${whereClause}
+          GROUP BY COALESCE(oracle_id, id)
+          ORDER BY NULL
+          LIMIT ${limit} OFFSET ${offset}
         )
-        ORDER BY name ASC
-        LIMIT ${limit} OFFSET ${offset}
+        SELECT c.* FROM cards c
+        INNER JOIN unique_cards uc ON c.id = uc.id
+        ORDER BY c.name ASC
       `;
-      // For the subquery, we need the same parameters
       dataQueryParams = queryParams;
     } else {
       dataQuery = `
