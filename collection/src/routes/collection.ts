@@ -306,6 +306,44 @@ router.get(
 );
 
 /**
+ * GET /api/collection/check-oracle/:oracleId
+ * Check if any printing of a card (by oracle_id) exists in user's collection
+ */
+router.get(
+  '/api/collection/check-oracle/:oracleId',
+  currentUser,
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(String(req.currentUser!.id));
+      const { oracleId } = req.params;
+
+      if (!oracleId) {
+        return res.status(400).json({
+          error: 'Oracle ID is required'
+        });
+      }
+
+      // Find any printing in collection with this oracle_id
+      const printings = await UserCardCollection.findByUserAndOracleId(userId, oracleId);
+
+      res.status(200).json({
+        inCollection: printings.length > 0,
+        oracleId,
+        printingsCount: printings.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error checking oracle_id in collection:', error);
+      res.status(500).json({
+        error: 'Failed to check card',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/collection/analytics
  * Get comprehensive analytics for the authenticated user's collection
  */

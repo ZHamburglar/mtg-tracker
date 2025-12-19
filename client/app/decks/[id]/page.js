@@ -14,6 +14,7 @@ import { getCardImage } from '@/hooks/get-card-image';
 import buildClient from '../../api/build-client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { ManaSymbols } from '@/components/ManaSymbols';
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -30,6 +31,8 @@ export default function DeckDetailPage() {
   const [searching, setSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('mainboard');
   const [showStats, setShowStats] = useState(true);
+  const [showCollection, setShowCollection] = useState(true);
+  const [collectionStatus, setCollectionStatus] = useState({});
   const [expandedCategories, setExpandedCategories] = useState({
     creatures: true,
     planeswalkers: true,
@@ -58,6 +61,15 @@ export default function DeckDetailPage() {
     }
   }, [searchQuery]);
 
+  useEffect(() => {
+    // Reload collection status when user logs in/out or deck cards change
+    if (currentUser && deckCards.length > 0) {
+      loadCollectionStatus(deckCards);
+    } else if (!currentUser) {
+      setCollectionStatus({});
+    }
+  }, [currentUser, deckCards.length]);
+
   const loadDeck = async () => {
     try {
       const client = buildClient();
@@ -81,6 +93,57 @@ export default function DeckDetailPage() {
       toast.error('Failed to load deck cards');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCollectionStatus = async (cards) => {
+    if (!currentUser || cards.length === 0) return;
+    
+    console.log('Loading collection status for', cards.length, 'cards');
+    
+    try {
+      const client = buildClient();
+      const statusMap = {};
+      
+      // Group cards by oracle_id to check for any printing in collection
+      const oracleIdToCardIds = {};
+      cards.forEach(c => {
+        const oracleId = c.card.oracle_id;
+        if (oracleId) {
+          if (!oracleIdToCardIds[oracleId]) {
+            oracleIdToCardIds[oracleId] = [];
+          }
+          oracleIdToCardIds[oracleId].push(c.card.id);
+        }
+      });
+      
+      console.log('Checking', Object.keys(oracleIdToCardIds).length, 'unique oracle IDs');
+      
+      // Check collection status for each oracle_id (checks all printings)
+      await Promise.all(
+        Object.entries(oracleIdToCardIds).map(async ([oracleId, cardIds]) => {
+          try {
+            // Use the new oracle_id endpoint
+            const { data } = await client.get(`/api/collection/check-oracle/${oracleId}`);
+            
+            // Mark all cards with this oracle_id based on collection status
+            cardIds.forEach(cardId => {
+              statusMap[cardId] = data.inCollection;
+            });
+          } catch (error) {
+            // If error (likely not authenticated), default to false
+            console.error('Error checking collection for oracle_id', oracleId, error);
+            cardIds.forEach(cardId => {
+              statusMap[cardId] = false;
+            });
+          }
+        })
+      );
+      
+      console.log('Collection status loaded:', statusMap);
+      setCollectionStatus(statusMap);
+    } catch (error) {
+      console.error('Error loading collection status:', error);
     }
   };
 
@@ -217,9 +280,12 @@ export default function DeckDetailPage() {
                     ) : (
                       <span className="w-12 h-8 flex items-center justify-center text-sm font-medium">{item.quantity}</span>
                     )}
+                    {showCollection && currentUser && collectionStatus[item.card.id] && (
+                      <div className="w-2 h-2 rounded-full bg-green-500" title="In your collection" />
+                    )}
                     <span className="text-sm">{item.card.name}</span>
                     {item.card.mana_cost && (
-                      <span className="text-xs text-muted-foreground">{item.card.mana_cost}</span>
+                      <ManaSymbols manaString={item.card.mana_cost} size="w-4 h-4" />
                     )}
                   </div>
                   {isOwner && (
@@ -307,106 +373,126 @@ export default function DeckDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Sidebar - Deck List */}
-          <div className="lg:col-span-3 space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Deck Stats</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowStats(!showStats)}
-                  >
-                    {showStats ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Deck Stats */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Deck Stats</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowStats(!showStats)}
+                >
+                  {showStats ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </CardHeader>
+            {showStats && (
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cards:</span>
+                  <span className="font-medium">{stats.totalCards}</span>
                 </div>
-              </CardHeader>
-              {showStats && (
-                <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Avg CMC:</span>
+                  <span className="font-medium">{stats.avgCMC}</span>
+                </div>
+                {stats.commanders > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cards:</span>
-                    <span className="font-medium">{stats.totalCards}</span>
+                    <span className="text-muted-foreground">Commanders:</span>
+                    <span className="font-medium">{stats.commanders}</span>
                   </div>
+                )}
+                {stats.sideboard > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Avg CMC:</span>
-                    <span className="font-medium">{stats.avgCMC}</span>
+                    <span className="text-muted-foreground">Sideboard:</span>
+                    <span className="font-medium">{stats.sideboard}</span>
                   </div>
-                  {stats.commanders > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Commanders:</span>
-                      <span className="font-medium">{stats.commanders}</span>
+                )}
+                {currentUser && (
+                  <>
+                    <div className="border-t pt-2 mt-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Show Collection:</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2"
+                        onClick={() => setShowCollection(!showCollection)}
+                      >
+                        {showCollection ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                      </Button>
                     </div>
-                  )}
-                  {stats.sideboard > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Sideboard:</span>
-                      <span className="font-medium">{stats.sideboard}</span>
-                    </div>
-                  )}
-                </CardContent>
-              )}
-            </Card>
+                  </>
+                )}
+              </CardContent>
+            )}
+          </Card>
 
+          {/* Decklist */}
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="text-lg">Decklist</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="mainboard" className="flex-1">Main</TabsTrigger>
+                  <TabsTrigger value="sideboard" className="flex-1">Side</TabsTrigger>
+                  {commanders.length > 0 && (
+                    <TabsTrigger value="commander" className="flex-1">Cmdr</TabsTrigger>
+                  )}
+                </TabsList>
+                
+                <TabsContent value="mainboard" className="mt-4">
+                  {loading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {renderCardList(categorizedMainboard, 'mainboard')}
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="sideboard" className="mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderCardList(categorizedSideboard, 'sideboard')}
+                  </div>
+                </TabsContent>
+                
+                {commanders.length > 0 && (
+                  <TabsContent value="commander" className="mt-4">
+                    {commanders.map((item) => (
+                      <div key={item.card.id} className="flex items-center justify-between py-2">
+                        <span className="text-sm font-medium">{item.card.name}</span>
+                        {isOwner && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => removeCardFromDeck(item.card.id, 'commander')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </TabsContent>
+                )}
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Card Search Section (only for owners) */}
+        {isOwner && (
+          <div className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Decklist</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="w-full">
-                    <TabsTrigger value="mainboard" className="flex-1">Main</TabsTrigger>
-                    <TabsTrigger value="sideboard" className="flex-1">Side</TabsTrigger>
-                    {commanders.length > 0 && (
-                      <TabsTrigger value="commander" className="flex-1">Cmdr</TabsTrigger>
-                    )}
-                  </TabsList>
-                  
-                  <TabsContent value="mainboard" className="mt-4">
-                    {loading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      </div>
-                    ) : (
-                      renderCardList(categorizedMainboard, 'mainboard')
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="sideboard" className="mt-4">
-                    {renderCardList(categorizedSideboard, 'sideboard')}
-                  </TabsContent>
-                  
-                  {commanders.length > 0 && (
-                    <TabsContent value="commander" className="mt-4">
-                      {commanders.map((item) => (
-                        <div key={item.card.id} className="flex items-center justify-between py-2">
-                          <span className="text-sm font-medium">{item.card.name}</span>
-                          {isOwner && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => removeCardFromDeck(item.card.id, 'commander')}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </TabsContent>
-                  )}
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content - Card Search (only for owners) */}
-          {isOwner && (
-            <div className="lg:col-span-9">
-              <Card>
-                <CardHeader>
                   <CardTitle>Add Cards</CardTitle>
                 <Input
                   placeholder="Search for cards..."
@@ -469,8 +555,7 @@ export default function DeckDetailPage() {
               </CardContent>
             </Card>
           </div>
-          )}
-        </div>
+        )}
       </main>
     </div>
   );
