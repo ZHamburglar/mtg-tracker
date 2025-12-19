@@ -130,9 +130,11 @@ export class Card {
     }
 
     const query = `
-      SELECT * FROM cards 
-      WHERE oracle_id = ? 
-      ORDER BY released_at DESC, set_name ASC
+      SELECT c.*, s.icon_svg_uri as set_icon_svg_uri 
+      FROM cards c
+      LEFT JOIN sets s ON c.set_code = s.code
+      WHERE c.oracle_id = ? 
+      ORDER BY c.released_at DESC, c.set_name ASC
     `;
     const [rows] = await Card.pool.query<mysql.RowDataPacket[]>(query, [oracleId]);
     
