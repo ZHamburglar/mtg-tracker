@@ -1,48 +1,3 @@
-// Returns the lowest USD price printing (over $0.01) for a card by name or id
-router.get('/api/search/lowest-price', async (req: Request, res: Response) => {
-  const { name, id } = req.query;
-  try {
-    let card = null;
-    if (id) {
-      card = await Card.findById(id as string);
-    } else if (name) {
-      // Use Card.search to find the first card by name
-      const result = await Card.search({ name: name as string, limit: 1 });
-      card = result.cards && result.cards.length > 0 ? result.cards[0] : null;
-    }
-    if (!card) {
-      return res.status(404).json({ error: 'Card not found' });
-    }
-    if (!card.oracle_id) {
-      return res.status(404).json({ error: 'Card has no oracle_id' });
-    }
-    // Get all printings for this oracle_id
-    const printings = await Card.findByOracleId(card.oracle_id);
-    let lowest = null;
-    printings.forEach(print => {
-      const priceCandidates = [print.prices?.usd, print.prices?.usd_foil, print.prices?.usd_etched];
-      priceCandidates.forEach(price => {
-        if (price && price > 0.01) {
-          if (!lowest || price < lowest.price) {
-            lowest = { price, print };
-          }
-        }
-      });
-    });
-    if (!lowest) {
-      return res.status(404).json({ error: 'No price found over $0.01 for this card' });
-    }
-    return res.status(200).json({
-      oracle_id: card.oracle_id,
-      card_name: card.name,
-      lowest_price: lowest.price,
-      printing: lowest.print,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get lowest price', message: error instanceof Error ? error.message : 'Unknown error' });
-  }
-});
 import express, { Request, Response } from 'express';
 import { Card } from '../models/card';
 import { CardPrice } from '../models/cardprice';
@@ -146,6 +101,139 @@ router.get('/api/search/artists', async (req: Request, res: Response) => {
       error: 'Failed to fetch artists',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+// Returns the lowest USD price printing (over $0.01) for a card by name or id
+router.get('/api/search/lowest-price', async (req: Request, res: Response) => {
+  const {
+    name,
+    released_at,
+    mana_cost,
+    cmc,
+    cmc_min,
+    cmc_max,
+    type_line,
+    oracle_text,
+    power,
+    toughness,
+    colors,
+    color_identity,
+    keywords,
+    rarity,
+    artist,
+    set_id,
+    set_code,
+    set_name,
+    legality_format,
+    include_all_types,
+    limit,
+    page
+  } = req.query;
+
+  try {
+    // Parse pagination
+    const parsedLimit = limit ? parseInt(limit as string) : 100;
+    const parsedPage = page ? parseInt(page as string) : 1;
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    // Build search parameters
+    const searchParams: any = {
+      limit: parsedLimit,
+      offset
+    };
+    if (name) searchParams.name = name as string;
+    if (released_at) searchParams.released_at = released_at as string;
+    if (mana_cost) searchParams.mana_cost = mana_cost as string;
+    if (cmc) {
+      searchParams.cmc = parseFloat(cmc as string);
+    } else {
+      if (cmc_min) searchParams.cmc_min = parseFloat(cmc_min as string);
+      if (cmc_max) searchParams.cmc_max = parseFloat(cmc_max as string);
+    }
+    if (type_line) {
+      searchParams.type_line = Array.isArray(type_line)
+        ? type_line
+        : (type_line as string).split(',').map(t => t.trim());
+    }
+    if (oracle_text) searchParams.oracle_text = oracle_text as string;
+    if (power) searchParams.power = power as string;
+    if (toughness) searchParams.toughness = toughness as string;
+    if (colors) {
+      searchParams.colors = Array.isArray(colors)
+        ? colors
+        : (colors as string).split(',').map(c => c.trim());
+    }
+    if (color_identity) {
+      searchParams.color_identity = Array.isArray(color_identity)
+        ? color_identity
+        : (color_identity as string).split(',').map(c => c.trim());
+    }
+    if (keywords) {
+      searchParams.keywords = Array.isArray(keywords)
+        ? keywords
+        : (keywords as string).split(',').map(k => k.trim());
+    }
+    if (rarity) {
+      searchParams.rarity = Array.isArray(rarity)
+        ? rarity
+        : (rarity as string).split(',').map(r => r.trim());
+    }
+    if (artist) {
+      searchParams.artist = Array.isArray(artist)
+        ? artist
+        : (artist as string).split(',').map(a => a.trim());
+    }
+    if (set_id) searchParams.set_id = set_id as string;
+    if (set_code) searchParams.set_code = set_code as string;
+    if (set_name) searchParams.set_name = set_name as string;
+    if (legality_format) {
+      searchParams.legality_format = Array.isArray(legality_format)
+        ? legality_format
+        : (legality_format as string).split(',').map(f => f.trim());
+    }
+    searchParams.include_all_types = include_all_types === 'true' || include_all_types === '1';
+
+    // Search for cards
+    const { cards, total } = await Card.search(searchParams);
+    const totalPages = Math.ceil(total / parsedLimit);
+
+    // For each card, find the lowest price printing over $0.01
+    const lowestPrintings = await Promise.all(cards.map(async card => {
+      if (!card.oracle_id) return null;
+      const printings = await Card.findByOracleId(card.oracle_id);
+      let lowest: (typeof printings[0] & { lowest_price: number }) | null = null;
+      printings.forEach(print => {
+        const prices = (print as any).prices;
+        if (!prices) return;
+        const priceCandidates = [prices.usd, prices.usd_foil, prices.usd_etched];
+        priceCandidates.forEach(price => {
+          if (price && price > 0.01) {
+            if (!lowest || price < lowest.lowest_price) {
+              lowest = { ...print, lowest_price: price };
+            }
+          }
+        });
+      });
+      return lowest;
+    }));
+    // Filter out nulls (cards with no valid price)
+    const filteredPrintings = lowestPrintings.filter(Boolean);
+
+    return res.status(200).json({
+      cards: filteredPrintings,
+      pagination: {
+        currentPage: parsedPage,
+        pageSize: parsedLimit,
+        totalRecords: total,
+        totalPages: totalPages,
+        hasNextPage: parsedPage < totalPages,
+        hasPreviousPage: parsedPage > 1
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get lowest price', message: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
