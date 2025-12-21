@@ -38,5 +38,9 @@ export const passwordValidator = body('password')
   .trim()
   .isLength({ min: 8, max: 25 })
   .withMessage('Password must be between 8 and 25 characters')
+  // Disallow quotes, semicolons, backslashes
   .matches(/^[^'";\\]+$/)
-  .withMessage('Password cannot contain quotes, semicolons, or backslashes');
+  .withMessage('Password cannot contain quotes, semicolons, or backslashes')
+  // Disallow whitespace
+  .not().matches(/\s/)
+  .withMessage('Password cannot contain whitespace characters');
