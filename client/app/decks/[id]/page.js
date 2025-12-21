@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import buildClient from '../../api/build-client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -257,46 +258,68 @@ export default function DeckDetailPage() {
           </button>
           {expandedCategories[type] && (
             <div className="space-y-1 pl-6">
-              {typeCards.map((item) => (
-                <div
-                  key={`${item.card.id}-${item.category}`}
-                  className="flex items-center justify-between py-1 px-2 rounded hover:bg-accent group"
-                >
-                  <div className="flex items-center gap-2 flex-1">
-                    {isOwner ? (
-                      <Input
-                        type="number"
-                        min="0"
-                        value={item.quantity}
-                        onChange={(e) => updateCardQuantity(item.card.id, item.category, parseInt(e.target.value))}
-                        className="w-12 h-8 text-center"
-                      />
-                    ) : (
-                      <span className="w-12 h-8 flex items-center justify-center text-sm font-medium">{item.quantity}</span>
-                    )}
-                    {showCollection && currentUser && (
-                      <div 
-                        className={`w-2 h-2 rounded-full ${collectionStatus[item.card.id] ? 'bg-green-500' : 'bg-red-500'}`}
-                        title={collectionStatus[item.card.id] ? 'In your collection' : 'Not in your collection'}
-                      />
-                    )}
-                    <span className="text-sm">{item.card.name}</span>
-                    {item.card.mana_cost && (
-                      <ManaSymbols manaString={item.card.mana_cost} size="w-4 h-4" />
-                    )}
-                  </div>
-                  {isOwner && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeCardFromDeck(item.card.id, item.category)}
+              {typeCards.map((item) => {
+                console.log('item:', item);
+                return (
+                <Popover key={`${item.card.id}-${item.category}`}>
+                  <PopoverTrigger asChild>
+                    <div
+                      className="flex items-center justify-between py-1 px-2 rounded hover:bg-accent group cursor-pointer"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+                      <div className="flex items-center gap-2 flex-1">
+                        {isOwner ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) => updateCardQuantity(item.card.id, item.category, parseInt(e.target.value))}
+                            className="w-12 h-8 text-center"
+                          />
+                        ) : (
+                          <span className="w-12 h-8 flex items-center justify-center text-sm font-medium">{item.quantity}</span>
+                        )}
+                        {showCollection && currentUser && (
+                          <div 
+                            className={`w-2 h-2 rounded-full ${collectionStatus[item.card.id] ? 'bg-green-500' : 'bg-red-500'}`}
+                            title={collectionStatus[item.card.id] ? 'In your collection' : 'Not in your collection'}
+                          />
+                        )}
+                        <span className="text-sm font-medium hover:underline">{item.card.name}</span>
+                        {item.card.mana_cost && (
+                          <ManaSymbols manaString={item.card.mana_cost} size="w-4 h-4" />
+                        )}
+                      </div>
+                      {isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeCardFromDeck(item.card.id, item.category)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent side="right" align="start" className="w-72 p-2">
+                    <div className="flex flex-col items-center">
+                      <CardImage card={item.card} className="rounded-lg mb-2" />
+                      <div className="text-center">
+                        <div className="font-semibold text-base">{item.card.name}</div>
+                        <div className="text-xs text-muted-foreground mb-1">{item.card.set_name} ({item.card.set_code?.toUpperCase()})</div>
+                        {item.card.type_line && <div className="text-xs mb-1">{item.card.type_line}</div>}
+                        {item.card.oracle_text && <div className="text-xs italic mb-1">{item.card.oracle_text}</div>}
+                        {item.card.rarity && <div className="text-xs capitalize">Rarity: {item.card.rarity}</div>}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )
+              }
+              
+              
+              
+              )}
             </div>
           )}
         </div>
@@ -464,20 +487,35 @@ export default function DeckDetailPage() {
                 {commanders.length > 0 && (
                   <TabsContent value="commander" className="mt-4">
                     {commanders.map((item) => (
-                      <div key={item.card.id} className="flex items-center justify-between py-2">
-                    {/* Lowest price printing for this card */}
-                        <span className="text-sm font-medium">{item.card.name}</span>
-                        {isOwner && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => removeCardFromDeck(item.card.id, 'commander')}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      <Popover key={item.card.id}>
+                        <PopoverTrigger asChild>
+                          <div className="flex items-center justify-between py-2 cursor-pointer">
+                            <span className="text-sm font-medium hover:underline">{item.card.name}</span>
+                            {isOwner && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => removeCardFromDeck(item.card.id, 'commander')}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent side="right" align="start" className="w-72 p-2">
+                          <div className="flex flex-col items-center">
+                            <CardImage card={item.card} className="rounded-lg mb-2" />
+                            <div className="text-center">
+                              <div className="font-semibold text-base">{item.card.name}</div>
+                              <div className="text-xs text-muted-foreground mb-1">{item.card.set_name} ({item.card.set_code?.toUpperCase()})</div>
+                              {item.card.type_line && <div className="text-xs mb-1">{item.card.type_line}</div>}
+                              {item.card.oracle_text && <div className="text-xs italic mb-1">{item.card.oracle_text}</div>}
+                              {item.card.rarity && <div className="text-xs capitalize">Rarity: {item.card.rarity}</div>}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     ))}
                   </TabsContent>
                 )}

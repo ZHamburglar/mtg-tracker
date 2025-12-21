@@ -232,7 +232,7 @@ router.post(
         data: data || null
       });
 
-      logger.log(`Internal notification created: ${notification.id} for user ${user_id}`);
+      logger.log(`Notification created: ${notification.id} for user ${user_id} - ${message}`);
 
       res.status(201).json({
         notification,

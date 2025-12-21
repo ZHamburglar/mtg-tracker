@@ -264,7 +264,7 @@ const fetchSets = async () => {
 if (process.env.ENABLE_CRON !== 'false') {
   logger.log('Registering cron job: Set import at 00:01 daily');
   cron.schedule('1 0 * * *', () => {
-    logger.log('Running scheduled task to fetch sets');
+    logger.log('Running scheduled task to fetch sets...');
     // Run asynchronously without blocking the cron scheduler
     setImmediate(() => {
       fetchSets().catch(err => {
@@ -280,7 +280,7 @@ if (process.env.ENABLE_CRON !== 'false') {
 if (process.env.ENABLE_CRON !== 'false') {
   logger.log('Registering cron job: Card import at 00:10 daily');
   cron.schedule('10 0 * * *', () => {
-    logger.log('Running scheduled task to fetch default cards');
+    logger.log('Running scheduled task to fetch cards from Scryfall...');
     // Run asynchronously without blocking the cron scheduler
     setImmediate(() => {
       fetchDefaultCards().catch(err => {
@@ -296,7 +296,7 @@ if (process.env.ENABLE_CRON !== 'false') {
 if (process.env.ENABLE_CRON !== 'false') {
   logger.log('Registering cron job: Trending calculation at 00:30 daily');
   cron.schedule('30 0 * * *', () => {
-    logger.log('Running scheduled task to calculate trending cards');
+    logger.log('Running scheduled task to calculate trending cards...');
     // Run asynchronously without blocking the cron scheduler
     setImmediate(() => {
       TrendingCard.calculateAndStoreTrendingCards().catch(err => {
@@ -312,7 +312,7 @@ if (process.env.ENABLE_CRON !== 'false') {
 if (process.env.ENABLE_CRON !== 'false') {
   logger.log('Registering cron job: Price change notifications at 00:45 daily');
   cron.schedule('45 0 * * *', () => {
-    logger.log('Running scheduled task to check price changes and notify users');
+    logger.log('Running scheduled task to check price changes and notify users...');
     // Run asynchronously without blocking the cron scheduler
     setImmediate(() => {
       const pool = CardPrice.getPool();
@@ -329,7 +329,7 @@ if (process.env.ENABLE_CRON !== 'false') {
 
 router.get('/api/bulk/card', async (req: Request, res: Response) => {
   try {
-    logger.log('Manual trigger: Fetching and importing default cards...');
+    logger.log('Trigger: Fetching and importing default cards...');
     res.status(202).json({
       message: 'Card import started',
       status: 'processing'
@@ -350,7 +350,7 @@ router.get('/api/bulk/card', async (req: Request, res: Response) => {
 
 router.get('/api/bulk/set', async (req: Request, res: Response) => {
   try {
-    logger.log('Manual trigger: Fetching and importing default sets...');
+    logger.log('Trigger: Fetching and importing default sets...');
     res.status(202).json({
       message: 'Set import started',
       status: 'processing'
@@ -371,7 +371,7 @@ router.get('/api/bulk/set', async (req: Request, res: Response) => {
 
 router.get('/api/bulk/trending', async (req: Request, res: Response) => {
   try {
-    logger.log('Manual trigger: Calculating trending cards...');
+    logger.log('Trigger: Calculating trending cards...');
     res.status(202).json({
       message: 'Trending cards calculation started',
       status: 'processing'
@@ -396,7 +396,7 @@ router.get('/api/bulk/trending', async (req: Request, res: Response) => {
 
 router.get('/api/bulk/price-notifications', async (req: Request, res: Response) => {
   try {
-    logger.log('Manual trigger: Checking price changes and sending notifications...');
+    logger.log('Trigger: Checking price changes and sending notifications...');
     res.status(202).json({
       message: 'Price change notification check started',
       status: 'processing'
