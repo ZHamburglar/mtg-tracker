@@ -4,6 +4,8 @@ import { BadRequestError, validateRequest, NotFoundError, currentUser } from '@m
 import { User } from '../models/user';
 import { logger } from '../logger';
 import { createRateLimiter } from '../middlewares/rate-limiter';
+import { emailValidator, usernameValidator, passwordValidator } from '../middlewares/validators';
+
 
 const updateUserLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
@@ -18,15 +20,8 @@ router.patch('/api/users/:id',
   updateUserLimiter,
   currentUser,
   [
-    body('email')
-      .optional()
-      .isEmail()
-      .withMessage('Email must be valid'),
-    body('password')
-      .optional()
-      .trim()
-      .isLength({ min: 8, max: 25 })
-      .withMessage('Password must be between 8 and 25 characters'),
+    emailValidator.optional(),
+    passwordValidator.optional(),
     body('role')
       .optional()
       .isIn(['user', 'admin'])

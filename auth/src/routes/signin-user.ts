@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { BadRequestError, validateRequest } from '@mtg-tracker/common'
 import { createRateLimiter } from '../middlewares/rate-limiter';
+import { emailValidator, passwordValidator } from '../middlewares/validators';
 
 import { User } from '../models/user';
 import { logger } from '../logger';
@@ -21,13 +22,8 @@ router.post(
   '/api/users/signin',
   signinRateLimiter,
   [
-    body('email')
-      .isEmail()
-      .withMessage('Email must be valid'),
-    body('password')
-      .trim()
-      .notEmpty()
-      .withMessage('You must supply a password')
+    emailValidator,
+    passwordValidator
   ],
   validateRequest,
   async (req: Request, res: Response) => {

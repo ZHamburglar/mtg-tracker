@@ -1,5 +1,6 @@
 import express, { Request, Response} from 'express';
 import { body } from 'express-validator';
+import { emailValidator, usernameValidator, passwordValidator } from '../middlewares/validators';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user';
 import { BadRequestError, validateRequest } from '@mtg-tracker/common';
@@ -19,21 +20,9 @@ const newUserRateLimiter = createRateLimiter({
 router.post('/api/users/newuser',
   newUserRateLimiter,
   [
-    body('email')
-      .isEmail()
-      .withMessage('Email must be valid'),
-    body('username')
-      .trim()
-      .notEmpty()
-      .withMessage('Username is required')
-      .isLength({ min: 3, max: 50 })
-      .withMessage('Username must be between 3 and 50 characters')
-      .matches(/^[a-zA-Z0-9_-]+$/)
-      .withMessage('Username can only contain letters, numbers, underscores, and hyphens'),
-    body('password')
-      .trim()
-      .isLength({ min: 8, max: 25 })
-      .withMessage('Password must be between 8 and 25 characters')
+    emailValidator,
+    usernameValidator,
+    passwordValidator
   ],
   validateRequest,
   async (req: Request, res: Response) => {
