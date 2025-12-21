@@ -554,8 +554,6 @@ router.delete(
         });
       }
 
-      logger.info(`Card ${cardId} removed from deck ${deckId} (${category})`);
-
       res.status(204).send();
     } catch (error) {
       logger.error('Error removing card from deck:', error);
