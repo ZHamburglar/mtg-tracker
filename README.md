@@ -76,6 +76,7 @@ graph TB
     Ingress -->|Route /api/notification/*| Notification
     Ingress -->|Route /api/deck/*| Deck
 
+
     Auth -->|Query Users| MySQL
     Bulk -->|Write Cards/Prices| MySQL
     Search -->|Query Cards| MySQL
@@ -83,6 +84,10 @@ graph TB
     Listing -->|Write/Read Listings| MySQL
     Notification -->|Write/Read Notifications| MySQL
     Deck -->|Write/Read Decks| MySQL
+
+    %% Rate Limiting with Redis
+    Auth -->|Rate Limiting| Redis
+    Search -->|Rate Limiting| Redis
 
     Collection -->|Events| NATS
     Listing -->|Events| NATS
