@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CardImage from '@/components/CardImage';
@@ -34,6 +36,11 @@ export default function DeckDetailPage() {
   const [showStats, setShowStats] = useState(true);
   const [showCollection, setShowCollection] = useState(false);
   const [collectionStatus, setCollectionStatus] = useState({});
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editFormat, setEditFormat] = useState('');
+  const [savingDeck, setSavingDeck] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({
     creatures: true,
     planeswalkers: true,
@@ -50,6 +57,14 @@ export default function DeckDetailPage() {
       loadDeckCards();
     }
   }, [deckId]);
+
+  useEffect(() => {
+    if (deck) {
+      setEditName(deck.name || '');
+      setEditDescription(deck.description || '');
+      setEditFormat(deck.format || '');
+    }
+  }, [deck]);
 
   useEffect(() => {
     if (searchQuery.length >= 3) {
@@ -187,6 +202,31 @@ export default function DeckDetailPage() {
     } catch (error) {
       console.error('Error setting as commander:', error);
       toast.error('Failed to set as commander');
+    }
+  };
+
+  const saveDeck = async () => {
+    if (!editName || editName.trim() === '') {
+      toast.error('Deck name is required');
+      return;
+    }
+
+    try {
+      setSavingDeck(true);
+      const client = buildClient();
+      const { data } = await client.put(`/api/deck/${deckId}`, {
+        name: editName,
+        description: editDescription,
+        format: editFormat
+      });
+      setDeck(data.deck);
+      toast.success('Deck updated');
+      setEditOpen(false);
+    } catch (error) {
+      console.error('Error saving deck:', error);
+      toast.error('Failed to save deck');
+    } finally {
+      setSavingDeck(false);
     }
   };
 
@@ -399,9 +439,55 @@ export default function DeckDetailPage() {
               >
                 <Share2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
+              <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Deck</DialogTitle>
+                    <DialogDescription>Update the deck name, description, and format.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 mt-2">
+                    <div>
+                      <Label htmlFor="deck-name">Name</Label>
+                      <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label htmlFor="deck-description">Description</Label>
+                      <Textarea
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full mt-1 p-2 border rounded border-border text-sm"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="deck-format">Format</Label>
+                      <select
+                        id="deck-format"
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                        value={editFormat}
+                        onChange={(e) => setEditFormat(e.target.value)}
+                      >
+                        <option value="standard">Standard</option>
+                        <option value="modern">Modern</option>
+                        <option value="commander">Commander</option>
+                        <option value="legacy">Legacy</option>
+                        <option value="vintage">Vintage</option>
+                        <option value="pauper">Pauper</option>
+                        <option value="pioneer">Pioneer</option>
+                      </select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+                    <Button onClick={saveDeck} disabled={savingDeck}>{savingDeck ? 'Saving...' : 'Save'}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
