@@ -173,6 +173,23 @@ export default function DeckDetailPage() {
     }
   };
 
+  // Handler to set a creature as commander
+  const setAsCommander = async (cardId) => {
+    try {
+      const client = buildClient();
+      // Remove from mainboard, add to commander
+      await client.patch(`/api/deck/${deckId}/cards/${cardId}`, {
+        category: 'commander',
+        quantity: 1
+      });
+      toast.success('Set as Commander');
+      loadDeckCards();
+    } catch (error) {
+      console.error('Error setting as commander:', error);
+      toast.error('Failed to set as commander');
+    }
+  };
+
   const removeCardFromDeck = async (cardId, category) => {
     try {
       const client = buildClient();
@@ -246,7 +263,7 @@ export default function DeckDetailPage() {
     // Always show Commander type for mainboard if format is commander
     let entries = Object.entries(cards);
     if (deck && deck.format === 'commander' && category === 'mainboard' && !entries.some(([type]) => type === 'commander')) {
-      entries = [['commander', []], ...entries];
+      entries = [['commander', commanders], ...entries];
     }
 
     if (entries.length === 0) return null;
@@ -322,6 +339,17 @@ export default function DeckDetailPage() {
                           )}
                           {item.card.rarity && <div className="text-xs capitalize">Rarity: {item.card.rarity}</div>}
                         </div>
+                        {/* Commander button for creatures in commander format */}
+                          {deck && deck.format === 'commander' && type === 'creatures' && isOwner && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="ml-2"
+                              onClick={() => setAsCommander(item.card.id)}
+                            >
+                              Set as Commander
+                            </Button>
+                          )}
                       </div>
                     </PopoverContent>
                   </Popover>
@@ -491,41 +519,6 @@ export default function DeckDetailPage() {
                   </div>
                 </TabsContent>
                 
-                {showCommanderTab && (
-                  <TabsContent value="commander" className="mt-4">
-                    {commanders.map((item) => (
-                      <Popover key={item.card.id}>
-                        <PopoverTrigger asChild>
-                          <div className="flex items-center justify-between py-2 cursor-pointer">
-                            <span className="text-sm font-medium hover:underline">{item.card.name}</span>
-                            {isOwner && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => removeCardFromDeck(item.card.id, 'commander')}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent side="right" align="start" className="w-72 p-2">
-                          <div className="flex flex-col items-center">
-                            <CardImage card={item.card} className="rounded-lg mb-2" />
-                            <div className="text-center">
-                              <div className="font-semibold text-base">{item.card.name}</div>
-                              <div className="text-xs text-muted-foreground mb-1">{item.card.set_name} ({item.card.set_code?.toUpperCase()})</div>
-                              {item.card.type_line && <div className="text-xs mb-1">{item.card.type_line}</div>}
-                              {item.card.oracle_text && <div className="text-xs italic mb-1">{item.card.oracle_text}</div>}
-                              {item.card.rarity && <div className="text-xs capitalize">Rarity: {item.card.rarity}</div>}
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    ))}
-                  </TabsContent>
-                )}
               </Tabs>
             </CardContent>
           </Card>

@@ -543,6 +543,21 @@ router.patch(
         });
       }
 
+      // If setting a new commander, move any existing commander to mainboard
+      if (category === 'commander') {
+        // Find all commander cards in this deck (should be at most 1)
+        const commanders = await DeckCard.findByDeckAndCategory(deckId, 'commander');
+        for (const commander of commanders) {
+          if (commander.card_id !== cardId) {
+            // Move old commander to mainboard
+            await DeckCard.update(deckId, commander.card_id, 'mainboard', {
+              quantity: commander.quantity,
+              is_commander: false
+            });
+          }
+        }
+      }
+
       const deckCard = await DeckCard.update(deckId, cardId, category, {
         ...(quantity && { quantity }),
         ...(is_commander !== undefined && { is_commander })
