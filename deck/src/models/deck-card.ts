@@ -129,6 +129,14 @@ export class DeckCard {
     return rows[0] || null;
   }
 
+  static async findByDeckAndCategory(deckId: number, category: string): Promise<DeckCardDoc[]> {
+    const [rows] = await this.pool.execute<DeckCardDoc[]>(
+      `SELECT * FROM deck_cards WHERE deck_id = ? AND category = ?`,
+      [deckId, category]
+    );
+    return rows;
+  }
+
   static async updateQuantity(
     deckId: number,
     cardId: string,
