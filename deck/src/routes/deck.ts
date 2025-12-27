@@ -566,17 +566,28 @@ router.patch(
 
       if (!deckCard) {
         // Try to find the card in any category
-        const existing = await DeckCard.findByDeckAndCard(deckId, cardId, category === 'commander' ? 'mainboard' : 'commander');
+        const allCards = await DeckCard.findByDeck(deckId);
+        const existing = allCards.find(c => c.card_id === cardId);
         if (existing) {
-          // Move card to the requested category
-          await DeckCard.update(deckId, cardId, existing.category, {
-            quantity: existing.quantity,
-            is_commander: false
-          });
-          deckCard = await DeckCard.update(deckId, cardId, category, {
-            quantity: 1,
-            is_commander: is_commander !== undefined ? is_commander : (category === 'commander')
-          });
+          // If found in a different category, remove and recreate in requested category
+          if (existing.category !== category) {
+            await DeckCard.delete(deckId, cardId, existing.category);
+            const newQty = quantity !== undefined ? quantity : existing.quantity;
+            const created = await DeckCard.create({
+              deck_id: deckId,
+              card_id: cardId,
+              quantity: newQty,
+              category,
+              is_commander: is_commander !== undefined ? is_commander : (category === 'commander')
+            });
+            deckCard = created as any;
+          } else {
+            // Same category but update previously failed for some reason — try update again
+            deckCard = await DeckCard.update(deckId, cardId, category, {
+              ...(quantity && { quantity }),
+              ...(is_commander !== undefined && { is_commander })
+            });
+          }
         }
       }
 
