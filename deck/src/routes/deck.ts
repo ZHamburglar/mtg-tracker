@@ -29,20 +29,20 @@ router.get(
 
       // Structure for Commander Spellbook API (only cards with valid name)
       const main = cards
-        .filter(card => card.category === 'mainboard' && card.name && card.name.trim())
-        .map(card => ({
-          card: card.name,
+        .filter(card => card.category === 'mainboard' && card.card?.name && card.card.name.trim())
+        .map(card => (
+          {
+          card: card.card?.name,
           quantity: card.quantity
         }));
       const commanders = cards
-        .filter(card => card.category === 'commander' && card.name && card.name.trim())
+        .filter(card => card.category === 'commander' && card.card?.name && card.card.name.trim())
         .map(card => ({
-          card: card.name,
+          card: card.card?.name,
           quantity: card.quantity
         }));
 
       const payload = { main, commanders };
-      console.log('Payload for Commander Spellbook API:', payload);
 
       // Send request to Commander Spellbook API
       const apiUrl = 'https://backend.commanderspellbook.com/find-my-combos';
