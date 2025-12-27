@@ -12,22 +12,16 @@ const router = express.Router();
  * POST /api/deck/:id/combos
  * Checks the cards in a deck and sends them to Commander Spellbook API to get combos
  */
-router.post(
+router.get(
   '/api/deck/:id/combos',
-  currentUser,
-  requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(String(req.currentUser!.id));
       const deckId = parseInt(String(req.params.id));
 
       // Find the deck and verify ownership
       const deck = await Deck.findById(deckId);
       if (!deck) {
         return res.status(404).json({ error: 'Deck not found' });
-      }
-      if (deck.user_id !== userId) {
-        return res.status(403).json({ error: 'Unauthorized to check combos for this deck' });
       }
 
       // Get all cards in the deck (mainboard only for now)
