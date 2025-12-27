@@ -547,6 +547,7 @@ router.patch(
       if (category === 'commander') {
         // Find all commander cards in this deck (should be at most 1)
         const commanders = await DeckCard.findByDeckAndCategory(deckId, 'commander');
+        console.log('Existing commanders in deck:', commanders);
         for (const commander of commanders) {
           if (commander.card_id !== cardId) {
             // Move old commander to mainboard
