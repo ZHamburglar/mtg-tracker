@@ -54,7 +54,8 @@ router.get(
 
       res.status(200).json({
         count: apiResponse.data.count,
-        combos: apiResponse.data.results,
+        combos: apiResponse.data.results?.included || [],
+        almostIncluded: apiResponse.data.results?.almostIncluded || [],
         timestamp: new Date().toISOString()
       });
     } catch (error) {
