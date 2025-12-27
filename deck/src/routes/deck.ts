@@ -50,8 +50,11 @@ router.get(
         headers: { 'Content-Type': 'application/json' }
       });
 
+      console.log('Combos response from Commander Spellbook API:', apiResponse.data);
+
       res.status(200).json({
-        combos: apiResponse.data,
+        count: apiResponse.data.count,
+        combos: apiResponse.data.results,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
