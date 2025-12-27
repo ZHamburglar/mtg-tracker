@@ -550,9 +550,13 @@ router.patch(
         console.log('Existing commanders in deck:', commanders);
         for (const commander of commanders) {
           if (commander.card_id !== cardId) {
-            // Move old commander to mainboard
-            await DeckCard.update(deckId, commander.card_id, 'mainboard', {
+            // Move old commander to mainboard by deleting the commander row and recreating in mainboard
+            await DeckCard.delete(deckId, commander.card_id, 'commander');
+            await DeckCard.create({
+              deck_id: deckId,
+              card_id: commander.card_id,
               quantity: commander.quantity,
+              category: 'mainboard',
               is_commander: false
             });
           }
