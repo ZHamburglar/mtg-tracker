@@ -559,10 +559,26 @@ router.patch(
         }
       }
 
-      const deckCard = await DeckCard.update(deckId, cardId, category, {
+      let deckCard = await DeckCard.update(deckId, cardId, category, {
         ...(quantity && { quantity }),
         ...(is_commander !== undefined && { is_commander })
       });
+
+      if (!deckCard) {
+        // Try to find the card in any category
+        const existing = await DeckCard.findByDeckAndCard(deckId, cardId, category === 'commander' ? 'mainboard' : 'commander');
+        if (existing) {
+          // Move card to the requested category
+          await DeckCard.update(deckId, cardId, existing.category, {
+            quantity: existing.quantity,
+            is_commander: false
+          });
+          deckCard = await DeckCard.update(deckId, cardId, category, {
+            quantity: 1,
+            is_commander: is_commander !== undefined ? is_commander : (category === 'commander')
+          });
+        }
+      }
 
       if (!deckCard) {
         return res.status(404).json({
