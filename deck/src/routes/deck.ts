@@ -50,12 +50,6 @@ router.get(
         headers: { 'Content-Type': 'application/json' }
       });
 
-      
-
-
-
-      console.log('Combos response from Commander Spellbook API:', apiResponse.data);
-
       // Normalize included to an array (some API responses use object maps)
       let includedRaw = apiResponse.data.results?.included || [];
       let included: any[] = [];
@@ -602,7 +596,6 @@ router.patch(
       if (category === 'commander') {
         // Find all commander cards in this deck (should be at most 1)
         const commanders = await DeckCard.findByDeckAndCategory(deckId, 'commander');
-        console.log('Existing commanders in deck:', commanders);
         for (const commander of commanders) {
           if (commander.card_id !== cardId) {
             // Move old commander to mainboard by deleting the commander row and recreating in mainboard
