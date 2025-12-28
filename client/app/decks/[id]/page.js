@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -230,6 +230,35 @@ export default function DeckDetailPage() {
     }
   };
 
+  const copyDeckToClipboard = async () => {
+    try {
+      if (!deckCards || deckCards.length === 0) {
+        toast.error('No cards to copy');
+        return;
+      }
+
+      // Order by category: mainboard, commander, sideboard, then by name
+      const order = { mainboard: 1, commander: 2, sideboard: 3 };
+      const sorted = [...deckCards].sort((a, b) => {
+        const ca = order[a.category] || 99;
+        const cb = order[b.category] || 99;
+        if (ca !== cb) return ca - cb;
+        const an = a.card?.name?.toLowerCase() || '';
+        const bn = b.card?.name?.toLowerCase() || '';
+        return an.localeCompare(bn);
+      });
+
+      const lines = sorted.map(c => `${c.quantity} ${c.card?.name || c.card_id}`);
+      const text = lines.join('\n');
+
+      await navigator.clipboard.writeText(text);
+      toast.success('Deck copied to clipboard');
+    } catch (error) {
+      console.error('Error copying deck to clipboard:', error);
+      toast.error('Failed to copy deck');
+    }
+  };
+
   const removeCardFromDeck = async (cardId, category) => {
     try {
       const client = buildClient();
@@ -438,6 +467,13 @@ export default function DeckDetailPage() {
                 }}
               >
                 <Share2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={copyDeckToClipboard}
+              >
+                <Clipboard className="h-4 w-4" />
               </Button>
               <Dialog open={editOpen} onOpenChange={setEditOpen}>
                 <DialogTrigger asChild>

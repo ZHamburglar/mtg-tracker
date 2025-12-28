@@ -50,12 +50,66 @@ router.get(
         headers: { 'Content-Type': 'application/json' }
       });
 
+      
+
+
+
       console.log('Combos response from Commander Spellbook API:', apiResponse.data);
 
+      // Normalize included to an array (some API responses use object maps)
+      let includedRaw = apiResponse.data.results?.included || [];
+      let included: any[] = [];
+      if (Array.isArray(includedRaw)) {
+        included = includedRaw;
+      } else if (includedRaw && typeof includedRaw === 'object') {
+        included = Object.values(includedRaw);
+      }
+
+      // Aggregate bracketTags counts from included items
+      const bracketTagsCount: Record<string, number> = {};
+      if (Array.isArray(included)) {
+        included.forEach((item: any) => {
+          // Accept multiple possible field names and shapes from the external API
+          const tags = item?.bracketTags ?? item?.bracketTag ?? item?.bracket_tags ?? item?.bracket_tag;
+          if (!tags) return;
+
+          if (Array.isArray(tags)) {
+            tags.forEach((tag: any) => {
+              const name = typeof tag === 'string' ? tag : (tag?.name ? String(tag.name) : null);
+              if (name) {
+                bracketTagsCount[name] = (bracketTagsCount[name] || 0) + 1;
+              }
+            });
+            return;
+          }
+
+          if (typeof tags === 'string') {
+            bracketTagsCount[tags] = (bracketTagsCount[tags] || 0) + 1;
+            return;
+          }
+
+          // If tags is an object, try common shapes (e.g., { name: 'S' } or { tags: ['S'] })
+          if (typeof tags === 'object') {
+            if (tags.name && typeof tags.name === 'string') {
+              bracketTagsCount[tags.name] = (bracketTagsCount[tags.name] || 0) + 1;
+            } else if (Array.isArray(tags.tags)) {
+              tags.tags.forEach((t: any) => {
+                const name = typeof t === 'string' ? t : (t?.name ? String(t.name) : null);
+                if (name) bracketTagsCount[name] = (bracketTagsCount[name] || 0) + 1;
+              });
+            }
+          }
+        });
+      }
+
+      // Return included count and a small sample to help debugging
+      const includedCount = included.length;
+
       res.status(200).json({
-        count: apiResponse.data.count,
-        combos: apiResponse.data.results?.included || [],
+        count: includedCount,
+        combos: included,
         almostIncluded: apiResponse.data.results?.almostIncluded || [],
+        bracketTags: bracketTagsCount,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
