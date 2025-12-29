@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2, Clipboard, BookCopy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,17 @@ export default function DeckDetailPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importParseErrors, setImportParseErrors] = useState([]);
   const [importParsedCount, setImportParsedCount] = useState(0);
+
+  // Preview is shown only after an import attempt finds errors
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const errorLines = useMemo(() => {
+    const linesSet = new Set();
+    (importParseErrors || []).forEach(e => linesSet.add(e.line));
+    if (importResult && importResult.notFound) importResult.notFound.forEach(l => linesSet.add(l));
+    if (importResult && importResult.errors) importResult.errors.forEach(e => linesSet.add(e.line));
+    return Array.from(linesSet);
+  }, [importParseErrors, importResult]);
 
   useEffect(() => {
     if (deckId) {
@@ -141,10 +152,12 @@ export default function DeckDetailPage() {
       return;
     }
 
-    // run basic parsing and show any errors
-    const { errors } = parseImportText(importText);
+    // run basic parsing and surface errors only after user clicks Import
+    const { errors, lines } = parseImportText(importText);
     if (errors.length > 0) {
-      toast.error(`${errors.length} malformed line(s) found — fix them and try again`);
+      setImportResult({ parseErrors: errors, notFound: [], errors: [] });
+      setShowImportPreview(true);
+      toast.error(`${errors.length} malformed line(s) found — fix them or correct and try again`);
       return;
     }
 
@@ -158,17 +171,23 @@ export default function DeckDetailPage() {
         const report = data.report;
         if ((report.notFound && report.notFound.length > 0) || (report.errors && report.errors.length > 0)) {
           console.warn('Import report issues:', report);
+          // Show preview with backend-not-found / errors inline
+          setImportResult(report);
+          setShowImportPreview(true);
           toast.error(`Imported with some issues: ${report.notFound?.length || 0} not found, ${report.errors?.length || 0} errors`);
+          // Keep dialog open so user can review/adjust
         } else {
           toast.success('Imported decklist');
+          await loadDeckCards();
+          setImportText('');
+          setImportOpen(false);
         }
       } else {
         toast.success('Imported decklist');
+        await loadDeckCards();
+        setImportText('');
+        setImportOpen(false);
       }
-
-      await loadDeckCards();
-      setImportText('');
-      setImportOpen(false);
     } catch (err) {
       console.error('Import failed', err);
       toast.error('Import failed — see console for details');
@@ -702,7 +721,24 @@ export default function DeckDetailPage() {
                         className="mt-1 w-full h-40"
                       />
                     </div>
-                  </div>
+                    {/* Preview parsed lines and show inline errors */}
+                    {showImportPreview ? (
+                      <div>
+                        <Label>Errors</Label>
+                      <div className="mt-1 p-2 bg-muted rounded text-sm">
+                          {errorLines.length === 0 ? (
+                            <div className="text-muted-foreground">No error lines to preview</div>
+                          ) : (
+                            errorLines.map((line, idx) => (
+                              <div key={idx} className="flex items-center justify-between">
+                                <div className="break-words">{line} <span className="text-red-500 ml-2">&lt;&lt;Card Import Error&gt;&gt;</span></div>
+                              </div>
+                            ))
+                          )}
+                      </div>
+                      </div>
+                    ) : null}
+                    </div>
                   <DialogFooter>
                     <Button variant="ghost" onClick={() => setImportOpen(false)}>Cancel</Button>
                     <Button onClick={importDecklist} disabled={isImporting}>{isImporting ? 'Importing...' : 'Import'}</Button>
