@@ -174,13 +174,15 @@ export default function DeckDetailPage() {
     }
   };
 
-  const addCardToDeck = async (cardId, category = 'mainboard') => {
+  const addCardToDeck = async (cardId, category = 'mainboard', oracleId = null) => {
     try {
       const client = buildClient();
       await client.post(`/api/deck/${deckId}/cards`, {
         card_id: cardId,
         category,
         quantity: 1
+        ,
+        oracle_id: oracleId ?? null
       });
       toast.success('Card added to deck');
       loadDeckCards();
@@ -750,7 +752,7 @@ export default function DeckDetailPage() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                           <Button
                             size="sm"
-                            onClick={() => addCardToDeck(card.id, 'mainboard')}
+                            onClick={() => addCardToDeck(card.id, 'mainboard', card.oracle_id)}
                           >
                             <Plus className="h-4 w-4 mr-1" />
                             Main
@@ -758,7 +760,7 @@ export default function DeckDetailPage() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => addCardToDeck(card.id, 'sideboard')}
+                            onClick={() => addCardToDeck(card.id, 'sideboard', card.oracle_id)}
                           >
                             <Plus className="h-4 w-4 mr-1" />
                             Side
