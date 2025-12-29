@@ -57,6 +57,8 @@ export default function DeckDetailPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [importParseErrors, setImportParseErrors] = useState([]);
+  const [importParsedCount, setImportParsedCount] = useState(0);
 
   useEffect(() => {
     if (deckId) {
@@ -119,60 +121,59 @@ export default function DeckDetailPage() {
     }
   };
 
-  // Todo possibly change to batch import later
+  const parseImportText = (text) => {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const errors = [];
+    for (const [i, line] of lines.entries()) {
+      const m = line.match(/^(\d+)\s+(.+)$/);
+      if (!m) {
+        errors.push({ line, index: i + 1, reason: 'Invalid format, expected: <quantity> <card name>' });
+      }
+    }
+    setImportParsedCount(lines.length);
+    setImportParseErrors(errors);
+    return { lines, errors };
+  };
+
   const importDecklist = async () => {
     if (!importText || importText.trim() === '') {
       toast.error('Nothing to import');
       return;
     }
 
+    // run basic parsing and show any errors
+    const { errors } = parseImportText(importText);
+    if (errors.length > 0) {
+      toast.error(`${errors.length} malformed line(s) found — fix them and try again`);
+      return;
+    }
+
     setIsImporting(true);
-    const client = buildClient();
-    const lines = importText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const notFound = [];
+    try {
+      const client = buildClient();
+      const { data } = await client.post(`/api/deck/${deckId}/import`, { text: importText });
 
-    console.log('Importing decklist lines:', lines);
+      // Backend returns a report with imported/notFound/errors
+      if (data && data.report) {
+        const report = data.report;
+        if ((report.notFound && report.notFound.length > 0) || (report.errors && report.errors.length > 0)) {
+          console.warn('Import report issues:', report);
+          toast.error(`Imported with some issues: ${report.notFound?.length || 0} not found, ${report.errors?.length || 0} errors`);
+        } else {
+          toast.success('Imported decklist');
+        }
+      } else {
+        toast.success('Imported decklist');
+      }
 
-    // for (const line of lines) {
-    //   const m = line.match(/^(\d+)\s+(.+)$/);
-    //   if (!m) {
-    //     notFound.push(line);
-    //     continue;
-    //   }
-
-    //   const qty = parseInt(m[1], 10);
-    //   const name = m[2].trim();
-
-    //   try {
-    //     const { data } = await client.get(`api/search/lowest-price?name=${encodeURIComponent(name)}`);
-    //     const found = data.cards && data.cards[0];
-    //     if (!found) {
-    //       notFound.push(line);
-    //       continue;
-    //     }
-
-    //     await client.post(`/api/deck/${deckId}/cards`, {
-    //       card_id: found.id,
-    //       category: 'mainboard',
-    //       quantity: qty,
-    //       oracle_id: found.oracle_id ?? null
-    //     });
-    //   } catch (err) {
-    //     console.error('Import error for line', line, err);
-    //     notFound.push(line);
-    //   }
-    // }
-
-    setIsImporting(false);
-    await loadDeckCards();
-    setImportText('');
-    setImportOpen(false);
-
-    if (notFound.length > 0) {
-      toast.error(`${notFound.length} lines could not be imported`);
-      console.warn('Import lines not found:', notFound);
-    } else {
-      toast.success('Imported decklist');
+      await loadDeckCards();
+      setImportText('');
+      setImportOpen(false);
+    } catch (err) {
+      console.error('Import failed', err);
+      toast.error('Import failed — see console for details');
+    } finally {
+      setIsImporting(false);
     }
   };
 
