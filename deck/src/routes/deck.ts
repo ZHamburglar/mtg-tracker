@@ -495,14 +495,18 @@ router.post(
     body('is_commander')
       .optional()
       .isBoolean()
-      .withMessage('is_commander must be a boolean')
+      .withMessage('is_commander must be a boolean'),
+    body('oracle_id')
+      .optional()
+      .isUUID()
+      .withMessage('Invalid oracle_id')
   ],
   validateRequest,
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
       const deckId = parseInt(String(req.params.id));
-      const { card_id, quantity, category, is_commander } = req.body;
+      const { card_id, quantity, category, is_commander, oracle_id } = req.body;
 
       const deck = await Deck.findById(deckId);
 
@@ -538,7 +542,8 @@ router.post(
           card_id,
           quantity,
           category,
-          is_commander: is_commander || false
+          is_commander: is_commander || false,
+          oracle_id: oracle_id ?? null
         });
       }
 

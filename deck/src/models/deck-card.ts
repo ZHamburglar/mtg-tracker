@@ -6,6 +6,7 @@ export interface DeckCardAttrs {
   quantity: number;
   category: 'mainboard' | 'sideboard' | 'commander';
   is_commander: boolean;
+  oracle_id?: string | null;
 }
 
 export interface DeckCardDoc extends RowDataPacket {
@@ -15,6 +16,7 @@ export interface DeckCardDoc extends RowDataPacket {
   quantity: number;
   category: 'mainboard' | 'sideboard' | 'commander';
   is_commander: boolean;
+  oracle_id?: string | null;
   created_at: Date;
   card?: any; // Card details from JOIN
 }
@@ -27,15 +29,17 @@ export class DeckCard {
   }
 
   static async create(attrs: DeckCardAttrs): Promise<DeckCardDoc> {
+
     const [result] = await this.pool.execute<ResultSetHeader>(
-      `INSERT INTO deck_cards (deck_id, card_id, quantity, category, is_commander)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO deck_cards (deck_id, card_id, quantity, category, is_commander, oracle_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
         attrs.deck_id,
         attrs.card_id,
         attrs.quantity,
         attrs.category,
-        attrs.is_commander
+        attrs.is_commander,
+        attrs.oracle_id ?? null
       ]
     );
 
@@ -110,6 +114,7 @@ export class DeckCard {
         quantity: row.quantity,
         category: row.category,
         is_commander: row.is_commander,
+        oracle_id: row.oracle_id ?? null,
         created_at: row.created_at,
         card
       } as DeckCardDoc;
