@@ -711,18 +711,23 @@ router.post(
     body('finish_type')
       .optional()
       .isIn(['normal', 'foil', 'etched'])
-      .withMessage('Finish type must be normal, foil, or etched')
+      .withMessage('Finish type must be normal, foil, or etched'),
+    body('oracle_id')
+      .optional()
+      .isLength({ min: 36, max: 36 })
+      .withMessage('Oracle ID must be a valid UUID')
   ],
   validateRequest,
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const { card_id, quantity, finish_type } = req.body;
+      const { card_id, quantity, finish_type, oracle_id } = req.body;
 
       // Add card to collection (or increment if exists)
       const card = await UserCardCollection.addCard({
         user_id: userId,
         card_id,
+        oracle_id: oracle_id ?? null,
         quantity: quantity || 1,
         finish_type: finish_type || 'normal'
       });
@@ -762,7 +767,7 @@ router.post(
     try {
       const userId = parseInt(String(req.currentUser!.id));
       const { cardId } = req.params;
-      const { finish_type } = req.body;
+      const { finish_type} = req.body;
 
       if (!cardId) {
         return res.status(400).json({
@@ -775,7 +780,7 @@ router.post(
         user_id: userId,
         card_id: cardId,
         quantity: 1,
-        finish_type
+        finish_type,
       });
 
       res.status(200).json({
