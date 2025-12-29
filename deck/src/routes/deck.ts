@@ -286,19 +286,24 @@ router.post(
       .notEmpty()
       .withMessage('Format is required')
       .isIn(['standard', 'modern', 'legacy', 'vintage', 'commander', 'pioneer', 'pauper', 'historic', 'brawl', 'other'])
-      .withMessage('Invalid format')
+      .withMessage('Invalid format'),
+    body('visibility')
+      .optional()
+      .isIn(['public', 'private', 'unlisted'])
+      .withMessage('Invalid visibility')
   ],
   validateRequest,
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
-      const { name, description, format } = req.body;
+      const { name, description, format, visibility } = req.body;
 
       const deck = await Deck.create({
         user_id: userId,
         name,
         description: description || null,
-        format
+        format,
+        visibility
       });
 
       logger.info(`Deck created: ${deck.id} by user ${userId}`);
@@ -339,7 +344,11 @@ router.put(
     body('format')
       .optional()
       .isIn(['standard', 'modern', 'legacy', 'vintage', 'commander', 'pioneer', 'pauper', 'historic', 'brawl', 'other'])
-      .withMessage('Invalid format')
+      .withMessage('Invalid format'),
+    body('visibility')
+      .optional()
+      .isIn(['public', 'private', 'unlisted'])
+      .withMessage('Invalid visibility')
   ],
   validateRequest,
   async (req: Request, res: Response) => {
@@ -362,12 +371,13 @@ router.put(
         });
       }
 
-      const { name, description, format } = req.body;
+      const { name, description, format, visibility } = req.body;
 
       const updatedDeck = await Deck.update(deckId, {
         ...(name && { name }),
         ...(description !== undefined && { description }),
-        ...(format && { format })
+        ...(format && { format }),
+        ...(visibility !== undefined && { visibility })
       });
 
       logger.info(`Deck updated: ${deckId} by user ${userId}`);
