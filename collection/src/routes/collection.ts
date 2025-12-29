@@ -761,13 +761,29 @@ router.post(
       .withMessage('Finish type is required')
       .isIn(['normal', 'foil', 'etched'])
       .withMessage('Finish type must be normal, foil, or etched')
+    ,
+    body('oracle_id')
+      .optional()
+      .isLength({ min: 36, max: 36 })
+      .withMessage('Oracle ID must be a valid UUID')
   ],
   validateRequest,
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(String(req.currentUser!.id));
       const { cardId } = req.params;
-      const { finish_type} = req.body;
+      const { finish_type, oracle_id: bodyOracleId } = req.body as { finish_type: any; oracle_id?: string };
+
+      // Resolve oracle_id: prefer provided value, otherwise look it up from the cards table
+      let oracle_id: string | null = bodyOracleId ?? null;
+      if (!oracle_id) {
+        const pool = UserCardCollection.getPool();
+        const [cardRows] = await pool.query<any[]>(
+          'SELECT oracle_id FROM cards WHERE id = ? LIMIT 1',
+          [cardId]
+        );
+        oracle_id = cardRows[0]?.oracle_id ?? null;
+      }
 
       if (!cardId) {
         return res.status(400).json({
@@ -779,6 +795,7 @@ router.post(
       const card = await UserCardCollection.addCard({
         user_id: userId,
         card_id: cardId,
+        oracle_id: oracle_id ?? null,
         quantity: 1,
         finish_type,
       });
