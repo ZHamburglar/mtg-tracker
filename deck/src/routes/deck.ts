@@ -99,10 +99,49 @@ router.get(
       // Return included count and a small sample to help debugging
       const includedCount = included.length;
 
+      // Helper to strip image fields from a card object
+      const stripCardImages = (card: any) => {
+        if (!card || typeof card !== 'object') return card;
+        const c = { ...card };
+        // common image fields to remove
+        [
+          'imageUriFrontPng', 'imageUriBackPng', 'imageUriFrontLarge', 'imageUriFrontSmall', 'imageUriFrontNormal',
+          'imageUriBackLarge', 'imageUriBackSmall', 'imageUriBackNormal', 'imageUriBackArtCrop', 'imageUriFrontArtCrop'
+        ].forEach(f => { if (f in c) delete c[f]; });
+        return c;
+      };
+
+      // Sanitize included items: remove `of` and strip images from nested cards
+      const sanitizeItem = (item: any) => {
+        if (!item || typeof item !== 'object') return item;
+        const copy = { ...item };
+        if ('of' in copy) delete copy.of;
+        if (Array.isArray(copy.uses)) {
+          copy.uses = copy.uses.map((u: any) => {
+            if (u && u.card) {
+              return { ...u, card: stripCardImages(u.card) };
+            }
+            return u;
+          });
+        }
+        return copy;
+      };
+
+      const sanitizedIncluded = included.map(sanitizeItem);
+
+      // Normalize and sanitize almostIncluded as well
+      let almostIncludedRaw = apiResponse.data.results?.almostIncluded || [];
+      let sanitizedAlmostIncluded: any[] = [];
+      if (Array.isArray(almostIncludedRaw)) {
+        sanitizedAlmostIncluded = almostIncludedRaw.map(sanitizeItem);
+      } else if (almostIncludedRaw && typeof almostIncludedRaw === 'object') {
+        sanitizedAlmostIncluded = Object.values(almostIncludedRaw).map(sanitizeItem);
+      }
+
       res.status(200).json({
         count: includedCount,
-        combos: included,
-        almostIncluded: apiResponse.data.results?.almostIncluded || [],
+        combos: sanitizedIncluded,
+        almostIncluded: sanitizedAlmostIncluded,
         bracketTags: bracketTagsCount,
         timestamp: new Date().toISOString()
       });
