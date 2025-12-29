@@ -60,6 +60,12 @@ export default function DeckDetailPage() {
   const [importParseErrors, setImportParseErrors] = useState([]);
   const [importParsedCount, setImportParsedCount] = useState(0);
 
+  // Combos data and UI state
+  const [combosData, setCombosData] = useState(null);
+  const [combosLoading, setCombosLoading] = useState(false);
+  const [expandedCombos, setExpandedCombos] = useState({});
+  const [expandedAlmostIncluded, setExpandedAlmostIncluded] = useState({});
+
   // Preview is shown only after an import attempt finds errors
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -106,6 +112,27 @@ export default function DeckDetailPage() {
       setCollectionStatus({});
     }
   }, [currentUser, deckCards.length]);
+
+  const loadCombos = async () => {
+    if (!deckId) return;
+    setCombosLoading(true);
+    try {
+      const client = buildClient();
+      const { data } = await client.get(`/api/deck/${deckId}/combos`);
+      setCombosData(data || null);
+    } catch (error) {
+      console.error('Error loading combos:', error);
+      setCombosData(null);
+    } finally {
+      setCombosLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (deckId) {
+      loadCombos();
+    }
+  }, [deckId]);
 
   const loadDeck = async () => {
     try {
@@ -554,6 +581,10 @@ export default function DeckDetailPage() {
   // Only show commander tab/cards if deck format is 'commander'
   const showCommanderTab = deck && deck.format === 'commander';
 
+  // Derived combo lists (support multiple possible shapes from API)
+  const combosList = combosData?.combos || combosData?.included || [];
+  const almostList = combosData?.almostIncluded || combosData?.almost_included || [];
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border sticky top-0 bg-background z-10">
@@ -875,6 +906,70 @@ export default function DeckDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Combos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {combosLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (combosList.length === 0 && almostList.length === 0) ? (
+              <div className="text-muted-foreground text-sm">No combos detected</div>
+            ) : (
+              <div className="space-y-4">
+                {combosList.map((combo, idx) => (
+                  <div key={`combo-${idx}`} className="border rounded p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{combo.title || combo.name || `Combo ${idx + 1}`}</div>
+                      <Button variant="ghost" size="icon" onClick={() => setExpandedCombos(prev => ({ ...prev, [idx]: !prev[idx] }))}>
+                        {expandedCombos[idx] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    {expandedCombos[idx] && (
+                      <div className="mt-2 text-sm space-y-2">
+                        {(combo.included || combo.uses || []).map((inc, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="font-medium">{inc.card?.name || inc.name || inc}</div>
+                            {inc.card?.set_name && <div className="text-muted-foreground text-xs"> — {inc.card.set_name}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {almostList.length > 0 && (
+                  <div>
+                    <div className="font-medium mb-2">Almost Included Combos</div>
+                    {almostList.map((a, ai) => (
+                      <div key={`almost-${ai}`} className="border rounded p-3 mb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">{a.title || a.name || `Candidate ${ai + 1}`}</div>
+                          <Button variant="ghost" size="icon" onClick={() => setExpandedAlmostIncluded(prev => ({ ...prev, [ai]: !prev[ai] }))}>
+                            {expandedAlmostIncluded[ai] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {expandedAlmostIncluded[ai] && (
+                          <div className="mt-2 text-sm">
+                            {(a.uses || a.items || []).map((u, ui) => (
+                              <div key={ui} className="flex items-center gap-2">
+                                <div className="font-medium">{u.card?.name || u.name || u}</div>
+                                {u.card?.set_name && <div className="text-muted-foreground text-xs"> — {u.card.set_name}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Card Search Section (only for owners) */}
         {isOwner && (
