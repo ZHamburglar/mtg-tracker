@@ -42,6 +42,8 @@ export default function DeckDetailPage() {
   const [editFormat, setEditFormat] = useState('');
   const [editVisibility, setEditVisibility] = useState('public');
   const [savingDeck, setSavingDeck] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingDeck, setDeletingDeck] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({
     creatures: true,
     planeswalkers: true,
@@ -230,6 +232,24 @@ export default function DeckDetailPage() {
       toast.error('Failed to save deck');
     } finally {
       setSavingDeck(false);
+    }
+  };
+
+  const deleteDeck = async () => {
+    try {
+      setDeletingDeck(true);
+      const client = buildClient();
+      await client.delete(`/api/deck/${deckId}`);
+      toast.success('Deck deleted');
+      // Navigate back to decks list
+      router.push('/decks');
+    } catch (error) {
+      console.error('Error deleting deck:', error);
+      toast.error('Failed to delete deck');
+    } finally {
+      setDeletingDeck(false);
+      setDeleteOpen(false);
+      setEditOpen(false);
     }
   };
 
@@ -533,10 +553,43 @@ export default function DeckDetailPage() {
                         <option value="private">Private</option>
                       </select>
                     </div>
+                    
                   </div>
                   <DialogFooter>
-                    <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
-                    <Button onClick={saveDeck} disabled={savingDeck}>{savingDeck ? 'Saving...' : 'Save'}</Button>
+                    <div className='flex justify-between w-full'>
+                      <div>
+                        {isOwner && (
+                          <Button
+                            variant="destructive"
+                            onClick={() => setDeleteOpen(true)}
+                          >
+                            Delete Deck
+                          </Button>
+                        )}
+                      </div>
+                      <div className="sm:space-x-2">
+                        <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+                        <Button onClick={saveDeck} disabled={savingDeck}>{savingDeck ? 'Saving...' : 'Save'}</Button>
+                      </div>
+                      
+                    </div>
+                    
+
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Deck</DialogTitle>
+                    <DialogDescription>This action is permanent and cannot be undone. Are you sure you want to delete this deck?</DialogDescription>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground">This will permanently delete the deck and all its cards. This action cannot be undone.</p>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={deleteDeck} disabled={deletingDeck}>{deletingDeck ? 'Deleting...' : 'Delete Deck'}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
