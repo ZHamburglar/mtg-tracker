@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2, Clipboard } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2, Clipboard, BookCopy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,9 @@ export default function DeckDetailPage() {
     artifacts: true,
     lands: true
   });
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     if (deckId) {
@@ -113,6 +116,63 @@ export default function DeckDetailPage() {
       toast.error('Failed to load deck cards');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Todo possibly change to batch import later
+  const importDecklist = async () => {
+    if (!importText || importText.trim() === '') {
+      toast.error('Nothing to import');
+      return;
+    }
+
+    setIsImporting(true);
+    const client = buildClient();
+    const lines = importText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const notFound = [];
+
+    console.log('Importing decklist lines:', lines);
+
+    // for (const line of lines) {
+    //   const m = line.match(/^(\d+)\s+(.+)$/);
+    //   if (!m) {
+    //     notFound.push(line);
+    //     continue;
+    //   }
+
+    //   const qty = parseInt(m[1], 10);
+    //   const name = m[2].trim();
+
+    //   try {
+    //     const { data } = await client.get(`api/search/lowest-price?name=${encodeURIComponent(name)}`);
+    //     const found = data.cards && data.cards[0];
+    //     if (!found) {
+    //       notFound.push(line);
+    //       continue;
+    //     }
+
+    //     await client.post(`/api/deck/${deckId}/cards`, {
+    //       card_id: found.id,
+    //       category: 'mainboard',
+    //       quantity: qty,
+    //       oracle_id: found.oracle_id ?? null
+    //     });
+    //   } catch (err) {
+    //     console.error('Import error for line', line, err);
+    //     notFound.push(line);
+    //   }
+    // }
+
+    setIsImporting(false);
+    await loadDeckCards();
+    setImportText('');
+    setImportOpen(false);
+
+    if (notFound.length > 0) {
+      toast.error(`${notFound.length} lines could not be imported`);
+      console.warn('Import lines not found:', notFound);
+    } else {
+      toast.success('Imported decklist');
     }
   };
 
@@ -617,6 +677,37 @@ export default function DeckDetailPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <Dialog open={importOpen} onOpenChange={setImportOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Import Cards</DialogTitle>
+                    <DialogDescription>Paste your decklist below. One card per line in the format: <strong>quantity card name</strong>.</DialogDescription>
+                    <div>
+                      <Label>Example paste</Label>
+                      <pre className="text-sm bg-muted p-2 rounded mt-1">{`4 Lightning Bolt
+1 Black Lotus
+2 Counterspell`}</pre>
+                    </div>
+                  </DialogHeader>
+                  <div className="space-y-3 mt-2">
+                    <div>
+                      
+                      <Label htmlFor="import-list">Paste decklist</Label>
+                      <Textarea
+                        id="import-list"
+                        value={importText}
+                        onChange={(e) => setImportText(e.target.value)}
+                        placeholder={`e.g.\n4 Lightning Bolt\n1 Black Lotus\n2 Counterspell`}
+                        className="mt-1 w-full h-40"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setImportOpen(false)}>Cancel</Button>
+                    <Button onClick={importDecklist} disabled={isImporting}>{isImporting ? 'Importing...' : 'Import'}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -710,31 +801,40 @@ export default function DeckDetailPage() {
               <CardTitle className="text-lg">Decklist</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="mainboard" className="flex-1">Main</TabsTrigger>
-                  <TabsTrigger value="sideboard" className="flex-1">Side</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="mainboard" className="mt-4">
-                  {loading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                  ) : (
+              {(!deckCards || deckCards.length === 0) ? (
+                <div className="flex items-center justify-center py-12">
+                  <Button onClick={() => setImportOpen(true)}>
+                    <BookCopy className="h-4 w-4 mr-2" />
+                    Import Cards
+                  </Button>
+                </div>
+              ) : (
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="mainboard" className="flex-1">Main</TabsTrigger>
+                    <TabsTrigger value="sideboard" className="flex-1">Side</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="mainboard" className="mt-4">
+                    {loading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {renderCardList(categorizedMainboard, 'mainboard')}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="sideboard" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {renderCardList(categorizedMainboard, 'mainboard')}
+                      {renderCardList(categorizedSideboard, 'sideboard')}
                     </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="sideboard" className="mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderCardList(categorizedSideboard, 'sideboard')}
-                  </div>
-                </TabsContent>
-                
-              </Tabs>
+                  </TabsContent>
+
+                </Tabs>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -742,7 +842,7 @@ export default function DeckDetailPage() {
         {/* Card Search Section (only for owners) */}
         {isOwner && (
           <div className="mt-6">
-            <Card>
+              <Card>
               <CardHeader>
                   <CardTitle>Add Cards</CardTitle>
                 <Input

@@ -142,6 +142,25 @@ export class DeckCard {
     return rows;
   }
 
+  // Try to resolve a card name to a single card id and oracle_id from the local `cards` table.
+  // Prefers exact (case-insensitive) name match, then falls back to a LIKE match ordered by release date.
+  static async findCardByName(name: string): Promise<{ id: string; oracle_id?: string | null; name: string } | null> {
+    const exactQuery = `SELECT id, oracle_id, name FROM cards WHERE LOWER(name) = LOWER(?) LIMIT 1`;
+    const [exactRows] = await this.pool.execute<any[]>(exactQuery, [name]);
+    if (exactRows && exactRows.length > 0) {
+      return { id: exactRows[0].id, oracle_id: exactRows[0].oracle_id, name: exactRows[0].name };
+    }
+
+    // Fuzzy fallback: find similar names, newest printings first
+    const likeQuery = `SELECT id, oracle_id, name FROM cards WHERE name LIKE ? ORDER BY released_at DESC, set_name ASC LIMIT 1`;
+    const [likeRows] = await this.pool.execute<any[]>(likeQuery, [`%${name}%`]);
+    if (likeRows && likeRows.length > 0) {
+      return { id: likeRows[0].id, oracle_id: likeRows[0].oracle_id, name: likeRows[0].name };
+    }
+
+    return null;
+  }
+
   static async updateQuantity(
     deckId: number,
     cardId: string,
