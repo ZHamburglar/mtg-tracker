@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import CardImage from '@/components/CardImage';
 import { getCardImage } from '@/hooks/get-card-image';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import buildClient from '../../api/build-client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -117,7 +118,7 @@ export default function DeckDetailPage() {
 
   const loadCollectionStatus = async (cards) => {
     if (!currentUser || cards.length === 0) return;
-        
+    console.log('cards: ', cards)
     try {
       const client = buildClient();
       const statusMap = {};
@@ -483,23 +484,44 @@ export default function DeckDetailPage() {
               Back to Decks
             </Button>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success('Link copied to clipboard!');
-                }}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={copyDeckToClipboard}
-              >
-                <Clipboard className="h-4 w-4" />
-              </Button>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast.success('Link copied to clipboard!');
+                      }}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Share Deck Link
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={copyDeckToClipboard}
+                    >
+                      <Clipboard className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Copy Decklist to Clipboard
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               <Dialog open={editOpen} onOpenChange={setEditOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="icon">

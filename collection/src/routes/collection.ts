@@ -760,8 +760,7 @@ router.post(
       .notEmpty()
       .withMessage('Finish type is required')
       .isIn(['normal', 'foil', 'etched'])
-      .withMessage('Finish type must be normal, foil, or etched')
-    ,
+      .withMessage('Finish type must be normal, foil, or etched'),
     body('oracle_id')
       .optional()
       .isLength({ min: 36, max: 36 })

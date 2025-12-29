@@ -68,7 +68,6 @@ function CardDetailPageContent() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}`);
-      console.log('Card detail response:', data);
       if (data) {
         setCard(data.card);
       }
@@ -84,7 +83,6 @@ function CardDetailPageContent() {
     try {
       const client = buildClient();
       const { data } = await client.get(`/api/search/${cardId}/prints`);
-      console.log('dAll prints response:', data);
       if (data && data.cards) {
         setAllPrints(data.cards);
       }
@@ -137,7 +135,6 @@ function CardDetailPageContent() {
   };
 
   const incrementCard = async (finishType, oracleId) => {
-    console.log('Incrementing card:', cardId, finishType, oracleId);
     startLoading('addingToCollection');
     try {
       const client = buildClient();
