@@ -40,6 +40,7 @@ export default function DeckDetailPage() {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editFormat, setEditFormat] = useState('');
+  const [editVisibility, setEditVisibility] = useState('public');
   const [savingDeck, setSavingDeck] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({
     creatures: true,
@@ -63,6 +64,7 @@ export default function DeckDetailPage() {
       setEditName(deck.name || '');
       setEditDescription(deck.description || '');
       setEditFormat(deck.format || '');
+      setEditVisibility(deck.visibility || 'public');
     }
   }, [deck]);
 
@@ -217,7 +219,8 @@ export default function DeckDetailPage() {
       const { data } = await client.put(`/api/deck/${deckId}`, {
         name: editName,
         description: editDescription,
-        format: editFormat
+        format: editFormat,
+        visibility: editVisibility
       });
       setDeck(data.deck);
       toast.success('Deck updated');
@@ -515,6 +518,19 @@ export default function DeckDetailPage() {
                         <option value="vintage">Vintage</option>
                         <option value="pauper">Pauper</option>
                         <option value="pioneer">Pioneer</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="deck-visibility">Visibility</Label>
+                      <select
+                        id="deck-visibility"
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                        value={editVisibility}
+                        onChange={(e) => setEditVisibility(e.target.value)}
+                      >
+                        <option value="public">Public</option>
+                        <option value="unlisted">Unlisted</option>
+                        <option value="private">Private</option>
                       </select>
                     </div>
                   </div>

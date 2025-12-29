@@ -1,10 +1,13 @@
 import { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 
+export type Visibility = 'public' | 'private' | 'unlisted';
+
 export interface DeckAttrs {
   user_id: number;
   name: string;
   description?: string | null;
   format: string;
+  visibility?: Visibility;
 }
 
 export interface DeckDoc extends RowDataPacket {
@@ -13,6 +16,7 @@ export interface DeckDoc extends RowDataPacket {
   name: string;
   description: string | null;
   format: string;
+  visibility: Visibility;
   created_at: Date;
   updated_at: Date;
 }
@@ -31,10 +35,12 @@ export class Deck {
   }
 
   static async create(attrs: DeckAttrs): Promise<DeckDoc> {
+    const visibility = attrs.visibility || 'public';
+
     const [result] = await this.pool.execute<ResultSetHeader>(
-      `INSERT INTO decks (user_id, name, description, format)
-       VALUES (?, ?, ?, ?)`,
-      [attrs.user_id, attrs.name, attrs.description || null, attrs.format]
+      `INSERT INTO decks (user_id, name, description, format, visibility)
+       VALUES (?, ?, ?, ?, ?)`,
+      [attrs.user_id, attrs.name, attrs.description || null, attrs.format, visibility]
     );
 
     const [rows] = await this.pool.execute<DeckDoc[]>(
@@ -89,7 +95,7 @@ export class Deck {
 
   static async update(
     id: number,
-    updates: Partial<Pick<DeckAttrs, 'name' | 'description' | 'format'>>
+    updates: Partial<Pick<DeckAttrs, 'name' | 'description' | 'format' | 'visibility'>>
   ): Promise<DeckDoc | null> {
     const fields: string[] = [];
     const values: any[] = [];
@@ -107,6 +113,11 @@ export class Deck {
     if (updates.format !== undefined) {
       fields.push('format = ?');
       values.push(updates.format);
+    }
+
+    if (updates.visibility !== undefined) {
+      fields.push('visibility = ?');
+      values.push(updates.visibility);
     }
 
     if (fields.length === 0) {
