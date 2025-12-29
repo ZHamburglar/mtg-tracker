@@ -6,6 +6,7 @@ export interface UserCardCollectionDoc {
   id: number;
   user_id: number;
   card_id: string;
+  oracle_id?: string | null;
   quantity: number;
   finish_type: FinishType;
   created_at: Date;
@@ -15,6 +16,7 @@ export interface UserCardCollectionDoc {
 export interface AddCardToCollectionParams {
   user_id: number;
   card_id: string;
+  oracle_id?: string | null;
   quantity?: number;
   finish_type?: FinishType;
 }
@@ -53,8 +55,8 @@ export class UserCardCollection {
 
     // Use INSERT ... ON DUPLICATE KEY UPDATE to add or increment quantity
     const query = `
-      INSERT INTO user_card_collection (user_id, card_id, quantity, available, finish_type)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO user_card_collection (user_id, card_id, oracle_id, quantity, available, finish_type)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         quantity = quantity + VALUES(quantity),
         available = available + VALUES(available),
@@ -63,7 +65,7 @@ export class UserCardCollection {
 
     const [result] = await UserCardCollection.pool.query<mysql.ResultSetHeader>(
       query,
-      [params.user_id, params.card_id, quantity, quantity, finish_type]
+      [params.user_id, params.card_id, params.oracle_id ?? null, quantity, quantity, finish_type]
     );
 
     // Update cache in background (don't await)
@@ -311,12 +313,12 @@ export class UserCardCollection {
       throw new Error('Database pool not initialized. Call UserCardCollection.setPool() first.');
     }
 
+    // If oracle_id is stored on user_card_collection, query directly for performance.
     const query = `
       SELECT ucc.* 
       FROM user_card_collection ucc
-      INNER JOIN cards c ON ucc.card_id = c.id
-      WHERE ucc.user_id = ? AND c.oracle_id = ?
-      ORDER BY c.released_at DESC, ucc.finish_type
+      WHERE ucc.user_id = ? AND ucc.oracle_id = ?
+      ORDER BY ucc.finish_type
     `;
 
     const [rows] = await UserCardCollection.pool.query<mysql.RowDataPacket[]>(
