@@ -136,12 +136,14 @@ function CardDetailPageContent() {
     }
   };
 
-  const incrementCard = async (finishType) => {
+  const incrementCard = async (finishType, oracleId) => {
+    console.log('Incrementing card:', cardId, finishType, oracleId);
     startLoading('addingToCollection');
     try {
       const client = buildClient();
       await client.post(`/api/collection/${cardId}/increment`, {
-        finish_type: finishType
+        finish_type: finishType,
+        oracle_id: oracleId
       });
       toast.success('Card added to collection.');
       await checkCollection();
@@ -394,7 +396,7 @@ function CardDetailPageContent() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => incrementCard('normal')}
+                                onClick={() => incrementCard('normal', card.oracle_id)}
                                 disabled={isLoading('addingToCollection')}
                               >
                                 <Plus className="h-4 w-4" />
@@ -424,7 +426,7 @@ function CardDetailPageContent() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => incrementCard('foil')}
+                                onClick={() => incrementCard('foil', card.oracle_id)}
                                 disabled={isLoading('addingToCollection')}
                               >
                                 <Plus className="h-4 w-4" />
@@ -455,7 +457,7 @@ function CardDetailPageContent() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => incrementCard('etched')}
+                                onClick={() => incrementCard('etched', card.oracle_id)}
                                 disabled={isLoading('addingToCollection')}
                               >
                                 <Plus className="h-4 w-4" />
