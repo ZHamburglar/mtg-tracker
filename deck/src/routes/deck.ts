@@ -564,6 +564,97 @@ router.post(
 );
 
 /**
+ * POST /api/deck/:id/import
+ * Import a raw decklist (one card per line like "4 Lightning Bolt") and add cards to the deck.
+ */
+router.post(
+  '/api/deck/:id/import',
+  currentUser,
+  requireAuth,
+  [
+    body('text')
+      .optional()
+      .isString()
+      .withMessage('text must be a string')
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(String(req.currentUser!.id));
+      const deckId = parseInt(String(req.params.id));
+      const { text } = req.body;
+
+      const deck = await Deck.findById(deckId);
+      if (!deck) {
+        return res.status(404).json({ error: 'Deck not found' });
+      }
+
+      if (deck.user_id !== userId) {
+        return res.status(403).json({ error: 'Unauthorized to modify this deck' });
+      }
+
+      if (!text || typeof text !== 'string' || text.trim() === '') {
+        return res.status(400).json({ error: 'No decklist text provided' });
+      }
+
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const report: { imported: number; notFound: string[]; errors: { line: string; reason: string }[] } = {
+        imported: 0,
+        notFound: [],
+        errors: []
+      };
+
+      for (const line of lines) {
+        try {
+          const m = line.match(/^(\d+)\s+(.+)$/);
+          if (!m) {
+            report.notFound.push(line);
+            continue;
+          }
+
+          const qty = parseInt(m[1]!, 10);
+          const name = m[2]!.trim();
+
+          // Resolve name -> card id (uses DeckCard helper that queries cards table)
+          const resolved = await DeckCard.findCardByName(name);
+          if (!resolved) {
+            report.notFound.push(line);
+            continue;
+          }
+
+          // Check existing and either update or create
+          const existing = await DeckCard.findByDeckAndCard(deckId, resolved.id, 'mainboard');
+          if (existing) {
+            await DeckCard.updateQuantity(deckId, resolved.id, 'mainboard', existing.quantity + qty);
+          } else {
+            await DeckCard.create({
+              deck_id: deckId,
+              card_id: resolved.id,
+              quantity: qty,
+              category: 'mainboard',
+              is_commander: false,
+              oracle_id: resolved.oracle_id ?? null
+            });
+          }
+
+          report.imported += 1;
+        } catch (err) {
+          report.errors.push({ line, reason: err instanceof Error ? err.message : String(err) });
+        }
+      }
+
+      // Refresh deck counts
+      const counts = await DeckCard.getCardCountsByCategory(deckId);
+
+      res.status(200).json({ report, counts, timestamp: new Date().toISOString() });
+    } catch (error) {
+      logger.error('Error importing decklist:', error);
+      res.status(500).json({ error: 'Failed to import decklist', message: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  }
+);
+
+/**
  * PATCH /api/deck/:id/cards/:cardId
  * Update a card's quantity or category in a deck
  */

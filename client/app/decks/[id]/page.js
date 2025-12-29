@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2, Clipboard } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Settings, Share2, Clipboard, BookCopy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,22 @@ export default function DeckDetailPage() {
     artifacts: true,
     lands: true
   });
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importParseErrors, setImportParseErrors] = useState([]);
+  const [importParsedCount, setImportParsedCount] = useState(0);
+
+  // Preview is shown only after an import attempt finds errors
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const errorLines = useMemo(() => {
+    const linesSet = new Set();
+    (importParseErrors || []).forEach(e => linesSet.add(e.line));
+    if (importResult && importResult.notFound) importResult.notFound.forEach(l => linesSet.add(l));
+    if (importResult && importResult.errors) importResult.errors.forEach(e => linesSet.add(e.line));
+    return Array.from(linesSet);
+  }, [importParseErrors, importResult]);
 
   useEffect(() => {
     if (deckId) {
@@ -113,6 +129,70 @@ export default function DeckDetailPage() {
       toast.error('Failed to load deck cards');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const parseImportText = (text) => {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const errors = [];
+    for (const [i, line] of lines.entries()) {
+      const m = line.match(/^(\d+)\s+(.+)$/);
+      if (!m) {
+        errors.push({ line, index: i + 1, reason: 'Invalid format, expected: <quantity> <card name>' });
+      }
+    }
+    setImportParsedCount(lines.length);
+    setImportParseErrors(errors);
+    return { lines, errors };
+  };
+
+  const importDecklist = async () => {
+    if (!importText || importText.trim() === '') {
+      toast.error('Nothing to import');
+      return;
+    }
+
+    // run basic parsing and surface errors only after user clicks Import
+    const { errors, lines } = parseImportText(importText);
+    if (errors.length > 0) {
+      setImportResult({ parseErrors: errors, notFound: [], errors: [] });
+      setShowImportPreview(true);
+      toast.error(`${errors.length} malformed line(s) found — fix them or correct and try again`);
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const client = buildClient();
+      const { data } = await client.post(`/api/deck/${deckId}/import`, { text: importText });
+
+      // Backend returns a report with imported/notFound/errors
+      if (data && data.report) {
+        const report = data.report;
+        if ((report.notFound && report.notFound.length > 0) || (report.errors && report.errors.length > 0)) {
+          console.warn('Import report issues:', report);
+          // Show preview with backend-not-found / errors inline
+          setImportResult(report);
+          setShowImportPreview(true);
+          toast.error(`Imported with some issues: ${report.notFound?.length || 0} not found, ${report.errors?.length || 0} errors`);
+          // Keep dialog open so user can review/adjust
+        } else {
+          toast.success('Imported decklist');
+          await loadDeckCards();
+          setImportText('');
+          setImportOpen(false);
+        }
+      } else {
+        toast.success('Imported decklist');
+        await loadDeckCards();
+        setImportText('');
+        setImportOpen(false);
+      }
+    } catch (err) {
+      console.error('Import failed', err);
+      toast.error('Import failed — see console for details');
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -617,6 +697,54 @@ export default function DeckDetailPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <Dialog open={importOpen} onOpenChange={setImportOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Import Cards</DialogTitle>
+                    <DialogDescription>Paste your decklist below. One card per line in the format: <strong>quantity card name</strong>.</DialogDescription>
+                    <div>
+                      <Label>Example paste</Label>
+                      <pre className="text-sm bg-muted p-2 rounded mt-1">{`4 Lightning Bolt
+1 Black Lotus
+2 Counterspell`}</pre>
+                    </div>
+                  </DialogHeader>
+                  <div className="space-y-3 mt-2">
+                    <div>
+                      
+                      <Label htmlFor="import-list">Paste decklist</Label>
+                      <Textarea
+                        id="import-list"
+                        value={importText}
+                        onChange={(e) => setImportText(e.target.value)}
+                        placeholder={`e.g.\n4 Lightning Bolt\n1 Black Lotus\n2 Counterspell`}
+                        className="mt-1 w-full h-40"
+                      />
+                    </div>
+                    {/* Preview parsed lines and show inline errors */}
+                    {showImportPreview ? (
+                      <div>
+                        <Label>Errors</Label>
+                      <div className="mt-1 p-2 bg-muted rounded text-sm">
+                          {errorLines.length === 0 ? (
+                            <div className="text-muted-foreground">No error lines to preview</div>
+                          ) : (
+                            errorLines.map((line, idx) => (
+                              <div key={idx} className="flex items-center justify-between">
+                                <div className="break-words">{line} <span className="text-red-500 ml-2">&lt;&lt;Card Import Error&gt;&gt;</span></div>
+                              </div>
+                            ))
+                          )}
+                      </div>
+                      </div>
+                    ) : null}
+                    </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setImportOpen(false)}>Cancel</Button>
+                    <Button onClick={importDecklist} disabled={isImporting}>{isImporting ? 'Importing...' : 'Import'}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -710,31 +838,40 @@ export default function DeckDetailPage() {
               <CardTitle className="text-lg">Decklist</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="mainboard" className="flex-1">Main</TabsTrigger>
-                  <TabsTrigger value="sideboard" className="flex-1">Side</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="mainboard" className="mt-4">
-                  {loading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                  ) : (
+              {(!deckCards || deckCards.length === 0) ? (
+                <div className="flex items-center justify-center py-12">
+                  <Button onClick={() => setImportOpen(true)}>
+                    <BookCopy className="h-4 w-4 mr-2" />
+                    Import Cards
+                  </Button>
+                </div>
+              ) : (
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="mainboard" className="flex-1">Main</TabsTrigger>
+                    <TabsTrigger value="sideboard" className="flex-1">Side</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="mainboard" className="mt-4">
+                    {loading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {renderCardList(categorizedMainboard, 'mainboard')}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="sideboard" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {renderCardList(categorizedMainboard, 'mainboard')}
+                      {renderCardList(categorizedSideboard, 'sideboard')}
                     </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="sideboard" className="mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderCardList(categorizedSideboard, 'sideboard')}
-                  </div>
-                </TabsContent>
-                
-              </Tabs>
+                  </TabsContent>
+
+                </Tabs>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -742,7 +879,7 @@ export default function DeckDetailPage() {
         {/* Card Search Section (only for owners) */}
         {isOwner && (
           <div className="mt-6">
-            <Card>
+              <Card>
               <CardHeader>
                   <CardTitle>Add Cards</CardTitle>
                 <Input
