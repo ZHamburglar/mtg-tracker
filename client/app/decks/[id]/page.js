@@ -19,6 +19,7 @@ import buildClient from '../../api/build-client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { ManaSymbols, TextWithSymbols } from '@/components/ManaSymbols';
+import CombosCard from '@/components/CombosCard';
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -36,6 +37,7 @@ export default function DeckDetailPage() {
   const [activeTab, setActiveTab] = useState('mainboard');
   const [showStats, setShowStats] = useState(true);
   const [showCollection, setShowCollection] = useState(false);
+  const [showCombos, setShowCombos] = useState(true);
   const [collectionStatus, setCollectionStatus] = useState({});
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
@@ -72,8 +74,8 @@ export default function DeckDetailPage() {
   const errorLines = useMemo(() => {
     const linesSet = new Set();
     (importParseErrors || []).forEach(e => linesSet.add(e.line));
-    if (importResult && importResult.notFound) importResult.notFound.forEach(l => linesSet.add(l));
-    if (importResult && importResult.errors) importResult.errors.forEach(e => linesSet.add(e.line));
+    if (importResult && importResult.notFound) {importResult.notFound.forEach(l => linesSet.add(l));}
+    if (importResult && importResult.errors) {importResult.errors.forEach(e => linesSet.add(e.line));}
     return Array.from(linesSet);
   }, [importParseErrors, importResult]);
 
@@ -114,7 +116,7 @@ export default function DeckDetailPage() {
   }, [currentUser, deckCards.length]);
 
   const loadCombos = async () => {
-    if (!deckId) return;
+    if (!deckId) {return;}
     setCombosLoading(true);
     try {
       const client = buildClient();
@@ -224,7 +226,7 @@ export default function DeckDetailPage() {
   };
 
   const loadCollectionStatus = async (cards) => {
-    if (!currentUser || cards.length === 0) return;
+    if (!currentUser || cards.length === 0) {return;}
     console.log('cards: ', cards)
     try {
       const client = buildClient();
@@ -375,7 +377,7 @@ export default function DeckDetailPage() {
       const sorted = [...deckCards].sort((a, b) => {
         const ca = order[a.category] || 99;
         const cb = order[b.category] || 99;
-        if (ca !== cb) return ca - cb;
+        if (ca !== cb) {return ca - cb;}
         const an = a.card?.name?.toLowerCase() || '';
         const bn = b.card?.name?.toLowerCase() || '';
         return an.localeCompare(bn);
@@ -468,11 +470,11 @@ export default function DeckDetailPage() {
       entries = [['commander', commanders], ...entries];
     }
 
-    if (entries.length === 0) return null;
+    if (entries.length === 0) {return null;}
 
     return entries.map(([type, typeCards]) => {
       // For commander type, always show even if empty (for mainboard in commander format)
-      if (typeCards.length === 0 && !(deck && deck.format === 'commander' && category === 'mainboard' && type === 'commander')) return null;
+      if (typeCards.length === 0 && !(deck && deck.format === 'commander' && category === 'mainboard' && type === 'commander')) {return null;}
 
       return (
         <div key={type} className="mb-4">
@@ -864,101 +866,30 @@ export default function DeckDetailPage() {
             )}
           </Card>
 
-          {/* Combos (two-column: each takes half width on md+) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Combos Found: {combosList.length}</CardTitle>
-              </CardHeader>
+          {/* Combos */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Combos</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowCombos(!showCombos)}
+                >
+                  {showCombos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </CardHeader>
+            {showCombos && (
               <CardContent>
-                {combosLoading ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : combosList.length === 0 ? (
-                  <div className="text-muted-foreground text-sm">No combos found</div>
-                ) : (
-                  <div className="space-y-3">
-                    {combosList.map((combo, idx) => (
-                      <div key={`combo-${idx}`} className="border rounded p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm">{combo.title || combo.name || ((combo.included || combo.uses || []).map(inc => inc.card?.name || inc.name || inc).filter(Boolean).join(' + ') || `Combo ${idx + 1}`)}</div>
-                          <Button variant="ghost" size="icon" onClick={() => setExpandedCombos(prev => ({ ...prev, [idx]: !prev[idx] }))}>
-                            {expandedCombos[idx] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        {expandedCombos[idx] && (
-                          <div className="mt-2 text-sm space-y-2">
-
-                            {combo.notablePrerequisites && combo.notablePrerequisites.length > 0 && (
-                              <div className="flex flex-wrap gap-2 items-center">
-                                <span className="font-semibold">Prerequisites:</span>
-                                <TextWithSymbols text={Array.isArray(combo.notablePrerequisites) ? combo.notablePrerequisites.join(', ') : combo.notablePrerequisites} className="text-sm text-muted-foreground" size="w-4 h-4" />
-                              </div>
-                            )}
-                          
-                            {combo.description && (
-                              <div className="text-sm">
-                                <span className="font-semibold">Steps:</span>{' '}
-                                <TextWithSymbols text={combo.description} className="inline text-sm text-muted-foreground" size="w-4 h-4" />
-                              </div>
-                            )}
-
-                             {combo.produces && combo.produces.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {combo.produces.map((p, pi) => (
-                                  <span key={pi} className="text-xs bg-muted px-2 py-1 rounded">{p.feature?.name}</span>
-                                ))}
-                              </div>
-                            )}
-
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CombosCard title="Combos Found" items={combosList} loading={combosLoading} />
+                  <CombosCard title="Almost Included Combos" items={almostList} loading={combosLoading} />
+                </div>
               </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Almost Included Combos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {combosLoading ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : almostList.length === 0 ? (
-                  <div className="text-muted-foreground text-sm">No near-miss combos</div>
-                ) : (
-                  <div className="space-y-3">
-                    {almostList.map((a, ai) => (
-                      <div key={`almost-${ai}`} className="border rounded p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm">{a.title || a.name || `Candidate ${ai + 1}`}</div>
-                          <Button variant="ghost" size="icon" onClick={() => setExpandedAlmostIncluded(prev => ({ ...prev, [ai]: !prev[ai] }))}>
-                            {expandedAlmostIncluded[ai] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        {expandedAlmostIncluded[ai] && (
-                          <div className="mt-2 text-sm">
-                            {(a.uses || a.items || []).map((u, ui) => (
-                              <div key={ui} className="flex items-center gap-2">
-                                <div className="font-medium">{u.card?.name || u.name || u}</div>
-                                {u.card?.set_name && <div className="text-muted-foreground text-xs"> — {u.card.set_name}</div>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+            )}
+          </Card>
 
           {/* Decklist */}
           <Card>

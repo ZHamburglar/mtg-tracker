@@ -49,16 +49,16 @@ export default function CardFaceToggle({ cardId, cardData }) {
   const getImageUrl = (face) => {
     // For adventure layout, images are at the card level, not in card_faces
     if (cardData.image_uri_png || cardData.image_uri_small) {
-      if (cardData.image_uri_png) return cardData.image_uri_png;
-      if (cardData.image_uri_large) return cardData.image_uri_large;
-      if (cardData.image_uri_normal) return cardData.image_uri_normal;
-      if (cardData.image_uri_small) return cardData.image_uri_small;
+      if (cardData.image_uri_png) {return cardData.image_uri_png;}
+      if (cardData.image_uri_large) {return cardData.image_uri_large;}
+      if (cardData.image_uri_normal) {return cardData.image_uri_normal;}
+      if (cardData.image_uri_small) {return cardData.image_uri_small;}
     }
     // For other layouts, use face-specific images
-    if (face.image_uri_png) return face.image_uri_png;
-    if (face.image_uri_large) return face.image_uri_large;
-    if (face.image_uri_normal) return face.image_uri_normal;
-    if (face.image_uri_small) return face.image_uri_small;
+    if (face.image_uri_png) {return face.image_uri_png;}
+    if (face.image_uri_large) {return face.image_uri_large;}
+    if (face.image_uri_normal) {return face.image_uri_normal;}
+    if (face.image_uri_small) {return face.image_uri_small;}
     return null;
   };
 

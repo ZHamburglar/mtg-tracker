@@ -79,7 +79,7 @@ export function DropdownMultiselect({
                     : Object.keys(options);
                   
                   const toggleGroup = (groupName) => {
-                    if (!collapsible) return;
+                    if (!collapsible) {return;}
                     setCollapsedGroups(prev => ({
                       ...prev,
                       [groupName]: !prev[groupName]
