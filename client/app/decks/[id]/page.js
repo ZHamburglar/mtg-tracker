@@ -805,9 +805,10 @@ export default function DeckDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="space-y-6">
           {/* Deck Stats */}
-          <Card className="lg:col-span-1">
+          {/* Decklist */}
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Deck Stats</CardTitle>
@@ -863,8 +864,104 @@ export default function DeckDetailPage() {
             )}
           </Card>
 
+          {/* Combos (two-column: each takes half width on md+) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Combos Found: {combosList.length}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {combosLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : combosList.length === 0 ? (
+                  <div className="text-muted-foreground text-sm">No combos found</div>
+                ) : (
+                  <div className="space-y-3">
+                    {combosList.map((combo, idx) => (
+                      <div key={`combo-${idx}`} className="border rounded p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">{combo.title || combo.name || ((combo.included || combo.uses || []).map(inc => inc.card?.name || inc.name || inc).filter(Boolean).join(' + ') || `Combo ${idx + 1}`)}</div>
+                          <Button variant="ghost" size="icon" onClick={() => setExpandedCombos(prev => ({ ...prev, [idx]: !prev[idx] }))}>
+                            {expandedCombos[idx] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {expandedCombos[idx] && (
+                          <div className="mt-2 text-sm space-y-2">
+
+                            {combo.notablePrerequisites && combo.notablePrerequisites.length > 0 && (
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <span className="font-semibold">Prerequisites:</span>
+                                <TextWithSymbols text={Array.isArray(combo.notablePrerequisites) ? combo.notablePrerequisites.join(', ') : combo.notablePrerequisites} className="text-sm text-muted-foreground" size="w-4 h-4" />
+                              </div>
+                            )}
+                          
+                            {combo.description && (
+                              <div className="text-sm">
+                                <span className="font-semibold">Steps:</span>{' '}
+                                <TextWithSymbols text={combo.description} className="inline text-sm text-muted-foreground" size="w-4 h-4" />
+                              </div>
+                            )}
+
+                             {combo.produces && combo.produces.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {combo.produces.map((p, pi) => (
+                                  <span key={pi} className="text-xs bg-muted px-2 py-1 rounded">{p.feature?.name}</span>
+                                ))}
+                              </div>
+                            )}
+
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Almost Included Combos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {combosLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : almostList.length === 0 ? (
+                  <div className="text-muted-foreground text-sm">No near-miss combos</div>
+                ) : (
+                  <div className="space-y-3">
+                    {almostList.map((a, ai) => (
+                      <div key={`almost-${ai}`} className="border rounded p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">{a.title || a.name || `Candidate ${ai + 1}`}</div>
+                          <Button variant="ghost" size="icon" onClick={() => setExpandedAlmostIncluded(prev => ({ ...prev, [ai]: !prev[ai] }))}>
+                            {expandedAlmostIncluded[ai] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {expandedAlmostIncluded[ai] && (
+                          <div className="mt-2 text-sm">
+                            {(a.uses || a.items || []).map((u, ui) => (
+                              <div key={ui} className="flex items-center gap-2">
+                                <div className="font-medium">{u.card?.name || u.name || u}</div>
+                                {u.card?.set_name && <div className="text-muted-foreground text-xs"> — {u.card.set_name}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Decklist */}
-          <Card className="lg:col-span-3">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Decklist</CardTitle>
             </CardHeader>
@@ -889,14 +986,14 @@ export default function DeckDetailPage() {
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {renderCardList(categorizedMainboard, 'mainboard')}
                       </div>
                     )}
                   </TabsContent>
 
                   <TabsContent value="sideboard" className="mt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {renderCardList(categorizedSideboard, 'sideboard')}
                     </div>
                   </TabsContent>
@@ -907,69 +1004,7 @@ export default function DeckDetailPage() {
           </Card>
         </div>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Combos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {combosLoading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : (combosList.length === 0 && almostList.length === 0) ? (
-              <div className="text-muted-foreground text-sm">No combos detected</div>
-            ) : (
-              <div className="space-y-4">
-                {combosList.map((combo, idx) => (
-                  <div key={`combo-${idx}`} className="border rounded p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">{combo.title || combo.name || `Combo ${idx + 1}`}</div>
-                      <Button variant="ghost" size="icon" onClick={() => setExpandedCombos(prev => ({ ...prev, [idx]: !prev[idx] }))}>
-                        {expandedCombos[idx] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {expandedCombos[idx] && (
-                      <div className="mt-2 text-sm space-y-2">
-                        {(combo.included || combo.uses || []).map((inc, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="font-medium">{inc.card?.name || inc.name || inc}</div>
-                            {inc.card?.set_name && <div className="text-muted-foreground text-xs"> — {inc.card.set_name}</div>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {almostList.length > 0 && (
-                  <div>
-                    <div className="font-medium mb-2">Almost Included Combos</div>
-                    {almostList.map((a, ai) => (
-                      <div key={`almost-${ai}`} className="border rounded p-3 mb-2">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm">{a.title || a.name || `Candidate ${ai + 1}`}</div>
-                          <Button variant="ghost" size="icon" onClick={() => setExpandedAlmostIncluded(prev => ({ ...prev, [ai]: !prev[ai] }))}>
-                            {expandedAlmostIncluded[ai] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        {expandedAlmostIncluded[ai] && (
-                          <div className="mt-2 text-sm">
-                            {(a.uses || a.items || []).map((u, ui) => (
-                              <div key={ui} className="flex items-center gap-2">
-                                <div className="font-medium">{u.card?.name || u.name || u}</div>
-                                {u.card?.set_name && <div className="text-muted-foreground text-xs"> — {u.card.set_name}</div>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        
 
         {/* Card Search Section (only for owners) */}
         {isOwner && (
