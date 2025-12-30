@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import path from 'path';
 import { app } from "./app";
 import { createMysqlPoolWithRetry } from './config/mysql';
+import { createRedisClient, closeRedisClient } from './config/redis';
 import { runMigrations } from '@mtg-tracker/common';
 import { Deck } from './models/deck';
 import { DeckCard } from './models/deck-card';
@@ -12,17 +13,10 @@ import { logger } from './logger';
 let pool: mysql.Pool | undefined;
 
 const start = async () => {
-  // if (!process.env.NATS_URL) {
-  //   throw new Error("NATS_URL must be defined");
-  // }
-
-  // if (!process.env.NATS_CLUSTER_ID) {
-  //   throw new Error("NATS_CLUSTER_ID must be defined");
-  // }
-
-  // if (!process.env.NATS_CLIENT_ID) {
-  //   throw new Error("NATS_CLIENT_ID must be defined");
-  // }
+  logger.info('Starting up...', {
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV || 'development'
+  });
 
   if (!process.env.MYSQL_HOST) {
     throw new Error("MYSQL_HOST must be defined");
@@ -41,32 +35,24 @@ const start = async () => {
   }
 
   if (process.env.MYSQL_DATABASE && process.env.MYSQL_PASSWORD && process.env.MYSQL_USER && process.env.MYSQL_HOST) {
-    logger.log("Connecting to MySQL with the following config:");
     logger.log(`Host: ${process.env.MYSQL_HOST}`);
     logger.log(`User: ${process.env.MYSQL_USER}`);
     logger.log(`Database: ${process.env.MYSQL_DATABASE}`);
   }
-
-  // // Connect to NATS
-  // try {
-  //   await natsWrapper.connect(
-  //     process.env.NATS_URL,
-  //     process.env.NATS_CLUSTER_ID,
-  //     process.env.NATS_CLIENT_ID
-  //   );
-  //   logger.log('Connected to NATS JetStream');
-  // } catch (err) {
-  //   logger.error('Failed to connect to NATS:', err);
-  //   throw err;
-  // }
 
   pool = await createMysqlPoolWithRetry({ retries: 20, delay: 3000 });
   // You can export the pool or set it in a global variable if needed
   logger.log('pool created:', pool !== undefined);
 
   if (!pool) {
-    throw new Error("Failed to create database pool");
+    throw new Error("Failed to create database pool.");
   }
+
+  // Connect to Redis
+  logger.log("Connecting to Redis...");
+  await createRedisClient();
+  logger.info('Redis client created successfully');
+
 
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
@@ -94,19 +80,25 @@ const start = async () => {
 start();
 
 process.on("SIGINT", async () => {
-  logger.log("SIGINT received, closing connections...");
-  // await natsWrapper.close();
+  logger.info("SIGINT received, shutting down gracefully...", {
+    timestamp: new Date().toISOString()
+  });
+  await closeRedisClient();
   if (pool) {
     await pool.end();
+    logger.info("Database connection closed");
   }
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  logger.log("SIGTERM received, closing connections...");
-  // await natsWrapper.close();
+  logger.info("SIGTERM received, shutting down gracefully...", {
+    timestamp: new Date().toISOString()
+  });
+  await closeRedisClient();
   if (pool) {
     await pool.end();
+    logger.info("Database connection closed");
   }
   process.exit(0);
 });
