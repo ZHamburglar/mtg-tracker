@@ -10,7 +10,7 @@ import { useSymbology } from '@/hooks/use-symbology';
 export const TextWithSymbols = ({ text, size = 'w-4 h-4', className = '' }) => {
   const { symbols, loading } = useSymbology();
 
-  if (!text) return null;
+  if (!text) {return null;}
 
   // If still loading, show text as-is
   if (loading) {
@@ -62,7 +62,7 @@ export const TextWithSymbols = ({ text, size = 'w-4 h-4', className = '' }) => {
 export const ManaSymbols = ({ manaString, size = 'w-5 h-5' }) => {
   const { symbols, loading } = useSymbology();
 
-  if (!manaString) return null;
+  if (!manaString) {return null;}
   
   // Parse "{X}{U}{U}" into ['{X}', '{U}', '{U}']
   const symbolMatches = manaString.match(/\{[^}]+\}/g);

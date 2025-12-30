@@ -111,8 +111,8 @@ export function CardSearch({ initialQuery = '', initialFilters = {} }) {
       if (data && data.sets) {
         // Sort sets by release date descending
         const sortedSets = data.sets.sort((a, b) => {
-          if (!a.released_at) return 1;
-          if (!b.released_at) return -1;
+          if (!a.released_at) {return 1;}
+          if (!b.released_at) {return -1;}
           return new Date(b.released_at) - new Date(a.released_at);
         });
         setSets(sortedSets);
@@ -160,7 +160,7 @@ export function CardSearch({ initialQuery = '', initialFilters = {} }) {
   const handleApplyFilters = () => {
     const filters = Object.entries(advancedFilters)
       .filter(([_, value]) => {
-        if (Array.isArray(value)) return value.length > 0;
+        if (Array.isArray(value)) {return value.length > 0;}
         return value;
       })
       .reduce((acc, [key, value]) => {
