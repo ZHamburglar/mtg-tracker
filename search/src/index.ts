@@ -45,7 +45,7 @@ const start = async () => {
   logger.info('MySQL pool created successfully');
 
   if (!pool) {
-    throw new Error("Failed to create database pool");
+    throw new Error("Failed to create database pool.");
   }
 
   // Connect to Redis
@@ -55,9 +55,7 @@ const start = async () => {
 
   // Run migrations from the migrations folder
   // Use process.cwd() to get the project root, then navigate to src/migrations
-  // const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-  // await runMigrations(pool, migrationsDir, 'search');
-
+ 
   // Initialize models with database pool
   logger.info('Initializing models...');
   Card.setPool(pool);
