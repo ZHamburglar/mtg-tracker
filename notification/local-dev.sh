@@ -1,16 +1,21 @@
 #!/bin/bash
 
 # Local Development Helper Script
-# This script helps manage local development for the notification service
+# This script helps manage local development for the collection service
 
 set -e
+
+# Ensure script runs under bash (re-exec with bash if invoked with sh)
+if [ -z "${BASH_VERSION}" ]; then
+    exec bash "$0" "$@"
+fi
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}MTG Tracker Notification - Local Dev Helper${NC}"
+echo -e "${GREEN}MTG Tracker Collection - Local Dev Helper${NC}"
 echo ""
 
 # Check if kubectl is installed
@@ -31,6 +36,17 @@ check_port_forward() {
     fi
 }
 
+# Check Redis port-forward
+check_redis_port_forward() {
+    if lsof -Pi :6379 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+        echo -e "${GREEN}✓ Redis port-forward is running on port 6379${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}! Redis port-forward is NOT running${NC}"
+        return 1
+    fi
+}
+
 # Start MySQL port-forward
 start_port_forward() {
     echo -e "${YELLOW}Starting MySQL port-forward...${NC}"
@@ -46,10 +62,44 @@ start_port_forward() {
         echo -e "${RED}✗ Failed to start port-forward${NC}"
         exit 1
     fi
+    # also start redis port-forward if available
+    start_redis_port_forward
+}
+
+# Start Redis port-forward
+start_redis_port_forward() {
+    printf "%bStarting Redis port-forward...%b\n" "$YELLOW" "$NC"
+
+    # Try to detect a redis service name if svc/redis doesn't exist
+    REDIS_SVC="redis"
+    if ! kubectl get svc "$REDIS_SVC" >/dev/null 2>&1; then
+        DETECTED=$(kubectl get svc --no-headers -o custom-columns=":metadata.name" 2>/dev/null | grep -i redis | head -n1 || true)
+        if [ -n "$DETECTED" ]; then
+            REDIS_SVC="$DETECTED"
+            printf "%bUsing detected redis service: %s% b\n" "$YELLOW" "$REDIS_SVC" "$NC"
+        else
+            printf "%bNo Redis service named 'redis' found in the current context.%b\n" "$YELLOW" "$NC"
+            printf "%bYou can create a service named 'redis' or adjust the script to use your service name.%b\n" "$YELLOW" "$NC"
+            return 1
+        fi
+    fi
+
+    kubectl port-forward svc/"$REDIS_SVC" 6379:6379 > /tmp/redis-port-forward.log 2>&1 &
+    RPF_PID=$!
+    echo $RPF_PID > /tmp/redis-port-forward.pid
+    sleep 2
+    if check_redis_port_forward; then
+        printf "%b✓ Redis port-forward started successfully (PID: %s)%b\n" "$GREEN" "$RPF_PID" "$NC"
+    else
+        printf "%b✗ Failed to start Redis port-forward — check /tmp/redis-port-forward.log for details%b\n" "$RED" "$NC"
+        tail -n 40 /tmp/redis-port-forward.log || true
+        return 1
+    fi
 }
 
 # Stop MySQL port-forward
 stop_port_forward() {
+    # Stop MySQL port-forward
     if [ -f /tmp/mysql-port-forward.pid ]; then
         PF_PID=$(cat /tmp/mysql-port-forward.pid)
         if ps -p $PF_PID > /dev/null 2>&1; then
@@ -57,17 +107,37 @@ stop_port_forward() {
             rm /tmp/mysql-port-forward.pid
             echo -e "${GREEN}✓ Stopped MySQL port-forward (PID: $PF_PID)${NC}"
         else
-            echo -e "${YELLOW}! Port-forward process not found${NC}"
+            echo -e "${YELLOW}! MySQL port-forward process not found${NC}"
             rm /tmp/mysql-port-forward.pid
         fi
     else
-        # Try to find and kill any kubectl port-forward on 3306
         PF_PID=$(lsof -t -i:3306 -sTCP:LISTEN 2>/dev/null || echo "")
         if [ -n "$PF_PID" ]; then
             kill $PF_PID
             echo -e "${GREEN}✓ Stopped port-forward on port 3306${NC}"
         else
             echo -e "${YELLOW}! No port-forward found running on port 3306${NC}"
+        fi
+    fi
+
+    # Stop Redis port-forward
+    if [ -f /tmp/redis-port-forward.pid ]; then
+        RPF_PID=$(cat /tmp/redis-port-forward.pid)
+        if ps -p $RPF_PID > /dev/null 2>&1; then
+            kill $RPF_PID
+            rm /tmp/redis-port-forward.pid
+            echo -e "${GREEN}✓ Stopped Redis port-forward (PID: $RPF_PID)${NC}"
+        else
+            echo -e "${YELLOW}! Redis port-forward process not found${NC}"
+            rm /tmp/redis-port-forward.pid
+        fi
+    else
+        RPF_PID=$(lsof -t -i:6379 -sTCP:LISTEN 2>/dev/null || echo "")
+        if [ -n "$RPF_PID" ]; then
+            kill $RPF_PID
+            echo -e "${GREEN}✓ Stopped port-forward on port 6379${NC}"
+        else
+            echo -e "${YELLOW}! No port-forward found running on port 6379${NC}"
         fi
     fi
 }
@@ -90,6 +160,24 @@ test_mysql() {
         fi
     else
         echo -e "${RED}✗ Port-forward not running${NC}"
+    fi
+}
+
+# Test Redis connection
+test_redis() {
+    echo -e "${YELLOW}Testing Redis connection...${NC}"
+    if check_redis_port_forward; then
+        if command -v redis-cli &> /dev/null; then
+            if redis-cli -h localhost -p 6379 PING | grep -q PONG; then
+                echo -e "${GREEN}✓ Redis connection successful${NC}"
+            else
+                echo -e "${RED}✗ Redis PING failed${NC}"
+            fi
+        else
+            echo -e "${YELLOW}! redis-cli not installed, skipping Redis ping test${NC}"
+        fi
+    else
+        echo -e "${RED}✗ Redis port-forward not running${NC}"
     fi
 }
 
@@ -143,7 +231,7 @@ show_menu() {
     echo "2) Just start port-forward"
     echo "3) Stop port-forward"
     echo "4) Check status"
-    echo "5) Test MySQL connection"
+    echo "5) Test DB & Redis connection"
     echo "6) Check deployed services"
     echo "7) View logs"
     echo "8) Exit"
@@ -163,6 +251,10 @@ while true; do
             echo ""
             echo -e "${GREEN}Starting local development server...${NC}"
             echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
+            # Ensure local dev connects to forwarded Redis instead of cluster DNS
+            export REDIS_HOST=127.0.0.1
+            export REDIS_PORT=6379
+            echo -e "${YELLOW}Exported REDIS_HOST=$REDIS_HOST REDIS_PORT=$REDIS_PORT for local dev${NC}"
             npm run dev:local
             ;;
         2)
@@ -177,12 +269,17 @@ while true; do
             ;;
         4)
             check_port_forward
+            check_redis_port_forward
             if [ -f /tmp/mysql-port-forward.pid ]; then
-                echo "Port-forward PID: $(cat /tmp/mysql-port-forward.pid)"
+                echo "MySQL port-forward PID: $(cat /tmp/mysql-port-forward.pid)"
+            fi
+            if [ -f /tmp/redis-port-forward.pid ]; then
+                echo "Redis port-forward PID: $(cat /tmp/redis-port-forward.pid)"
             fi
             ;;
         5)
             test_mysql
+            test_redis
             ;;
         6)
             check_services

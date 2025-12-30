@@ -5,6 +5,11 @@
 
 set -e
 
+# Ensure script runs under bash (re-exec with bash if invoked with sh)
+if [ -z "${BASH_VERSION}" ]; then
+    exec bash "$0" "$@"
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -63,15 +68,32 @@ start_port_forward() {
 
 # Start Redis port-forward
 start_redis_port_forward() {
-    echo -e "${YELLOW}Starting Redis port-forward...${NC}"
-    kubectl port-forward svc/redis 6379:6379 > /tmp/redis-port-forward.log 2>&1 &
+    printf "%bStarting Redis port-forward...%b\n" "$YELLOW" "$NC"
+
+    # Try to detect a redis service name if svc/redis doesn't exist
+    REDIS_SVC="redis"
+    if ! kubectl get svc "$REDIS_SVC" >/dev/null 2>&1; then
+        DETECTED=$(kubectl get svc --no-headers -o custom-columns=":metadata.name" 2>/dev/null | grep -i redis | head -n1 || true)
+        if [ -n "$DETECTED" ]; then
+            REDIS_SVC="$DETECTED"
+            printf "%bUsing detected redis service: %s% b\n" "$YELLOW" "$REDIS_SVC" "$NC"
+        else
+            printf "%bNo Redis service named 'redis' found in the current context.%b\n" "$YELLOW" "$NC"
+            printf "%bYou can create a service named 'redis' or adjust the script to use your service name.%b\n" "$YELLOW" "$NC"
+            return 1
+        fi
+    fi
+
+    kubectl port-forward svc/"$REDIS_SVC" 6379:6379 > /tmp/redis-port-forward.log 2>&1 &
     RPF_PID=$!
     echo $RPF_PID > /tmp/redis-port-forward.pid
-    sleep 1
+    sleep 2
     if check_redis_port_forward; then
-        echo -e "${GREEN}✓ Redis port-forward started successfully (PID: $RPF_PID)${NC}"
+        printf "%b✓ Redis port-forward started successfully (PID: %s)%b\n" "$GREEN" "$RPF_PID" "$NC"
     else
-        echo -e "${RED}✗ Failed to start Redis port-forward${NC}"
+        printf "%b✗ Failed to start Redis port-forward — check /tmp/redis-port-forward.log for details%b\n" "$RED" "$NC"
+        tail -n 40 /tmp/redis-port-forward.log || true
+        return 1
     fi
 }
 
@@ -229,6 +251,10 @@ while true; do
             echo ""
             echo -e "${GREEN}Starting local development server...${NC}"
             echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
+            # Ensure local dev connects to forwarded Redis instead of cluster DNS
+            export REDIS_HOST=127.0.0.1
+            export REDIS_PORT=6379
+            echo -e "${YELLOW}Exported REDIS_HOST=$REDIS_HOST REDIS_PORT=$REDIS_PORT for local dev${NC}"
             npm run dev:local
             ;;
         2)
