@@ -1,10 +1,5 @@
 {
   "name": "mtg-tracker-root",
   "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "lint:client": "npm --prefix client run lint",
-    "lint:client:fix": "npm --prefix client run lint:fix",
-    "lint": "npm run lint:client"
-  }
+  "private": true
 }

@@ -1,5 +1,6 @@
 import { Loader2, ChevronDown, ChevronUp, Combine, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Pagination, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { TextWithSymbols } from '@/components/ManaSymbols';
 import React, { useState, useEffect } from 'react';
@@ -30,10 +31,14 @@ export default function CombosCard({ title = 'Combos', items = [], loading = fal
         ) : items.length === 0 ? (
           <div className="text-muted-foreground text-sm">{title === 'Combos Found' ? 'No combos found' : 'No near-miss combos'}</div>
         ) : (
-          <div className="space-y-3">
+          <>
+            <div className="space-y-3">
             {pageItems.map((item, idx) => {
                 const globalIdx = start + idx;
-                const header = item.title || item.name || `${title} ${globalIdx + 1}`;
+                const header = item.title || item.name || (
+                  (item.included || item.uses || item.items || [])
+                    .map(i => (i.card?.name || i.name || String(i))).slice(0, 6).join(' + ') || `${title} ${globalIdx + 1}`
+                );
                 return (
                   <div key={globalIdx} className="border rounded px-3 py-2">
                     <div className="flex items-center justify-between">
@@ -109,7 +114,20 @@ export default function CombosCard({ title = 'Combos', items = [], loading = fal
                   </div>
                 );
               })}
-          </div>
+            </div>
+            {totalPages > 1 && (
+              <Pagination className="mt-3">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} aria-disabled={page <= 1} />
+                    <span className="text-sm text-muted-foreground">Page {page} / {totalPages}</span>
+                    <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} aria-disabled={page >= totalPages} />
+                  </div>
+                  <div className="text-sm text-muted-foreground">{items.length} total</div>
+                </div>
+              </Pagination>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
