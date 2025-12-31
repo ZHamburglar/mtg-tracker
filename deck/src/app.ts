@@ -8,6 +8,8 @@ import { errorHandler } from "@mtg-tracker/common"
 // Import routes here and use them
 import { healthRouter } from "./routes/health";
 import { deckRouter } from "./routes/deck";
+import { comboRouter } from "./routes/combos";
+import { analyticsRouter } from "./routes/analytics";
 
 import { logger } from "./logger";
 
@@ -34,7 +36,9 @@ const timestamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.g
 logger.log(`[${timestamp}] Deck service up and running!`);
 // Use the imported routes here
 app.use(healthRouter);
+app.use(comboRouter);
 app.use(deckRouter);
+app.use(analyticsRouter);
 
 // Error handler must be added AFTER all routes
 app.use(errorHandler);
