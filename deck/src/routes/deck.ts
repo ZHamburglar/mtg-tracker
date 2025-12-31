@@ -3,6 +3,7 @@ import { body, query, param } from 'express-validator';
 import { validateRequest, currentUser, requireAuth } from '@mtg-tracker/common';
 import { Deck } from '../models/deck';
 import { DeckCard } from '../models/deck-card';
+import { clearCombosCache } from './combos';
 import { logger } from '../logger';
 
 const router = express.Router();
@@ -273,6 +274,13 @@ router.put(
 
       logger.info(`Deck updated: ${deckId} by user ${userId}`);
 
+      // Invalidate combos cache — deck metadata may affect combos
+      try {
+        await clearCombosCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear combos cache after deck update', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
       res.status(200).json({
         deck: updatedDeck,
         timestamp: new Date().toISOString()
@@ -318,6 +326,13 @@ router.delete(
       await Deck.delete(deckId);
 
       logger.info(`Deck deleted: ${deckId} by user ${userId}`);
+
+      // Invalidate combos cache for deleted deck
+      try {
+        await clearCombosCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear combos cache after deck deletion', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
 
       res.status(204).send();
     } catch (error) {
@@ -440,6 +455,13 @@ router.post(
 
       logger.info(`Card ${card_id} added to deck ${deckId} (${category})`);
 
+      // Invalidate combos cache for this deck
+      try {
+        await clearCombosCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear combos cache after adding card', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
       res.status(201).json({
         deckCard,
         timestamp: new Date().toISOString()
@@ -536,6 +558,13 @@ router.post(
 
       // Refresh deck counts
       const counts = await DeckCard.getCardCountsByCategory(deckId);
+
+      // Invalidate combos cache for this deck after import
+      try {
+        await clearCombosCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear combos cache after import', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
 
       res.status(200).json({ report, counts, timestamp: new Date().toISOString() });
     } catch (error) {
@@ -648,6 +677,13 @@ router.patch(
 
       logger.info(`Card ${cardId} updated in deck ${deckId}`);
 
+      // Invalidate combos cache for this deck after card update
+      try {
+        await clearCombosCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear combos cache after updating card', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
       res.status(200).json({
         deckCard,
         timestamp: new Date().toISOString()
@@ -704,6 +740,13 @@ router.delete(
         return res.status(404).json({
           error: 'Card not found in deck'
         });
+      }
+
+      // Invalidate combos cache for this deck after card removal
+      try {
+        await clearCombosCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear combos cache after removing card', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
       res.status(204).send();

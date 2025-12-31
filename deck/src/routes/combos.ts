@@ -3,8 +3,17 @@ import axios from 'axios';
 import { Deck } from '../models/deck';
 import { DeckCard } from '../models/deck-card';
 import { logger } from '../logger';
+import { getRedisClient, isRedisConnected } from '../config/redis';
 
 const router = express.Router();
+
+// Cache for combos endpoint
+// In-memory fallback cache (used if Redis is unavailable)
+// stores a single cache entry with its key so it can be invalidated
+let combosCache: { key: string; data: any; timestamp: number } | null = null;
+const COMBOS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const COMBOS_CACHE_PREFIX = 'combos:deck:';
+
 
 /**
  * GET /api/deck/:id/combos
@@ -41,6 +50,28 @@ router.get(
         }));
 
       const payload = { main, commanders };
+
+      // Try to read cached response from Redis (or in-memory fallback)
+      const cacheKey = `${COMBOS_CACHE_PREFIX}${deckId}`;
+      try {
+        if (isRedisConnected()) {
+          const client = getRedisClient();
+          const cached = await client.get(cacheKey);
+          if (cached) {
+            logger.info('Combos cache hit (redis)', { deckId });
+            const parsed = JSON.parse(cached);
+            return res.status(200).json(parsed);
+          }
+        } else if (combosCache && (Date.now() - combosCache.timestamp) < COMBOS_CACHE_TTL) {
+          // ensure the cached entry matches this deck
+          if (combosCache.key === cacheKey) {
+            logger.info('Combos cache hit (memory)', { deckId });
+            return res.status(200).json(combosCache.data);
+          }
+        }
+      } catch (err) {
+        logger.error('Error reading combos cache', { error: err instanceof Error ? err.message : String(err) });
+      }
 
       // Send request to Commander Spellbook API
       const apiUrl = 'https://backend.commanderspellbook.com/find-my-combos';
@@ -136,13 +167,30 @@ router.get(
         sanitizedAlmostIncluded = Object.values(almostIncludedRaw).map(sanitizeItem);
       }
 
-      res.status(200).json({
+      const responsePayload = {
         count: includedCount,
         combos: sanitizedIncluded,
         almostIncluded: sanitizedAlmostIncluded,
         bracketTags: bracketTagsCount,
         timestamp: new Date().toISOString()
-      });
+      };
+
+      // Store in Redis (or memory fallback)
+      try {
+        if (isRedisConnected()) {
+          const client = getRedisClient();
+          // Set with TTL in seconds
+          await client.set(cacheKey, JSON.stringify(responsePayload), { EX: Math.floor(COMBOS_CACHE_TTL / 1000) });
+          logger.info('Combos cache set (redis)', { deckId });
+        } else {
+          combosCache = { key: cacheKey, data: responsePayload, timestamp: Date.now() };
+          logger.info('Combos cache set (memory)', { deckId });
+        }
+      } catch (err) {
+        logger.error('Error setting combos cache', { error: err instanceof Error ? err.message : String(err) });
+      }
+
+      return res.status(200).json(responsePayload);
     } catch (error) {
       logger.error('Error checking combos for deck:', error);
       res.status(500).json({
@@ -153,4 +201,28 @@ router.get(
   }
 );
 
+// Export helper to clear combos cache for a deck (used by other routes when deck changes)
+export async function clearCombosCache(deckId?: number) {
+  const key = deckId ? `${COMBOS_CACHE_PREFIX}${deckId}` : undefined;
+  try {
+    if (isRedisConnected() && key) {
+      const client = getRedisClient();
+      await client.del(key);
+      logger.info('Cleared combos cache (redis)', { deckId });
+    }
+  } catch (err) {
+    logger.error('Failed to clear combos cache in redis', { error: err instanceof Error ? err.message : String(err), deckId });
+  }
+
+  // clear in-memory fallback if present and matches
+  if (combosCache) {
+    if (!key || combosCache.key === key) {
+      combosCache = null;
+      logger.info('Cleared combos cache (memory)', { deckId });
+    }
+  }
+}
+
 export { router as comboRouter };
+
+
