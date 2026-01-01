@@ -55,6 +55,7 @@ router.get(
     try {
       const limit = parseInt(req.query.limit as string) || 6;
 
+      // Retrieve recent public decks
       const decks = await Deck.findRecent(limit);
 
       // Add card counts to each deck
