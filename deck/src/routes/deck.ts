@@ -4,9 +4,39 @@ import { validateRequest, currentUser, requireAuth } from '@mtg-tracker/common';
 import { Deck } from '../models/deck';
 import { DeckCard } from '../models/deck-card';
 import { clearCombosCache } from './combos';
+import { getRedisClient, isRedisConnected } from '../config/redis';
 import { logger } from '../logger';
 
 const router = express.Router();
+
+// Deck cache (redis-backed with in-memory fallback map)
+const DECK_CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
+const DECK_CACHE_PREFIX = 'deck:id:';
+const deckCacheMap: Map<string, { data: any; timestamp: number }> = new Map();
+
+export async function clearDeckCache(deckId?: number) {
+  const key = deckId ? `${DECK_CACHE_PREFIX}${deckId}` : undefined;
+  try {
+    if (isRedisConnected() && key) {
+      const client = getRedisClient();
+      await client.del(key);
+      logger.info('Cleared deck cache (redis)', { deckId });
+    }
+  } catch (err) {
+    logger.error('Failed to clear deck cache in redis', { error: err instanceof Error ? err.message : String(err), deckId });
+  }
+
+  if (!key) {
+    deckCacheMap.clear();
+    logger.info('Cleared all deck cache (memory)');
+    return;
+  }
+
+  if (deckCacheMap.has(key)) {
+    deckCacheMap.delete(key);
+    logger.info('Cleared deck cache (memory)', { deckId });
+  }
+}
 
 /**
  * GET /api/deck/recent
@@ -134,16 +164,56 @@ router.get(
         });
       }
 
+      // Try cache (redis or memory) before computing
+      const cacheKey = `${DECK_CACHE_PREFIX}${deckId}`;
+      try {
+        if (isRedisConnected()) {
+          const client = getRedisClient();
+          const cached = await client.get(cacheKey);
+          if (cached) {
+            logger.info('Deck cache hit (redis)', { deckId });
+            const parsed = JSON.parse(cached);
+            return res.status(200).json(parsed);
+          }
+        } else if (deckCacheMap.has(cacheKey)) {
+          const entry = deckCacheMap.get(cacheKey)!;
+          if ((Date.now() - entry.timestamp) < DECK_CACHE_TTL) {
+            logger.info('Deck cache hit (memory)', { deckId });
+            return res.status(200).json(entry.data);
+          } else {
+            deckCacheMap.delete(cacheKey);
+          }
+        }
+      } catch (err) {
+        logger.error('Error reading deck cache', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
       // Add card counts
       const counts = await DeckCard.getCardCountsByCategory(deckId);
 
-      res.status(200).json({
+      const responsePayload = {
         deck: {
           ...deck,
           ...counts
         },
         timestamp: new Date().toISOString()
-      });
+      };
+
+      // Store in cache (redis or memory)
+      try {
+        if (isRedisConnected()) {
+          const client = getRedisClient();
+          await client.set(cacheKey, JSON.stringify(responsePayload), { EX: Math.floor(DECK_CACHE_TTL / 1000) });
+          logger.info('Deck cache set (redis)', { deckId });
+        } else {
+          deckCacheMap.set(cacheKey, { data: responsePayload, timestamp: Date.now() });
+          logger.info('Deck cache set (memory)', { deckId });
+        }
+      } catch (err) {
+        logger.error('Error setting deck cache', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
+      res.status(200).json(responsePayload);
     } catch (error) {
       logger.error('Error fetching deck:', error);
       res.status(500).json({
@@ -199,6 +269,13 @@ router.post(
       });
 
       logger.info(`Deck created: ${deck.id} by user ${userId}`);
+
+      // Clear any stale cache for this deck (newly created)
+      try {
+        await clearDeckCache(deck.id);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after create', { error: err instanceof Error ? err.message : String(err), deckId: deck.id });
+      }
 
       res.status(201).json({
         deck,
@@ -281,6 +358,13 @@ router.put(
         logger.error('Failed to clear combos cache after deck update', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
+      // Invalidate deck cache
+      try {
+        await clearDeckCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after deck update', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
       res.status(200).json({
         deck: updatedDeck,
         timestamp: new Date().toISOString()
@@ -332,6 +416,13 @@ router.delete(
         await clearCombosCache(deckId);
       } catch (err) {
         logger.error('Failed to clear combos cache after deck deletion', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
+      // Invalidate deck cache for deleted deck
+      try {
+        await clearDeckCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after deck deletion', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
       res.status(204).send();
@@ -462,6 +553,13 @@ router.post(
         logger.error('Failed to clear combos cache after adding card', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
+      // Invalidate deck cache for this deck
+      try {
+        await clearDeckCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after adding card', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
       res.status(201).json({
         deckCard,
         timestamp: new Date().toISOString()
@@ -564,6 +662,13 @@ router.post(
         await clearCombosCache(deckId);
       } catch (err) {
         logger.error('Failed to clear combos cache after import', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
+      // Invalidate deck cache for this deck after import
+      try {
+        await clearDeckCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after import', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
       res.status(200).json({ report, counts, timestamp: new Date().toISOString() });
@@ -677,11 +782,19 @@ router.patch(
 
       logger.info(`Card ${cardId} updated in deck ${deckId}`);
 
+
       // Invalidate combos cache for this deck after card update
       try {
         await clearCombosCache(deckId);
       } catch (err) {
         logger.error('Failed to clear combos cache after updating card', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
+      // Invalidate deck cache for this deck after card update
+      try {
+        await clearDeckCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after updating card', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
       res.status(200).json({
@@ -747,6 +860,13 @@ router.delete(
         await clearCombosCache(deckId);
       } catch (err) {
         logger.error('Failed to clear combos cache after removing card', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
+      // Invalidate deck cache for this deck after card removal
+      try {
+        await clearDeckCache(deckId);
+      } catch (err) {
+        logger.error('Failed to clear deck cache after removing card', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
       res.status(204).send();
