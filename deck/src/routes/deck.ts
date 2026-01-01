@@ -15,7 +15,7 @@ const DECK_CACHE_PREFIX = 'deck:id:';
 const deckCacheMap: Map<string, { data: any; timestamp: number }> = new Map();
 
 // Recent Decks cache (in-memory only)
-const RECENT_DECK_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const RECENT_DECK_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 let recentDecksCache: { data: any; timestamp: number } | null = null;
 
 export async function clearRecentDeckCache() {
