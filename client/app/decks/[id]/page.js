@@ -37,7 +37,7 @@ export default function DeckDetailPage() {
   const [activeTab, setActiveTab] = useState('mainboard');
   const [showStats, setShowStats] = useState(true);
   const [showCollection, setShowCollection] = useState(false);
-  const [showCombos, setShowCombos] = useState(true);
+  const [showCombos, setShowCombos] = useState(false);
   const [collectionStatus, setCollectionStatus] = useState({});
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
