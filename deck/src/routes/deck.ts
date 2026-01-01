@@ -14,6 +14,15 @@ const DECK_CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
 const DECK_CACHE_PREFIX = 'deck:id:';
 const deckCacheMap: Map<string, { data: any; timestamp: number }> = new Map();
 
+// Recent Decks cache (in-memory only)
+const RECENT_DECK_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let recentDecksCache: { data: any; timestamp: number } | null = null;
+
+export async function clearRecentDeckCache() {
+  recentDecksCache = null;
+  logger.info('Cleared recent decks cache (memory)');
+}
+
 export async function clearDeckCache(deckId?: number) {
   const key = deckId ? `${DECK_CACHE_PREFIX}${deckId}` : undefined;
   try {
@@ -54,6 +63,11 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 6;
+      const cacheEntry = recentDecksCache;
+      if (cacheEntry && (Date.now() - cacheEntry.timestamp) < RECENT_DECK_CACHE_TTL) {
+        logger.info('Recent decks cache hit (memory)');
+        return res.status(200).json(cacheEntry.data);
+      }
 
       // Retrieve recent public decks
       const decks = await Deck.findRecent(limit);
@@ -69,10 +83,15 @@ router.get(
         })
       );
 
-      res.status(200).json({
+      const payload = {
         decks: decksWithCounts,
         timestamp: new Date().toISOString()
-      });
+      };
+
+      // store in memory cache
+      recentDecksCache = { data: payload, timestamp: Date.now() };
+
+      res.status(200).json(payload);
     } catch (error) {
       logger.error('Error fetching recent decks:', error);
       res.status(500).json({
@@ -278,6 +297,16 @@ router.post(
         logger.error('Failed to clear deck cache after create', { error: err instanceof Error ? err.message : String(err), deckId: deck.id });
       }
 
+      // Clear recent decks cache
+      if (deck.visibility === 'public') {
+        try {
+          await clearRecentDeckCache();
+        } catch (err) {
+          logger.error('Failed to clear recent decks cache after create', { error: err instanceof Error ? err.message : String(err), deckId: deck.id });
+        }
+      }
+      
+
       res.status(201).json({
         deck,
         timestamp: new Date().toISOString()
@@ -366,6 +395,15 @@ router.put(
         logger.error('Failed to clear deck cache after deck update', { error: err instanceof Error ? err.message : String(err), deckId });
       }
 
+      // Clear recent decks cache
+      if (visibility === 'public') {
+        try {
+          await clearRecentDeckCache();
+        } catch (err) {
+          logger.error('Failed to clear recent decks cache after create', { error: err instanceof Error ? err.message : String(err), deckId: deck.id });
+        }
+      }
+
       res.status(200).json({
         deck: updatedDeck,
         timestamp: new Date().toISOString()
@@ -424,6 +462,15 @@ router.delete(
         await clearDeckCache(deckId);
       } catch (err) {
         logger.error('Failed to clear deck cache after deck deletion', { error: err instanceof Error ? err.message : String(err), deckId });
+      }
+
+      // Clear recent decks cache
+      if (deck.visibility === 'public') {
+        try {
+          await clearRecentDeckCache();
+        } catch (err) {
+          logger.error('Failed to clear recent decks cache after create', { error: err instanceof Error ? err.message : String(err), deckId: deck.id });
+        }
       }
 
       res.status(204).send();
