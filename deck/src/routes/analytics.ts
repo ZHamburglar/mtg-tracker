@@ -66,6 +66,7 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const deckCards = await DeckCard.findByDeck(deckId);
 		const mana_cost_tally: Record<string, number> = {};
 		const cmc_tally: Record<string, number> = {};
+		const rarity_tally: Record<string, number> = {};
 		let totalCmcSum = 0;
 		let totalQtySum = 0;
 
@@ -77,10 +78,14 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		for (const dc of deckCards) {
 			const qty = dc.quantity || 1;
 			const typeLine = dc.card?.type_line || '';
-			if (/\bLand\b/i.test(typeLine)) continue; // skip lands for analytics and counts
 
-			// Counts (exclude lands)
-			total_cards += qty;
+			// Counts (all cards count, including Lands) — exclude commanders from total_cards
+			if (dc.category !== 'commander') {
+				total_cards += qty;
+				// Rarity tally uses the same basis as total_cards (exclude commanders)
+				const rarity = (dc.card?.rarity || 'unknown').toString();
+				rarity_tally[rarity] = (rarity_tally[rarity] || 0) + qty;
+			}
 			switch (dc.category) {
 				case 'mainboard':
 					mainboard_count += qty;
@@ -92,6 +97,9 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 					commander_count += qty;
 					break;
 			}
+
+			// Skip Lands for mana/CMC computations
+			if (/\bLand\b/i.test(typeLine)) continue;
 
 			// Mana symbols
 			const manaCost = dc.card?.mana_cost;
@@ -118,7 +126,7 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const average_cmc = totalQtySum > 0 ? parseFloat((totalCmcSum / totalQtySum).toFixed(2)) : 0;
 
 		// Return only the summary useful for analytics (no card lists)
-		res.status(200).json({ deck: { ...data.deck, total_cards, mainboard_count, sideboard_count, commander_count, mana_cost_tally, cmc_tally, average_cmc }, timestamp: data.timestamp });
+		res.status(200).json({ deck: { ...data.deck, total_cards, mainboard_count, sideboard_count, commander_count, rarity_tally, mana_cost_tally, cmc_tally, average_cmc }, timestamp: data.timestamp });
 	} catch (err) {
 		logger.error('Analytics route error', { error: err instanceof Error ? err.message : String(err) });
 		res.status(500).json({ error: 'Failed to get analytics data' });
