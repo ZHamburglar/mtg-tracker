@@ -30,20 +30,10 @@ export async function getDeckForAnalytics(deckId: number) {
 		const deck = await Deck.findById(deckId);
 		if (!deck) return null;
 
-		const counts = await DeckCard.getCardCountsByCategory(deckId);
-
-		// Normalize numeric counts returned from SQL (often strings)
-		const normalizedCounts = {
-			total_cards: Number(counts.total_cards) || 0,
-			mainboard_count: Number(counts.mainboard_count) || 0,
-			sideboard_count: Number(counts.sideboard_count) || 0,
-			commander_count: Number(counts.commander_count) || 0
-		};
-
+		// Return base deck info only - counts and analytics are computed in the route handler now
 		const payload = {
 			deck: {
-				...deck,
-				...normalizedCounts
+				...deck
 			},
 			timestamp: new Date().toISOString()
 		};
@@ -79,8 +69,29 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		let totalCmcSum = 0;
 		let totalQtySum = 0;
 
+		let total_cards = 0;
+		let mainboard_count = 0;
+		let sideboard_count = 0;
+		let commander_count = 0;
+
 		for (const dc of deckCards) {
 			const qty = dc.quantity || 1;
+			const typeLine = dc.card?.type_line || '';
+			if (/\bLand\b/i.test(typeLine)) continue; // skip lands for analytics and counts
+
+			// Counts (exclude lands)
+			total_cards += qty;
+			switch (dc.category) {
+				case 'mainboard':
+					mainboard_count += qty;
+					break;
+				case 'sideboard':
+					sideboard_count += qty;
+					break;
+				case 'commander':
+					commander_count += qty;
+					break;
+			}
 
 			// Mana symbols
 			const manaCost = dc.card?.mana_cost;
@@ -107,7 +118,7 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const average_cmc = totalQtySum > 0 ? parseFloat((totalCmcSum / totalQtySum).toFixed(2)) : 0;
 
 		// Return only the summary useful for analytics (no card lists)
-		res.status(200).json({ deck: { ...data.deck, mana_cost_tally, cmc_tally, average_cmc }, timestamp: data.timestamp });
+		res.status(200).json({ deck: { ...data.deck, total_cards, mainboard_count, sideboard_count, commander_count, mana_cost_tally, cmc_tally, average_cmc }, timestamp: data.timestamp });
 	} catch (err) {
 		logger.error('Analytics route error', { error: err instanceof Error ? err.message : String(err) });
 		res.status(500).json({ error: 'Failed to get analytics data' });
