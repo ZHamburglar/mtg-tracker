@@ -70,6 +70,7 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const type_tally: Record<string, number> = {};
 		let totalCmcSum = 0;
 		let totalQtySum = 0;
+		let total_price_usd = 0;
 
 		let total_cards = 0;
 		let mainboard_count = 0;
@@ -102,6 +103,12 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 				// Fallback: count the whole primary type string if nothing canonical matched
 				if (!matched && typePart) {
 					type_tally[typePart] = (type_tally[typePart] || 0) + qty;
+				}
+
+				// Accumulate price for non-commander cards (if price available)
+				const priceUsd = dc.card?.prices?.price_usd;
+				if (priceUsd !== null && priceUsd !== undefined && !isNaN(Number(priceUsd))) {
+					total_price_usd += Number(priceUsd) * qty;
 				}
 			}
 
@@ -147,6 +154,7 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const average_cmc = totalQtySum > 0 ? parseFloat((totalCmcSum / totalQtySum).toFixed(2)) : 0;
 
 		// Return only the summary useful for analytics (no card lists)
+		const total_price_usd_rounded = parseFloat(total_price_usd.toFixed(2));
 		res.status(200).json({ 
 			deck: { 
 				...data.deck, 
@@ -158,7 +166,8 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 				type_tally, 
 				mana_cost_tally, 
 				cmc_tally, 
-				average_cmc 
+				average_cmc,
+				total_price_usd: total_price_usd_rounded
 			}, 
 			timestamp: data.timestamp });
 	} catch (err) {

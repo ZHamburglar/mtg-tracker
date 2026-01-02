@@ -71,7 +71,11 @@ export class DeckCard {
         c.set_code as 'card.set_code',
         c.rarity as 'card.rarity',
         c.image_uri_small as 'card.image_uri_small',
-        c.image_uri_png as 'card.image_uri_png'
+        c.image_uri_png as 'card.image_uri_png',
+        (SELECT COUNT(*) FROM card_faces cf WHERE cf.card_id = c.id) as 'card.face_count',
+        (SELECT cp.price_usd FROM card_prices cp WHERE cp.card_id = c.id ORDER BY cp.created_at DESC LIMIT 1) as 'card.price_usd',
+        (SELECT cp.price_usd_foil FROM card_prices cp WHERE cp.card_id = c.id ORDER BY cp.created_at DESC LIMIT 1) as 'card.price_usd_foil',
+        (SELECT cp.price_usd_etched FROM card_prices cp WHERE cp.card_id = c.id ORDER BY cp.created_at DESC LIMIT 1) as 'card.price_usd_etched'
       FROM deck_cards dc
       LEFT JOIN cards c ON dc.card_id COLLATE utf8mb4_0900_ai_ci = c.id
       WHERE dc.deck_id = ?
@@ -104,6 +108,12 @@ export class DeckCard {
           small: row['card.image_uri_small'],
           normal: row['card.image_uri_png'],
           png: row['card.image_uri_png']
+        },
+        has_multiple_faces: (Number(row['card.face_count']) || 0) > 1,
+        prices: {
+          price_usd: row['card.price_usd'] !== null && row['card.price_usd'] !== undefined ? Number(row['card.price_usd']) : null,
+          price_usd_foil: row['card.price_usd_foil'] !== null && row['card.price_usd_foil'] !== undefined ? Number(row['card.price_usd_foil']) : null,
+          price_usd_etched: row['card.price_usd_etched'] !== null && row['card.price_usd_etched'] !== undefined ? Number(row['card.price_usd_etched']) : null
         }
       };
 
