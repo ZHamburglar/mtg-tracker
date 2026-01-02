@@ -56,8 +56,11 @@ export class DeckCard {
   }
 
   static async findByDeck(deckId: number): Promise<DeckCardDoc[]> {
-    const [rows] = await this.pool.execute<DeckCardDoc[]>(
-      `SELECT 
+    // Execute query and handle closed-pool errors gracefully so routes can return 503
+    let rows: DeckCardDoc[] = [];
+    try {
+      const res = await this.pool.execute<DeckCardDoc[]>(
+        `SELECT 
         dc.*,
         c.id as 'card.id',
         c.name as 'card.name',
@@ -72,26 +75,12 @@ export class DeckCard {
         c.rarity as 'card.rarity',
         c.image_uri_small as 'card.image_uri_small',
         c.image_uri_png as 'card.image_uri_png',
-        fc.face_count as 'card.face_count',
-        lp.price_usd as 'card.price_usd',
-        lp.price_usd_foil as 'card.price_usd_foil',
-        lp.price_usd_etched as 'card.price_usd_etched'
+        (SELECT COUNT(*) FROM card_faces cf WHERE cf.card_id = c.id) as 'card.face_count',
+        (SELECT cp.price_usd FROM card_prices cp WHERE cp.card_id = c.id ORDER BY cp.created_at DESC LIMIT 1) as 'card.price_usd',
+        (SELECT cp.price_usd_foil FROM card_prices cp WHERE cp.card_id = c.id ORDER BY cp.created_at DESC LIMIT 1) as 'card.price_usd_foil',
+        (SELECT cp.price_usd_etched FROM card_prices cp WHERE cp.card_id = c.id ORDER BY cp.created_at DESC LIMIT 1) as 'card.price_usd_etched'
       FROM deck_cards dc
       LEFT JOIN cards c ON dc.card_id COLLATE utf8mb4_0900_ai_ci = c.id
-      LEFT JOIN (
-        SELECT cp.card_id, cp.price_usd, cp.price_usd_foil, cp.price_usd_etched
-        FROM (
-          SELECT card_id, price_usd, price_usd_foil, price_usd_etched,
-                 ROW_NUMBER() OVER (PARTITION BY card_id ORDER BY created_at DESC) as rn
-          FROM card_prices
-        ) cp2
-        WHERE cp2.rn = 1
-      ) lp ON lp.card_id = c.id
-      LEFT JOIN (
-        SELECT card_id, COUNT(*) as face_count
-        FROM card_faces
-        GROUP BY card_id
-      ) fc ON fc.card_id = c.id
       WHERE dc.deck_id = ?
       ORDER BY 
         CASE dc.category
@@ -101,8 +90,16 @@ export class DeckCard {
         END,
         c.cmc ASC,
         c.name ASC`,
-      [deckId]
-    );
+        [deckId]
+      );
+      rows = (res as any)[0];
+    } catch (err: any) {
+      if (err && (err.message || '').includes('Pool is closed')) {
+        // Re-throw a clearer error for upstream handling
+        throw new Error('Database connection pool is closed');
+      }
+      throw err;
+    }
 
     // Transform nested card data
     return rows.map(row => {

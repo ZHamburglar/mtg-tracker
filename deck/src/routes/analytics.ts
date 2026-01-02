@@ -172,6 +172,10 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 			timestamp: data.timestamp });
 	} catch (err) {
 		logger.error('Analytics route error', { error: err instanceof Error ? err.message : String(err) });
+		const msg = err instanceof Error ? err.message : String(err);
+		if (msg.includes('Pool is closed') || msg.includes('Database connection pool is closed')) {
+			return res.status(503).json({ error: 'Database unavailable' });
+		}
 		res.status(500).json({ error: 'Failed to get analytics data' });
 	}
 });
