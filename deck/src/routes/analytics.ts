@@ -67,6 +67,7 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const mana_cost_tally: Record<string, number> = {};
 		const cmc_tally: Record<string, number> = {};
 		const rarity_tally: Record<string, number> = {};
+		const type_tally: Record<string, number> = {};
 		let totalCmcSum = 0;
 		let totalQtySum = 0;
 
@@ -85,7 +86,25 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 				// Rarity tally uses the same basis as total_cards (exclude commanders)
 				const rarity = (dc.card?.rarity || 'unknown').toString();
 				rarity_tally[rarity] = (rarity_tally[rarity] || 0) + qty;
+
+				// Type breakdown (use left side of type_line before the em-dash as the area to look for types)
+				const typePart = (dc.card?.type_line || '').split(/—|-|–/)[0].trim();
+				const canonicalTypes = ['Creature','Planeswalker','Artifact','Enchantment','Instant','Sorcery','Land','Tribal','Vehicle','Conspiracy','Plane','Scheme','Phenomenon','Vanguard'];
+				let matched = false;
+				// Assign to the first matching canonical type so each card counts only once
+				for (const t of canonicalTypes) {
+					if (new RegExp('\\b' + t + '\\b','i').test(typePart)) {
+						type_tally[t] = (type_tally[t] || 0) + qty;
+						matched = true;
+						break;
+					}
+				}
+				// Fallback: count the whole primary type string if nothing canonical matched
+				if (!matched && typePart) {
+					type_tally[typePart] = (type_tally[typePart] || 0) + qty;
+				}
 			}
+
 			switch (dc.category) {
 				case 'mainboard':
 					mainboard_count += qty;
@@ -97,6 +116,8 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 					commander_count += qty;
 					break;
 			}
+
+			// Get list of Types
 
 			// Skip Lands for mana/CMC computations
 			if (/\bLand\b/i.test(typeLine)) continue;
@@ -126,7 +147,20 @@ router.get('/api/deck/:id/analytics', async (req: Request, res: Response) => {
 		const average_cmc = totalQtySum > 0 ? parseFloat((totalCmcSum / totalQtySum).toFixed(2)) : 0;
 
 		// Return only the summary useful for analytics (no card lists)
-		res.status(200).json({ deck: { ...data.deck, total_cards, mainboard_count, sideboard_count, commander_count, rarity_tally, mana_cost_tally, cmc_tally, average_cmc }, timestamp: data.timestamp });
+		res.status(200).json({ 
+			deck: { 
+				...data.deck, 
+				total_cards, 
+				mainboard_count, 
+				sideboard_count, 
+				commander_count, 
+				rarity_tally, 
+				type_tally, 
+				mana_cost_tally, 
+				cmc_tally, 
+				average_cmc 
+			}, 
+			timestamp: data.timestamp });
 	} catch (err) {
 		logger.error('Analytics route error', { error: err instanceof Error ? err.message : String(err) });
 		res.status(500).json({ error: 'Failed to get analytics data' });
